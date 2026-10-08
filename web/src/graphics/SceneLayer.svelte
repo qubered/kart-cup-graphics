@@ -7,6 +7,7 @@
   import NextRaceScene from './scenes/NextRaceScene.svelte'
   import StandingsScene from './scenes/StandingsScene.svelte'
   import WinnerScene from './scenes/WinnerScene.svelte'
+  import NoticeScene from './scenes/NoticeScene.svelte'
 
   let { scene, view, enter, exit, lowfx = false }: { scene: SceneView; view: ViewModel; enter: number; exit: number; lowfx?: boolean } = $props()
 </script>
@@ -23,6 +24,8 @@
       <StandingsScene {scene} {view} {enter} />
     {:else if scene.kind === 'winner'}
       <WinnerScene {scene} {view} {enter} {lowfx} />
+    {:else if scene.kind === 'notice'}
+      <NoticeScene {scene} {view} {enter} />
     {/if}
   </div>
 {/key}

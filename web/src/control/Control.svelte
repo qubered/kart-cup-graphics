@@ -22,6 +22,8 @@
 
   function onKeydown(e: KeyboardEvent) {
     if (!st || !$control.connected || e.ctrlKey || e.metaKey || e.altKey) return
+    // The notice editor is a rich-text field: typing there (space, Enter, capital B...) must never fire the show shortcuts.
+    if ((e.target as HTMLElement | null)?.isContentEditable && e.key !== 'Escape') return
     const cmd = shortcutCommand(
       { key: e.key, shiftKey: e.shiftKey, targetTag: (e.target as HTMLElement | null)?.tagName ?? 'BODY' },
       { outputs: st.outputs.map((o) => o.id), armed: st.armed, hold: st.overlay.hold.on, ftb: st.overlay.ftb },

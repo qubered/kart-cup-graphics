@@ -157,8 +157,8 @@ function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | u
   }
   if (sc.armed) next = { ...next, armed: preset.armed.filter((id) => state.outputs.some((o) => o.id === id)) }
   if (sc.show) {
-    const { event, typography, race } = structuredClone(preset.draft)
-    next = withDraft(next, { event, typography, race })
+    const { event, typography, race, notice } = structuredClone(preset.draft)
+    next = withDraft(next, { event, typography, race, notice })
   }
   if (sc.players) next = withDraft(next, { players: structuredClone(preset.draft.players) })
   if (sc.scores) next = liveScores(withDraft(next, { scores: structuredClone(preset.draft.scores) }), ctx)
@@ -207,6 +207,8 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
     }
     case 'setEventText':
       return withDraft(state, { event: { ...state.draft.event, ...cmd.patch } })
+    case 'setNotice':
+      return withDraft(state, { notice: cmd.doc })
     case 'setTypography': {
       const ty = state.draft.typography
       const { font, style, look } = cmd.patch

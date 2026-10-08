@@ -3,7 +3,7 @@ import type { Catalog } from './catalog'
 export type ColourId = 'red' | 'blue' | 'green' | 'yellow' | 'pink' | 'orange' | 'purple' | 'cyan'
 export type OutputFormat = 'wide' | 'twin' | 'hd'
 export type BackgroundId = 'A' | 'B' | 'C' | 'none'
-export type SceneId = 'none' | 'title' | 'lineup' | 'nextRace' | 'standings' | 'winner'
+export type SceneId = 'none' | 'title' | 'lineup' | 'nextRace' | 'standings' | 'winner' | 'notice'
 export type TransitionSpeed = 'fast' | 'normal' | 'slow'
 export type TakeMode = 'cut' | 'auto'
 export interface SafeArea { top: number; right: number; bottom: number; left: number }
@@ -18,8 +18,13 @@ export interface Typography {
   names: { font: string }
   labels: { font: string }
 }
+/** One styled stretch of notice-board text. font = a family name (as in the font lists); size is px on a 1080-tall canvas. Absent = the board default. */
+export interface NoticeRun { text: string; bold?: boolean; italic?: boolean; underline?: boolean; color?: string; font?: string; size?: number }
+export interface NoticeBlock { align: 'left' | 'center' | 'right'; runs: NoticeRun[] }
+/** The notice board's rich text: paragraphs of styled runs (a newline inside a run is a line break). */
+export interface NoticeDoc { blocks: NoticeBlock[] }
 export interface ShowData {
-  event: EventText; typography: Typography; players: Player[]; race: RaceState
+  event: EventText; typography: Typography; players: Player[]; race: RaceState; notice: NoticeDoc
   scores: { races: RaceResult[]; adjustments: number[] }
 }
 /** `lineupShown`: how many line-up cards are revealed (1-4); absent = all four. */
@@ -35,6 +40,7 @@ export type SceneView =
   | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; single: boolean; cupTracks: { name: string; thumb: string; current: boolean }[] }
   | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[] }
   | { kind: 'winner'; player: PlayerView; total: number }
+  | { kind: 'notice'; doc: NoticeDoc }
 export interface ViewModel {
   format: OutputFormat; canvas: { w: number; h: number }; safeArea: SafeArea; graphicsScale: number
   fonts: FontStacks; headingLook: 'chrome' | 'classic' | 'plain'; headingUpright: boolean; eventTitleStyle: 'chrome' | 'classic'
@@ -81,6 +87,7 @@ export type Command =
   | { type: 'saveResults'; raceNo: number; trackId: string; positions: number[]; adjustments?: number[] }
   | { type: 'setAdjustment'; index: 0 | 1 | 2 | 3; value: number }
   | { type: 'setEventText'; patch: Partial<EventText> }
+  | { type: 'setNotice'; doc: NoticeDoc }
   | { type: 'setTypography'; role: 'eventTitle' | 'headings' | 'names' | 'labels'; patch: { font?: string; style?: 'chrome' | 'classic'; look?: 'chrome' | 'classic' | 'plain' } }
   | { type: 'setLayers'; outputId: string; patch: Partial<Layers> }
   | { type: 'savePreset'; name: string; from?: PresetSource; scope?: Partial<PresetScope> }
