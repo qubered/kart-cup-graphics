@@ -1,10 +1,10 @@
 import { z } from 'zod'
-import type { Command, Cue, CueStack, Layers, OutputConfig, Preset, PresetScope, ShowData, ShowFile, ShowState, ViewModel } from './types'
+import type { BracketConfig, Command, Cue, CueStack, Layers, Match, MatchesSceneConfig, OutputConfig, Preset, PresetScope, ShowData, ShowFile, ShowState, Tournament, ViewModel, WinScreenConfig } from './types'
 
 export const colourIdSchema = z.enum(['red', 'blue', 'green', 'yellow', 'pink', 'orange', 'purple', 'cyan'])
 export const outputFormatSchema = z.enum(['wide', 'twin', 'hd'])
 export const backgroundIdSchema = z.enum(['A', 'B', 'C', 'none'])
-export const sceneIdSchema = z.enum(['none', 'title', 'lineup', 'nextRace', 'standings', 'winner'])
+export const sceneIdSchema = z.enum(['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'bracket', 'matches'])
 export const transitionSpeedSchema = z.enum(['fast', 'normal', 'slow'])
 export const takeModeSchema = z.enum(['cut', 'auto'])
 export const slotSchema = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)])
@@ -49,20 +49,40 @@ export const showDataSchema: z.ZodType<ShowData, z.ZodTypeDef, unknown> = z.obje
     adjustments: z.array(z.number().finite()).length(4),
   }),
 })
-export const layersSchema: z.ZodType<Layers> = z.object({
+export const scenePartSchema = z.enum(['full', 'hero', 'board'])
+const idStr = z.string().min(1).max(64)
+export const matchRefSchema = z.union([z.enum(['active', 'previous']), z.object({ matchId: idStr })])
+export const matchSetSchema = z.object({
+  rounds: z.array(z.number().int().min(0).max(20)).max(21).optional(),
+  ids: z.array(idStr).max(64).optional(),
+  range: z.tuple([z.number().int().min(0).max(63), z.number().int().min(0).max(63)]).optional(),
+})
+const layersShape = {
   background: backgroundIdSchema,
   scene: sceneIdSchema,
   trackCard: z.boolean(),
   lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }),
   lineupShown: z.number().int().min(1).max(4).optional(),
-})
+  part: scenePartSchema.optional(),
+  matchRef: matchRefSchema.optional(),
+  matchSet: matchSetSchema.optional(),
+}
+export const layersSchema: z.ZodType<Layers> = z.object(layersShape)
 
-export const presetScopeSchema: z.ZodType<PresetScope> = z.object({
-  layers: z.boolean(), armed: z.boolean(), show: z.boolean(), scores: z.boolean(), transition: z.boolean(), mattify: z.boolean(),
-})
-const partialScopeSchema = z.object({
-  layers: z.boolean(), armed: z.boolean(), show: z.boolean(), scores: z.boolean(), transition: z.boolean(), mattify: z.boolean(),
-}).partial()
+const SCOPE_KEYS = ['layers', 'armed', 'style', 'match', 'scores', 'transition', 'mattify'] as const
+/** Scope objects saved before the `show` split: show -> style + match (an explicit style/match wins). */
+export function migrateScope(v: unknown): unknown {
+  if (typeof v !== 'object' || v === null || !('show' in v)) return v
+  const { show, ...rest } = v as Record<string, unknown>
+  const out: Record<string, unknown> = { ...rest }
+  if (typeof show === 'boolean') { out.style ??= show; out.match ??= show }
+  else if (show === null) { /* legacy cue patch "inherit": nothing to set */ }
+  return out
+}
+export const presetScopeSchema: z.ZodType<PresetScope, z.ZodTypeDef, unknown> = z.preprocess(
+  migrateScope, z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean()]))),
+) as unknown as z.ZodType<PresetScope, z.ZodTypeDef, unknown>
+const partialScopeSchema = z.preprocess(migrateScope, z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean()]))).partial())
 export const presetSchema: z.ZodType<Preset, z.ZodTypeDef, unknown> = z.object({
   id: z.string().min(1).max(64),
   name: z.string().max(100),
@@ -74,15 +94,53 @@ export const presetSchema: z.ZodType<Preset, z.ZodTypeDef, unknown> = z.object({
   mattify: z.boolean(),
 })
 
-const SCOPE_KEYS = ['layers', 'armed', 'show', 'scores', 'transition', 'mattify'] as const
-const cueScopeSchema = z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean()]))).partial()
-const cueScopePatchSchema = z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean().nullable()]))).partial()
+const cueScopeSchema = partialScopeSchema
+const cueScopePatchSchema = z.preprocess(migrateScope, z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean().nullable()]))).partial())
+const cueActionSchema = z.enum(['nextRace', 'nextMatch', 'resetStack'])
 export const cueSchema: z.ZodType<Cue> = z.object({
-  id: z.string().min(1).max(64), presetId: z.string().min(1).max(64), take: takeModeSchema.nullable(), scope: cueScopeSchema.optional(),
+  id: z.string().min(1).max(64), presetId: z.string().min(1).max(64), take: takeModeSchema.nullable(), scope: cueScopeSchema.optional(), action: cueActionSchema.optional(),
 }) as unknown as z.ZodType<Cue>
 export const cueStackSchema: z.ZodType<CueStack, z.ZodTypeDef, unknown> = z.object({
   id: z.string().min(1).max(64), name: z.string().max(100), cues: z.array(cueSchema), current: z.string().nullable(), selected: z.string().nullable().default(null),
 })
+
+// ---- tournaments ----
+export const winScreenConfigSchema: z.ZodType<WinScreenConfig> = z.object({
+  layout: z.enum(['heroLeft', 'heroCentre']),
+  blocks: z.object({ hero: z.boolean(), board: z.boolean(), cupEmblem: z.boolean(), trackName: z.boolean(), racePoints: z.boolean() }),
+})
+const matchesLayoutSchema = z.enum(['grid', 'row', 'stack', 'focus'])
+const matchesDetailSchema = z.enum(['full', 'compact', 'winner'])
+export const matchesSceneConfigSchema: z.ZodType<MatchesSceneConfig> = z.object({
+  layout: matchesLayoutSchema,
+  detail: z.object({ wide: matchesDetailSchema, twin: matchesDetailSchema, hd: matchesDetailSchema }),
+  pendingScores: z.enum(['zeros', 'hide']),
+  liveMarker: z.boolean(),
+})
+export const bracketConfigSchema: z.ZodType<BracketConfig> = z.object({ showScores: z.boolean(), showStatus: z.boolean() })
+const slotSourceSchema = z.object({ matchId: idStr, auto: z.boolean() })
+export const matchSchema: z.ZodType<Match, z.ZodTypeDef, unknown> = z.object({
+  id: idStr,
+  label: z.string().max(100),
+  round: z.number().int().min(0).max(20),
+  data: showDataSchema,
+  status: z.enum(['pending', 'live', 'done']).default('pending'),
+  winnerOverride: slotSchema.nullable().default(null),
+  slotSources: z.array(slotSourceSchema.nullable()).max(4).optional(),
+})
+const defaultWin: WinScreenConfig = { layout: 'heroLeft', blocks: { hero: true, board: true, cupEmblem: true, trackName: true, racePoints: true } }
+const defaultMatches: MatchesSceneConfig = { layout: 'grid', detail: { wide: 'full', twin: 'compact', hd: 'compact' }, pendingScores: 'zeros', liveMarker: true }
+export const tournamentSchema: z.ZodType<Tournament, z.ZodTypeDef, unknown> = z.object({
+  id: idStr,
+  name: z.string().max(100),
+  matches: z.array(matchSchema).max(64),
+  activeMatchId: idStr,
+  winScreen: winScreenConfigSchema.default(defaultWin),
+  matchesScene: matchesSceneConfigSchema.default(defaultMatches),
+  bracket: bracketConfigSchema.default({ showScores: true, showStatus: true }),
+})
+export const DEFAULT_WIN_SCREEN: WinScreenConfig = defaultWin
+export const DEFAULT_MATCHES_SCENE: MatchesSceneConfig = defaultMatches
 
 export const programFrameSchema = z.object({
   view: z.custom<ViewModel>((v) => typeof v === 'object' && v !== null),
@@ -106,6 +164,8 @@ export const showStateSchema: z.ZodType<ShowState, z.ZodTypeDef, unknown> = z.ob
   lastPreset: z.string().nullable().default(null),
   settings: z.object({ mattify: z.boolean() }).default({ mattify: false }),
   stacks: z.array(cueStackSchema).default([]),
+  tournaments: z.array(tournamentSchema).default([]),
+  activeTournamentId: z.string().nullable().default(null),
 })
 
 export const showFileSchema: z.ZodType<ShowFile, z.ZodTypeDef, unknown> = z.object({
@@ -115,6 +175,7 @@ export const showFileSchema: z.ZodType<ShowFile, z.ZodTypeDef, unknown> = z.obje
   transition: transitionSpeedSchema,
   presets: z.array(presetSchema).default([]),
   stacks: z.array(cueStackSchema).default([]),
+  tournaments: z.array(tournamentSchema).default([]),
 })
 
 export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
@@ -144,6 +205,9 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     trackCard: z.boolean().optional(),
     lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }).optional(),
     lineupShown: z.number().int().min(1).max(4).optional(),
+    part: scenePartSchema.optional(),
+    matchRef: matchRefSchema.optional(),
+    matchSet: matchSetSchema.optional(),
   }) }),
   z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), capture: z.boolean().optional(), scope: partialScopeSchema.optional() }),
@@ -153,8 +217,8 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('renameStack'), id: z.string(), name: z.string().trim().min(1).max(100) }),
   z.object({ type: z.literal('deleteStack'), id: z.string() }),
   z.object({ type: z.literal('resetStack'), id: z.string() }),
-  z.object({ type: z.literal('addCue'), stackId: z.string(), presetId: z.string(), take: takeModeSchema.nullable(), index: z.number().int().min(0).optional(), scope: cueScopePatchSchema.optional() }),
-  z.object({ type: z.literal('updateCue'), stackId: z.string(), cueId: z.string(), presetId: z.string().optional(), take: takeModeSchema.nullable().optional(), scope: cueScopePatchSchema.optional() }),
+  z.object({ type: z.literal('addCue'), stackId: z.string(), presetId: z.string(), take: takeModeSchema.nullable(), index: z.number().int().min(0).optional(), scope: cueScopePatchSchema.optional(), action: cueActionSchema.optional() }),
+  z.object({ type: z.literal('updateCue'), stackId: z.string(), cueId: z.string(), presetId: z.string().optional(), take: takeModeSchema.nullable().optional(), scope: cueScopePatchSchema.optional(), action: cueActionSchema.nullable().optional() }),
   z.object({ type: z.literal('removeCue'), stackId: z.string(), cueId: z.string() }),
   z.object({ type: z.literal('moveCue'), stackId: z.string(), cueId: z.string(), delta: z.union([z.literal(1), z.literal(-1)]) }),
   z.object({ type: z.literal('fireCue'), stackId: z.string(), cueId: z.string() }),
@@ -183,5 +247,43 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('resetShow') }),
   z.object({ type: z.literal('resetOnAirClock') }),
   z.object({ type: z.literal('setMattify'), on: z.boolean() }),
+  z.object({ type: z.literal('createTournament'), name: z.string().trim().min(1).max(100), template: z.enum(['bracket', 'empty']).optional() }),
+  z.object({ type: z.literal('loadTournament'), id: z.string().nullable() }),
+  z.object({ type: z.literal('renameTournament'), id: z.string(), name: z.string().trim().min(1).max(100) }),
+  z.object({ type: z.literal('deleteTournament'), id: z.string() }),
+  z.object({ type: z.literal('addMatch'), label: z.string().trim().min(1).max(100).optional(), round: z.number().int().min(0).max(20).optional() }),
+  z.object({
+    type: z.literal('updateMatch'), matchId: z.string(),
+    patch: z.object({
+      label: z.string().trim().min(1).max(100).optional(),
+      round: z.number().int().min(0).max(20).optional(),
+      players: z.array(playerSchema.partial().nullable()).max(4).optional(),
+      race: raceStateSchema.partial().optional(),
+    }),
+  }),
+  z.object({ type: z.literal('removeMatch'), matchId: z.string() }),
+  z.object({ type: z.literal('setActiveMatch'), matchId: z.string() }),
+  z.object({ type: z.literal('nextMatch') }),
+  z.object({
+    type: z.literal('setMatchResults'), matchId: z.string(),
+    races: z.array(raceResultSchema).max(99).optional(),
+    adjustments: z.array(z.number().finite()).length(4).optional(),
+  }),
+  z.object({ type: z.literal('setWinnerOverride'), matchId: z.string(), slot: slotSchema.nullable() }),
+  z.object({ type: z.literal('setSlotSource'), matchId: z.string(), slot: slotSchema, source: slotSourceSchema.nullable() }),
+  z.object({
+    type: z.literal('setWinScreenConfig'),
+    patch: z.object({ layout: z.enum(['heroLeft', 'heroCentre']).optional(), blocks: z.object({ hero: z.boolean(), board: z.boolean(), cupEmblem: z.boolean(), trackName: z.boolean(), racePoints: z.boolean() }).partial().optional() }),
+  }),
+  z.object({
+    type: z.literal('setMatchesSceneConfig'),
+    patch: z.object({
+      layout: matchesLayoutSchema.optional(),
+      detail: z.object({ wide: matchesDetailSchema, twin: matchesDetailSchema, hd: matchesDetailSchema }).partial().optional(),
+      pendingScores: z.enum(['zeros', 'hide']).optional(),
+      liveMarker: z.boolean().optional(),
+    }),
+  }),
+  z.object({ type: z.literal('setBracketConfig'), patch: z.object({ showScores: z.boolean(), showStatus: z.boolean() }).partial() }),
   z.object({ type: z.literal('registerFont'), family: z.string().min(1).max(100), file: z.string().min(1).max(300) }),
 ]) as unknown as z.ZodType<Command>
