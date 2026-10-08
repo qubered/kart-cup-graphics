@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade } from 'svelte/transition'
   import type { OutputPayload } from '../../../shared/protocol'
-  import { enterDuration, exitDuration } from './motion'
+  import { SPEED_MS, enterDuration, exitDuration } from './motion'
   import SkyBackground from './backgrounds/SkyBackground.svelte'
   import IconPattern from './backgrounds/IconPattern.svelte'
   import HoldOverlay from './overlays/HoldOverlay.svelte'
@@ -45,6 +45,15 @@
   })
   // First render after (re)load is always a CUT: every duration is 0.
   const enter = $derived(!payload || firstPaint ? 0 : enterDuration(payload.frame.mode, payload.frame.speed))
+  // Background identity for the crossfade: A/B/C, plus the settings that restyle B (Mattify) and C (its watermark and title plate, which have no in-place swap).
+  const bgKey = $derived.by(() => {
+    const b = view?.background
+    if (!b) return ''
+    if (b.id === 'B') return `B|${payload?.mattify ?? false}`
+    if (b.id === 'C') return `C|${b.watermark}|${b.title.preTitle}|${b.title.title}|${b.title.accent}|${view?.fonts.eventTitle}`
+    return b.id
+  })
+  const holdMs = $derived(!payload || firstPaint ? 0 : SPEED_MS.normal)
   const exit = $derived(!payload || firstPaint ? 0 : exitDuration(payload.frame.mode, payload.frame.speed))
 </script>
 
@@ -64,8 +73,8 @@
 
     <!-- BACKGROUND (A, B, C) -->
     {#if view.background}
-      {#key view.background.id}
-        <div class="layer" data-layer="background" data-bg={view.background.id} in:fade={{ duration: enter }} out:fade={{ duration: exit }}>
+      {#key bgKey}
+        <div class="layer" data-layer="background" data-bg={view.background.id} in:fade|global={{ duration: enter }} out:fade|global={{ duration: exit }}>
           {#if keyMode}
             <div class="key-solid"></div>
           {:else if view.background.id === 'A'}
@@ -81,7 +90,16 @@
               </div>
             {/each}
           {:else if view.background.id === 'C'}
-            <StickerWall watermark={view.background.watermark} title={view.background.title} titleFont={view.fonts.eventTitle} labelFont={view.fonts.labels} {lowfx} w={view.canvas.w} h={view.canvas.h} />
+            {#if view.format === 'twin'}
+              <!-- Two 960 px screens: each draws its own wall (own logo plate), so nothing straddles the seam. -->
+              {#each [0, TWIN_HALF] as left (left)}
+                <div class="seg" style:left="{left}px" style:width="{TWIN_HALF}px">
+                  <StickerWall watermark={view.background.watermark} title={view.background.title} titleFont={view.fonts.eventTitle} labelFont={view.fonts.labels} {lowfx} w={TWIN_HALF} h={view.canvas.h} />
+                </div>
+              {/each}
+            {:else}
+              <StickerWall watermark={view.background.watermark} title={view.background.title} titleFont={view.fonts.eventTitle} labelFont={view.fonts.labels} {lowfx} w={view.canvas.w} h={view.canvas.h} />
+            {/if}
           {/if}
         </div>
       {/key}
@@ -96,11 +114,11 @@
     <!-- LOWER THIRDS: LowerThirdsLayer goes inside this container -->
     <div class="layer" data-layer="lowerthirds">{#if view.lowerThirds.length}<LowerThirdsLayer players={view.lowerThirds} {view} {enter} {exit} />{/if}</div>
 
-    <!-- HOLD: instant, no transition -->
+    <!-- HOLD: fades in/out like FTB (instant on the first paint) -->
     {#if payload?.hold && keyMode}
-      <div class="key-solid" data-overlay="hold"></div>
+      <div class="key-solid" data-overlay="hold" in:fade|global={{ duration: holdMs }} out:fade|global={{ duration: holdMs }}></div>
     {:else if payload?.hold}
-      <HoldOverlay hold={payload.hold} logoSrc={payload.logo} format={view.format} w={view.canvas.w} h={view.canvas.h} />
+      <HoldOverlay hold={payload.hold} logoSrc={payload.logo} format={view.format} w={view.canvas.w} h={view.canvas.h} dur={holdMs} />
     {/if}
 
     <!-- FTB: 500 ms opacity fade -->

@@ -3,6 +3,8 @@ export interface FitTextParams {
   max: number
   /** Font-size floor as a fraction of the base size (default 0.6; 0 = no floor). */
   minRatio?: number
+  /** Allow a name with spaces to wrap onto up to this many lines (e.g. first / last name) when one line would have to shrink a lot. Default 1. */
+  lines?: number
   /** Optional: any changing value re-runs the fit. */
   text?: string
   /** Called after every fit with the resulting font-size in px (used to equalise grouped lines). */
@@ -19,6 +21,7 @@ export function fitText(node: HTMLElement, p: FitTextParams) {
   let params = p
   let base = ''
   let running = false
+  let wrapped = false
   const target = (): HTMLElement => (node.querySelector(':scope > span') as HTMLElement | null) ?? node
   const run = () => {
     if (running) return
@@ -26,6 +29,7 @@ export function fitText(node: HTMLElement, p: FitTextParams) {
     try {
       const span = target()
       span.style.transform = ''
+      if (wrapped) { wrapped = false; node.style.whiteSpace = ''; span.style.whiteSpace = ''; span.style.display = 'inline-block' }
       node.style.fontSize = base
       if (getComputedStyle(node).display === 'inline') node.style.display = 'inline-block'
       if (span !== node) span.style.display = span.style.display || 'inline-block'
@@ -38,6 +42,24 @@ export function fitText(node: HTMLElement, p: FitTextParams) {
       while (node.scrollWidth > params.max && fs > floor && guard-- > 0) {
         fs -= 1
         node.style.fontSize = `${fs}px`
+      }
+      const lines = params.lines ?? 1
+      if (lines > 1 && span !== node && /\s/.test(span.textContent ?? '') && fs < baseSize * 0.8) {
+        // Try stacking the words instead of squeezing one line: keep it when it lets the text stay clearly bigger.
+        const oneLine = fs
+        const lh = (parseFloat(getComputedStyle(node).lineHeight) || fs * 1.05) / fs
+        wrapped = true
+        node.style.whiteSpace = 'normal'; span.style.whiteSpace = 'normal'; span.style.display = 'block'
+        let ws = baseSize
+        node.style.fontSize = `${ws}px`
+        const over = () => node.scrollWidth > params.max || node.scrollHeight > ws * lh * (lines + 0.2)
+        let g = 2000
+        while (over() && ws > floor && g-- > 0) { ws -= 1; node.style.fontSize = `${ws}px` }
+        if (over() || ws < oneLine * 1.15) {
+          wrapped = false
+          node.style.whiteSpace = ''; span.style.whiteSpace = ''; span.style.display = 'inline-block'
+          node.style.fontSize = `${oneLine}px`
+        } else fs = ws
       }
       const w = span === node ? node.scrollWidth : span.offsetWidth
       if (node.scrollWidth > params.max && w > 0) {

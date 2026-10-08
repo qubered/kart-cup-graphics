@@ -17,13 +17,13 @@
     {#each [0, 1] as h (h)}
       <div class="half" style:left="{h * 960}px" in:pop|global={{ duration: enter, delay: h * st }}>
         <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} dur={enter} logo={logo === 'title'} {logoSrc} />
-        {#if logo === 'corner'}<div class="logo-mark"><Logo size={logoSize} src={logoSrc} /></div>{/if}
+        {#if logo === 'corner'}<div class="logo-mark"><Logo size={logoSize} src={logoSrc} dur={enter} /></div>{/if}
       </div>
     {/each}
   {:else}
     <div class="center" in:pop|global={{ duration: enter }}>
       <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} dur={enter} logo={logo === 'title'} {logoSrc} />
-      {#if logo === 'corner'}<div class="logo-mark"><Logo size={logoSize} src={logoSrc} /></div>{/if}
+      {#if logo === 'corner'}<div class="logo-mark"><Logo size={logoSize} src={logoSrc} dur={enter} /></div>{/if}
     </div>
   {/if}
 </div>

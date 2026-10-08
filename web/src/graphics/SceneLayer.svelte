@@ -13,11 +13,12 @@
   import Matches from './scenes/Matches.svelte'
   import NoticeScene from './scenes/NoticeScene.svelte'
   import QrScene from './scenes/QrScene.svelte'
+  import { sceneVariant } from './scene-variant'
 
   let { scene, view, enter, exit, lowfx = false, logoSrc = null }: { scene: SceneView; view: ViewModel; enter: number; exit: number; lowfx?: boolean; logoSrc?: string | null } = $props()
 </script>
 
-{#key scene.kind}
+{#key `${scene.kind}|${sceneVariant(scene)}`}
   <div class="scene-wrap" in:fade|global={{ duration: enter }} out:fade|global={{ duration: exit, easing: cubicIn }}>
     {#if scene.kind === 'title'}
       <TitleScene title={scene.title} logo={scene.logo} {logoSrc} {view} {enter} />

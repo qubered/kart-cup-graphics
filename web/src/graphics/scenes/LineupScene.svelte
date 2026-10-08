@@ -18,7 +18,7 @@
 
 <div class="lineup" class:wide class:hd={!wide}>
   <div class="stage" style:transform={tf}>
-    <div class="hold" style="left:1920px;top:50px">
+    <div class="hold" style="left:1920px;top:{scene.players.length ? 50 : 480}px" data-testid="lineup-hold">
       <div in:pop|global={{ duration: enter }}>
         <Swap key="{view.headingLook}|{view.fonts.headings}|{view.headingUpright}" dur={enter}>
           <Heading text="THE RACERS" look={view.headingLook} font={view.fonts.headings} upright={view.headingUpright} size={120} />
@@ -33,7 +33,7 @@
         <div class="info">
           <span class="pchip" style:font-family={view.fonts.names}>P{p.slot + 1}</span>
           <Swap key={p.name} dur={enter} block>
-            <div class="name" style:display="block" style:font-family={view.fonts.names} use:fitText={{ max: 740, text: p.name }}><span>{p.name}</span></div>
+            <div class="name" style:display="block" style:font-family={view.fonts.names} use:fitText={{ max: 740, lines: 2, text: p.name }}><span>{p.name}</span></div>
           </Swap>
           <Swap key={p.character} dur={enter} block>
             <div class="char" style:font-family={view.fonts.labels}>{p.character}</div>
@@ -47,7 +47,7 @@
 <style>
   .lineup { position: absolute; inset: 0; overflow: hidden; }
   .stage { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
-  .hold { position: absolute; width: 0; display: flex; justify-content: center; }
+  .hold { position: absolute; width: max-content; translate: -50% 0; }
   .lineup-card { position: absolute; top: 250px; width: 780px; height: 860px; }
   .panel {
     position: absolute; left: 0; right: 0; top: 210px; bottom: 0; background: var(--mk-bar);

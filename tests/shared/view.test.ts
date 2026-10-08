@@ -18,6 +18,10 @@ describe('deriveView', () => {
     expect(deriveView(st.draft, { ...EMPTY_LAYERS, scene: 'standings' }, twin, idx).scene).toBeNull()
     expect(deriveView(st.draft, { ...EMPTY_LAYERS, scene: 'title' }, twin, idx).scene?.kind).toBe('title')
   })
+  it('lineup can show no players', () => {
+    const players = (n?: number) => { const s = deriveView(st.draft, { ...EMPTY_LAYERS, scene: 'lineup', lineupShown: n }, hd, idx).scene; return s?.kind === 'lineup' ? s.players.length : -1 }
+    expect([players(0), players(2), players(undefined)]).toEqual([0, 2, 4])
+  })
   it('track card cup mode', () => {
     const d2 = { ...st.draft, race: { ...st.draft.race, raceIndex: 1 as const, raceNo: 2 } }
     expect(deriveView(d2, { ...EMPTY_LAYERS, trackCard: true }, twin, idx).trackCard).toMatchObject({

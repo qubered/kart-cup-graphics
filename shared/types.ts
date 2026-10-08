@@ -40,7 +40,7 @@ export type MatchRef = 'active' | 'previous' | { matchId: string }
 export interface MatchSet { rounds?: number[]; ids?: string[]; range?: [number, number] }
 /** Which part of a win screen an output shows: both (full), the winner hero only, or the scoreboard only. */
 export type ScenePart = 'full' | 'hero' | 'board'
-/** `lineupShown`: how many line-up cards are revealed (1-4); absent = all four.
+/** `lineupShown`: how many line-up cards are revealed (0-4; 0 = none); absent = all four.
  *  `part`: raceWin/cupWin only (default full). `matchRef`: raceWin/cupWin source match (default active). `matchSet`: matches scene selection (default all). */
 export interface Layers {
   background: BackgroundId; scene: SceneId; trackCard: boolean; lowerThirds: { on: boolean; players: number[] }; lineupShown?: number

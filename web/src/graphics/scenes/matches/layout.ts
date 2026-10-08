@@ -3,12 +3,48 @@ import type { MatchesLayout } from '../../../../../shared/types'
 export interface Area { x: number; y: number; w: number; h: number }
 /** 'v' = header on top, players stacked; 'h' = header on the left, players side by side; 'strip' = one slim line (focus layout). */
 export type Orient = 'v' | 'h' | 'strip'
-export interface Slot extends Area { index: number; orient: Orient; focus: boolean }
+export interface Slot extends Area { index: number; orient: Orient; focus: boolean; /** Twin only: a second copy of the same card, drawn in the right half. */ mirror?: boolean }
 export interface Canvas { w: number; h: number }
 
-/** Where the heading sits and how big it is, per canvas. */
-export function headingSpec(c: Canvas): { size: number; top: number } {
-  return c.w > 3000 ? { size: 100, top: 30 } : { size: 80, top: 30 }
+/** The twin canvas is two 960 px screens side by side: nothing may straddle x = 960, so every part is laid out per half. */
+export const TWIN_HALF = 960
+export const isTwin = (c: Canvas) => c.w === 1920 && c.h === 1152
+/** Below the track card (y 40-160) that sits at the top-left of each half. */
+const TWIN_TOP = 290
+
+/** Where the heading sits (centre x of each copy: one per half on twins) and how big it is, per canvas. */
+export function headingSpec(c: Canvas): { size: number; top: number; xs: number[] } {
+  if (isTwin(c)) return { size: 80, top: 175, xs: [TWIN_HALF / 2, TWIN_HALF * 1.5] }
+  return { size: c.w > 3000 ? 100 : 80, top: 30, xs: [c.w / 2] }
+}
+
+/** The part of one twin half below the heading that cards may use. */
+export function halfArea(h: number, c: Canvas): Area {
+  return { x: h * TWIN_HALF + 40, y: TWIN_TOP, w: TWIN_HALF - 80, h: c.h - TWIN_TOP - 50 }
+}
+
+/** Cards stacked top to bottom in one half (centred, capped height). `n` cards of `idx`. */
+function stackInHalf(idx: number[], h: number, orient: Orient, capH: number, c: Canvas, mirror = false): Slot[] {
+  const A = halfArea(h, c)
+  const gap = gapOf(c)
+  const k = idx.length
+  const ch = Math.min((A.h - (k - 1) * gap) / k, capH)
+  const y0 = A.y + centre(A.h, k * ch + (k - 1) * gap)
+  return idx.map((index, r) => ({ index, x: A.x, y: y0 + r * (ch + gap), w: A.w, h: ch, orient, focus: false, mirror }))
+}
+
+/** Twin layouts: each half is its own column of cards. grid / row / stack = the cards split between the halves, focus = big card left + strips right. */
+function layoutTwin(layout: MatchesLayout, n: number, c: Canvas, focusIndex: number): Slot[] {
+  const all = [...Array(n).keys()]
+  if (n === 1) return [...stackInHalf([0], 0, 'v', cardMaxH(c), c), ...stackInHalf([0], 1, 'v', cardMaxH(c), c, true)].map((s) => ({ ...s, focus: layout === 'focus' }))
+  if (layout === 'focus') {
+    const f = Math.min(Math.max(focusIndex, 0), n - 1)
+    const others = all.filter((i) => i !== f)
+    return [...stackInHalf([f], 0, 'v', cardMaxH(c), c).map((s) => ({ ...s, focus: true })), ...stackInHalf(others, 1, 'strip', 170, c)]
+  }
+  const left = all.slice(0, Math.ceil(n / 2)), right = all.slice(Math.ceil(n / 2))
+  // Side-by-side ('h') cards need a wide cell, so grid / row / stack all stack 'v' cards down each half.
+  return [...stackInHalf(left, 0, 'v', cardMaxH(c), c), ...stackInHalf(right, 1, 'v', cardMaxH(c), c)]
 }
 
 /** The part of the canvas below the heading that cards may use. */
@@ -47,6 +83,7 @@ function placeGrid(n: number, cols: number, rows: number, cellMaxW: number, cell
 /** Pixel rectangles for `n` cards (canvas pixels). `focusIndex` is the large card in the focus layout. */
 export function layoutMatches(layout: MatchesLayout, n: number, c: Canvas, focusIndex = 0): Slot[] {
   if (n <= 0) return []
+  if (isTwin(c)) return layoutTwin(layout, n, c, focusIndex)
   const A = contentArea(c)
   const gap = gapOf(c)
   const wide = c.w > 3000
@@ -85,9 +122,54 @@ export function layoutMatches(layout: MatchesLayout, n: number, c: Canvas, focus
 export interface BracketBox extends Area { matchId: string; round: number; style: 'winner' | 'slots'; slotY: number[]; head: number }
 
 /** Bracket geometry: one column per round, nodes spread evenly. `slots` boxes list every player (rows), `winner` boxes only the winner. */
-export function layoutBracket(
-  rounds: { round: number; nodes: { matchId: string; slotCount: number; fed: boolean }[] }[], c: Canvas,
-): { boxes: BracketBox[]; colW: number } {
+type BracketRound = { round: number; nodes: { matchId: string; slotCount: number; fed: boolean }[] }
+
+function bracketBox(n: BracketRound['nodes'][number], round: number, x: number, y: number, w: number, h: number): BracketBox {
+  const head = Math.round(Math.min(78, h * 0.27))
+  const rowH = (h - head - 16) / Math.max(1, n.slotCount)
+  return {
+    matchId: n.matchId, round, x, y, w, h, head, style: n.fed ? 'slots' : 'winner',
+    slotY: Array.from({ length: n.slotCount }, (_, i) => y + head + 8 + rowH * i + rowH / 2),
+  }
+}
+
+/** Twin bracket: the rounds are split between the two 960 px halves (a single round splits its matches), one column per round, nothing crosses x = 960. */
+function layoutBracketTwin(rounds: BracketRound[], c: Canvas): { boxes: BracketBox[]; colW: number } {
+  type Col = { half: number; round: number; nodes: BracketRound['nodes'] }
+  const R = rounds.length
+  const cols: Col[] = []
+  if (R === 1) {
+    const ns = rounds[0].nodes
+    const k = Math.ceil(ns.length / 2)
+    cols.push({ half: 0, round: rounds[0].round, nodes: ns.slice(0, k) })
+    if (ns.length > k) cols.push({ half: 1, round: rounds[0].round, nodes: ns.slice(k) })
+  } else {
+    const k = Math.ceil(R / 2)
+    rounds.forEach((rd, ri) => cols.push({ half: ri < k ? 0 : 1, round: rd.round, nodes: rd.nodes }))
+  }
+  const boxes: BracketBox[] = []
+  const gapX = 60, gapY = 20
+  let colW = 0
+  for (const half of [0, 1]) {
+    const mine = cols.filter((col) => col.half === half)
+    if (!mine.length) continue
+    const A = halfArea(half, c)
+    const w = (A.w - (mine.length - 1) * gapX) / mine.length
+    colW = w
+    mine.forEach((col, ci) => {
+      const nn = col.nodes.length
+      const fed = col.nodes.some((n) => n.fed)
+      const maxH = fed ? Math.min(A.h, 100 + 4 * 125) : 210
+      const h = Math.min((A.h - (nn - 1) * gapY) / nn, maxH)
+      const y0 = A.y + centre(A.h, nn * h + (nn - 1) * gapY)
+      col.nodes.forEach((n, k) => boxes.push(bracketBox(n, col.round, A.x + ci * (w + gapX), y0 + k * (h + gapY), w, h)))
+    })
+  }
+  return { boxes, colW }
+}
+
+export function layoutBracket(rounds: BracketRound[], c: Canvas): { boxes: BracketBox[]; colW: number } {
+  if (isTwin(c)) return layoutBracketTwin(rounds, c)
   const A = contentArea(c)
   const wide = c.w > 3000
   const R = rounds.length
