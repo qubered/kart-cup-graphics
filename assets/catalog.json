@@ -1,0 +1,1447 @@
+{
+  "characters": [
+    {
+      "id": "mario",
+      "name": "Mario",
+      "base": "mario",
+      "icon": "/assets/characters/mario.png"
+    },
+    {
+      "id": "luigi",
+      "name": "Luigi",
+      "base": "luigi",
+      "icon": "/assets/characters/luigi.png"
+    },
+    {
+      "id": "peach",
+      "name": "Peach",
+      "base": "peach",
+      "icon": "/assets/characters/peach.png",
+      "art": "/assets/characters/peach-art.png"
+    },
+    {
+      "id": "daisy",
+      "name": "Daisy",
+      "base": "daisy",
+      "icon": "/assets/characters/daisy.png"
+    },
+    {
+      "id": "rosalina",
+      "name": "Rosalina",
+      "base": "rosalina",
+      "icon": "/assets/characters/rosalina.png"
+    },
+    {
+      "id": "tanooki-mario",
+      "name": "Tanooki Mario",
+      "base": "tanooki-mario",
+      "icon": "/assets/characters/tanooki-mario.png"
+    },
+    {
+      "id": "cat-peach",
+      "name": "Cat Peach",
+      "base": "cat-peach",
+      "icon": "/assets/characters/cat-peach.png"
+    },
+    {
+      "id": "birdo",
+      "name": "Birdo",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo.png"
+    },
+    {
+      "id": "birdo-light-blue",
+      "name": "Birdo (Light Blue)",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo-light-blue.png",
+      "variant": "Light Blue"
+    },
+    {
+      "id": "birdo-black",
+      "name": "Birdo (Black)",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo-black.png",
+      "variant": "Black"
+    },
+    {
+      "id": "birdo-red",
+      "name": "Birdo (Red)",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo-red.png",
+      "variant": "Red"
+    },
+    {
+      "id": "birdo-yellow",
+      "name": "Birdo (Yellow)",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo-yellow.png",
+      "variant": "Yellow"
+    },
+    {
+      "id": "birdo-white",
+      "name": "Birdo (White)",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo-white.png",
+      "variant": "White"
+    },
+    {
+      "id": "birdo-blue",
+      "name": "Birdo (Blue)",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo-blue.png",
+      "variant": "Blue"
+    },
+    {
+      "id": "birdo-green",
+      "name": "Birdo (Green)",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo-green.png",
+      "variant": "Green"
+    },
+    {
+      "id": "birdo-orange",
+      "name": "Birdo (Orange)",
+      "base": "birdo",
+      "icon": "/assets/characters/birdo-orange.png",
+      "variant": "Orange"
+    },
+    {
+      "id": "yoshi",
+      "name": "Yoshi",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi.png"
+    },
+    {
+      "id": "yoshi-light-blue",
+      "name": "Yoshi (Light Blue)",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi-light-blue.png",
+      "variant": "Light Blue"
+    },
+    {
+      "id": "yoshi-black",
+      "name": "Yoshi (Black)",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi-black.png",
+      "variant": "Black"
+    },
+    {
+      "id": "yoshi-red",
+      "name": "Yoshi (Red)",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi-red.png",
+      "variant": "Red"
+    },
+    {
+      "id": "yoshi-yellow",
+      "name": "Yoshi (Yellow)",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi-yellow.png",
+      "variant": "Yellow"
+    },
+    {
+      "id": "yoshi-white",
+      "name": "Yoshi (White)",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi-white.png",
+      "variant": "White"
+    },
+    {
+      "id": "yoshi-blue",
+      "name": "Yoshi (Blue)",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi-blue.png",
+      "variant": "Blue"
+    },
+    {
+      "id": "yoshi-pink",
+      "name": "Yoshi (Pink)",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi-pink.png",
+      "variant": "Pink"
+    },
+    {
+      "id": "yoshi-orange",
+      "name": "Yoshi (Orange)",
+      "base": "yoshi",
+      "icon": "/assets/characters/yoshi-orange.png",
+      "variant": "Orange"
+    },
+    {
+      "id": "toad",
+      "name": "Toad",
+      "base": "toad",
+      "icon": "/assets/characters/toad.png"
+    },
+    {
+      "id": "koopa-troopa",
+      "name": "Koopa Troopa",
+      "base": "koopa-troopa",
+      "icon": "/assets/characters/koopa-troopa.png"
+    },
+    {
+      "id": "shy-guy",
+      "name": "Shy Guy",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy.png"
+    },
+    {
+      "id": "shy-guy-light-blue",
+      "name": "Shy Guy (Light Blue)",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy-light-blue.png",
+      "variant": "Light Blue"
+    },
+    {
+      "id": "shy-guy-black",
+      "name": "Shy Guy (Black)",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy-black.png",
+      "variant": "Black"
+    },
+    {
+      "id": "shy-guy-green",
+      "name": "Shy Guy (Green)",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy-green.png",
+      "variant": "Green"
+    },
+    {
+      "id": "shy-guy-yellow",
+      "name": "Shy Guy (Yellow)",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy-yellow.png",
+      "variant": "Yellow"
+    },
+    {
+      "id": "shy-guy-white",
+      "name": "Shy Guy (White)",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy-white.png",
+      "variant": "White"
+    },
+    {
+      "id": "shy-guy-blue",
+      "name": "Shy Guy (Blue)",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy-blue.png",
+      "variant": "Blue"
+    },
+    {
+      "id": "shy-guy-pink",
+      "name": "Shy Guy (Pink)",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy-pink.png",
+      "variant": "Pink"
+    },
+    {
+      "id": "shy-guy-orange",
+      "name": "Shy Guy (Orange)",
+      "base": "shy-guy",
+      "icon": "/assets/characters/shy-guy-orange.png",
+      "variant": "Orange"
+    },
+    {
+      "id": "lakitu",
+      "name": "Lakitu",
+      "base": "lakitu",
+      "icon": "/assets/characters/lakitu.png"
+    },
+    {
+      "id": "toadette",
+      "name": "Toadette",
+      "base": "toadette",
+      "icon": "/assets/characters/toadette.png"
+    },
+    {
+      "id": "king-boo",
+      "name": "King Boo",
+      "base": "king-boo",
+      "icon": "/assets/characters/king-boo.png"
+    },
+    {
+      "id": "petey-piranha",
+      "name": "Petey Piranha",
+      "base": "petey-piranha",
+      "icon": "/assets/characters/petey-piranha.png"
+    },
+    {
+      "id": "baby-mario",
+      "name": "Baby Mario",
+      "base": "baby-mario",
+      "icon": "/assets/characters/baby-mario.png"
+    },
+    {
+      "id": "baby-luigi",
+      "name": "Baby Luigi",
+      "base": "baby-luigi",
+      "icon": "/assets/characters/baby-luigi.png"
+    },
+    {
+      "id": "baby-peach",
+      "name": "Baby Peach",
+      "base": "baby-peach",
+      "icon": "/assets/characters/baby-peach.png"
+    },
+    {
+      "id": "baby-daisy",
+      "name": "Baby Daisy",
+      "base": "baby-daisy",
+      "icon": "/assets/characters/baby-daisy.png"
+    },
+    {
+      "id": "baby-rosalina",
+      "name": "Baby Rosalina",
+      "base": "baby-rosalina",
+      "icon": "/assets/characters/baby-rosalina.png"
+    },
+    {
+      "id": "metal-mario",
+      "name": "Metal Mario",
+      "base": "metal-mario",
+      "icon": "/assets/characters/metal-mario.png"
+    },
+    {
+      "id": "gold-mario",
+      "name": "Gold Mario",
+      "base": "gold-mario",
+      "icon": "/assets/characters/gold-mario.png"
+    },
+    {
+      "id": "pink-gold-peach",
+      "name": "Pink Gold Peach",
+      "base": "pink-gold-peach",
+      "icon": "/assets/characters/pink-gold-peach.png"
+    },
+    {
+      "id": "wiggler",
+      "name": "Wiggler",
+      "base": "wiggler",
+      "icon": "/assets/characters/wiggler.png"
+    },
+    {
+      "id": "wario",
+      "name": "Wario",
+      "base": "wario",
+      "icon": "/assets/characters/wario.png"
+    },
+    {
+      "id": "waluigi",
+      "name": "Waluigi",
+      "base": "waluigi",
+      "icon": "/assets/characters/waluigi.png"
+    },
+    {
+      "id": "donkey-kong",
+      "name": "Donkey Kong",
+      "base": "donkey-kong",
+      "icon": "/assets/characters/donkey-kong.png"
+    },
+    {
+      "id": "bowser",
+      "name": "Bowser",
+      "base": "bowser",
+      "icon": "/assets/characters/bowser.png",
+      "art": "/assets/characters/bowser-art.png"
+    },
+    {
+      "id": "dry-bones",
+      "name": "Dry Bones",
+      "base": "dry-bones",
+      "icon": "/assets/characters/dry-bones.png"
+    },
+    {
+      "id": "bowser-jr",
+      "name": "Bowser Jr.",
+      "base": "bowser-jr",
+      "icon": "/assets/characters/bowser-jr.png"
+    },
+    {
+      "id": "dry-bowser",
+      "name": "Dry Bowser",
+      "base": "dry-bowser",
+      "icon": "/assets/characters/dry-bowser.png"
+    },
+    {
+      "id": "kamek",
+      "name": "Kamek",
+      "base": "kamek",
+      "icon": "/assets/characters/kamek.png"
+    },
+    {
+      "id": "lemmy",
+      "name": "Lemmy",
+      "base": "lemmy",
+      "icon": "/assets/characters/lemmy.png"
+    },
+    {
+      "id": "larry",
+      "name": "Larry",
+      "base": "larry",
+      "icon": "/assets/characters/larry.png"
+    },
+    {
+      "id": "wendy",
+      "name": "Wendy",
+      "base": "wendy",
+      "icon": "/assets/characters/wendy.png"
+    },
+    {
+      "id": "ludwig",
+      "name": "Ludwig",
+      "base": "ludwig",
+      "icon": "/assets/characters/ludwig.png"
+    },
+    {
+      "id": "iggy",
+      "name": "Iggy",
+      "base": "iggy",
+      "icon": "/assets/characters/iggy.png"
+    },
+    {
+      "id": "roy",
+      "name": "Roy",
+      "base": "roy",
+      "icon": "/assets/characters/roy.png"
+    },
+    {
+      "id": "morton",
+      "name": "Morton",
+      "base": "morton",
+      "icon": "/assets/characters/morton.png"
+    },
+    {
+      "id": "peachette",
+      "name": "Peachette",
+      "base": "peachette",
+      "icon": "/assets/characters/peachette.png"
+    },
+    {
+      "id": "inkling-girl",
+      "name": "Inkling Girl",
+      "base": "inkling-girl",
+      "icon": "/assets/characters/inkling-girl.png"
+    },
+    {
+      "id": "inkling-girl-green",
+      "name": "Inkling Girl (Green)",
+      "base": "inkling-girl",
+      "icon": "/assets/characters/inkling-girl-green.png",
+      "variant": "Green"
+    },
+    {
+      "id": "inkling-girl-pink",
+      "name": "Inkling Girl (Pink)",
+      "base": "inkling-girl",
+      "icon": "/assets/characters/inkling-girl-pink.png",
+      "variant": "Pink"
+    },
+    {
+      "id": "inkling-boy",
+      "name": "Inkling Boy",
+      "base": "inkling-boy",
+      "icon": "/assets/characters/inkling-boy.png"
+    },
+    {
+      "id": "inkling-boy-purple",
+      "name": "Inkling Boy (Purple)",
+      "base": "inkling-boy",
+      "icon": "/assets/characters/inkling-boy-purple.png",
+      "variant": "Purple"
+    },
+    {
+      "id": "inkling-boy-cyan",
+      "name": "Inkling Boy (Cyan)",
+      "base": "inkling-boy",
+      "icon": "/assets/characters/inkling-boy-cyan.png",
+      "variant": "Cyan"
+    },
+    {
+      "id": "villager-boy",
+      "name": "Villager (Boy)",
+      "base": "villager-boy",
+      "icon": "/assets/characters/villager-boy.png"
+    },
+    {
+      "id": "villager-girl",
+      "name": "Villager (Girl)",
+      "base": "villager-girl",
+      "icon": "/assets/characters/villager-girl.png"
+    },
+    {
+      "id": "isabelle",
+      "name": "Isabelle",
+      "base": "isabelle",
+      "icon": "/assets/characters/isabelle.png"
+    },
+    {
+      "id": "link",
+      "name": "Link",
+      "base": "link",
+      "icon": "/assets/characters/link.png"
+    },
+    {
+      "id": "link-champions-tunic",
+      "name": "Link (Champion's Tunic)",
+      "base": "link",
+      "icon": "/assets/characters/link-champions-tunic.png",
+      "variant": "Champion's Tunic"
+    },
+    {
+      "id": "diddy-kong",
+      "name": "Diddy Kong",
+      "base": "diddy-kong",
+      "icon": "/assets/characters/diddy-kong.png"
+    },
+    {
+      "id": "funky-kong",
+      "name": "Funky Kong",
+      "base": "funky-kong",
+      "icon": "/assets/characters/funky-kong.png"
+    },
+    {
+      "id": "pauline",
+      "name": "Pauline",
+      "base": "pauline",
+      "icon": "/assets/characters/pauline.png"
+    },
+    {
+      "id": "mii",
+      "name": "Mii",
+      "base": "mii",
+      "icon": "/assets/characters/mii.png"
+    }
+  ],
+  "cups": [
+    {
+      "id": "mushroom",
+      "name": "Mushroom Cup",
+      "emblem": "/assets/cups/mushroom.png",
+      "tracks": [
+        "mario-kart-stadium",
+        "water-park",
+        "sweet-sweet-canyon",
+        "thwomp-ruins"
+      ]
+    },
+    {
+      "id": "flower",
+      "name": "Flower Cup",
+      "emblem": "/assets/cups/flower.png",
+      "tracks": [
+        "mario-circuit",
+        "toad-harbor",
+        "twisted-mansion",
+        "shy-guy-falls"
+      ]
+    },
+    {
+      "id": "star",
+      "name": "Star Cup",
+      "emblem": "/assets/cups/star.png",
+      "tracks": [
+        "sunshine-airport",
+        "dolphin-shoals",
+        "electrodrome",
+        "mount-wario"
+      ]
+    },
+    {
+      "id": "special",
+      "name": "Special Cup",
+      "emblem": "/assets/cups/special.png",
+      "tracks": [
+        "cloudtop-cruise",
+        "bone-dry-dunes",
+        "bowsers-castle",
+        "rainbow-road"
+      ]
+    },
+    {
+      "id": "shell",
+      "name": "Shell Cup",
+      "emblem": "/assets/cups/shell.png",
+      "tracks": [
+        "wii-moo-moo-meadows",
+        "gba-mario-circuit",
+        "ds-cheep-cheep-beach",
+        "n64-toads-turnpike"
+      ]
+    },
+    {
+      "id": "banana",
+      "name": "Banana Cup",
+      "emblem": "/assets/cups/banana.png",
+      "tracks": [
+        "gcn-dry-dry-desert",
+        "snes-donut-plains-3",
+        "n64-royal-raceway",
+        "3ds-dk-jungle"
+      ]
+    },
+    {
+      "id": "leaf",
+      "name": "Leaf Cup",
+      "emblem": "/assets/cups/leaf.png",
+      "tracks": [
+        "ds-wario-stadium",
+        "gcn-sherbet-land",
+        "3ds-music-park",
+        "n64-yoshi-valley"
+      ]
+    },
+    {
+      "id": "lightning",
+      "name": "Lightning Cup",
+      "emblem": "/assets/cups/lightning.png",
+      "tracks": [
+        "ds-tick-tock-clock",
+        "3ds-piranha-plant-slide",
+        "wii-grumble-volcano",
+        "n64-rainbow-road"
+      ]
+    },
+    {
+      "id": "egg",
+      "name": "Egg Cup",
+      "emblem": "/assets/cups/egg.png",
+      "tracks": [
+        "gcn-yoshi-circuit",
+        "excitebike-arena",
+        "dragon-driftway",
+        "mute-city"
+      ]
+    },
+    {
+      "id": "triforce",
+      "name": "Triforce Cup",
+      "emblem": "/assets/cups/triforce.png",
+      "tracks": [
+        "wii-warios-gold-mine",
+        "snes-rainbow-road",
+        "ice-ice-outpost",
+        "hyrule-circuit"
+      ]
+    },
+    {
+      "id": "crossing",
+      "name": "Crossing Cup",
+      "emblem": "/assets/cups/crossing.png",
+      "tracks": [
+        "gcn-baby-park",
+        "gba-cheese-land",
+        "wild-woods",
+        "animal-crossing"
+      ]
+    },
+    {
+      "id": "bell",
+      "name": "Bell Cup",
+      "emblem": "/assets/cups/bell.png",
+      "tracks": [
+        "3ds-neo-bowser-city",
+        "gba-ribbon-road",
+        "super-bell-subway",
+        "big-blue"
+      ]
+    },
+    {
+      "id": "golden-dash",
+      "name": "Golden Dash Cup",
+      "emblem": "/assets/cups/golden-dash.png",
+      "tracks": [
+        "tour-paris-promenade",
+        "3ds-toad-circuit",
+        "n64-choco-mountain",
+        "wii-coconut-mall"
+      ]
+    },
+    {
+      "id": "lucky-cat",
+      "name": "Lucky Cat Cup",
+      "emblem": "/assets/cups/lucky-cat.png",
+      "tracks": [
+        "tour-tokyo-blur",
+        "ds-shroom-ridge",
+        "gba-sky-garden",
+        "ninja-hideaway"
+      ]
+    },
+    {
+      "id": "turnip",
+      "name": "Turnip Cup",
+      "emblem": "/assets/cups/turnip.png",
+      "tracks": [
+        "tour-new-york-minute",
+        "snes-mario-circuit-3",
+        "n64-kalimari-desert",
+        "ds-waluigi-pinball"
+      ]
+    },
+    {
+      "id": "propeller",
+      "name": "Propeller Cup",
+      "emblem": "/assets/cups/propeller.png",
+      "tracks": [
+        "tour-sydney-sprint",
+        "gba-snow-land",
+        "wii-mushroom-gorge",
+        "sky-high-sundae"
+      ]
+    },
+    {
+      "id": "rock",
+      "name": "Rock Cup",
+      "emblem": "/assets/cups/rock.png",
+      "tracks": [
+        "tour-london-loop",
+        "gba-boo-lake",
+        "3ds-rock-rock-mountain",
+        "wii-maple-treeway"
+      ]
+    },
+    {
+      "id": "moon",
+      "name": "Moon Cup",
+      "emblem": "/assets/cups/moon.png",
+      "tracks": [
+        "tour-berlin-byways",
+        "ds-peach-gardens",
+        "merry-mountain",
+        "3ds-rainbow-road"
+      ]
+    },
+    {
+      "id": "fruit",
+      "name": "Fruit Cup",
+      "emblem": "/assets/cups/fruit.png",
+      "tracks": [
+        "tour-amsterdam-drift",
+        "gba-riverside-park",
+        "wii-dk-summit",
+        "yoshis-island"
+      ]
+    },
+    {
+      "id": "boomerang",
+      "name": "Boomerang Cup",
+      "emblem": "/assets/cups/boomerang.png",
+      "tracks": [
+        "tour-bangkok-rush",
+        "ds-mario-circuit",
+        "gcn-waluigi-stadium",
+        "tour-singapore-speedway"
+      ]
+    },
+    {
+      "id": "feather",
+      "name": "Feather Cup",
+      "emblem": "/assets/cups/feather.png",
+      "tracks": [
+        "tour-athens-dash",
+        "gcn-daisy-cruiser",
+        "wii-moonview-highway",
+        "squeaky-clean-sprint"
+      ]
+    },
+    {
+      "id": "cherry",
+      "name": "Cherry Cup",
+      "emblem": "/assets/cups/cherry.png",
+      "tracks": [
+        "tour-los-angeles-laps",
+        "gba-sunset-wilds",
+        "wii-koopa-cape",
+        "tour-vancouver-velocity"
+      ]
+    },
+    {
+      "id": "acorn",
+      "name": "Acorn Cup",
+      "emblem": "/assets/cups/acorn.png",
+      "tracks": [
+        "tour-rome-avanti",
+        "gcn-dk-mountain",
+        "wii-daisy-circuit",
+        "piranha-plant-cove"
+      ]
+    },
+    {
+      "id": "spiny",
+      "name": "Spiny Cup",
+      "emblem": "/assets/cups/spiny.png",
+      "tracks": [
+        "tour-madrid-drive",
+        "3ds-rosalinas-ice-world",
+        "snes-bowser-castle-3",
+        "wii-rainbow-road"
+      ]
+    }
+  ],
+  "tracks": [
+    {
+      "id": "mario-kart-stadium",
+      "name": "Mario Kart Stadium",
+      "cupId": "mushroom",
+      "thumb": "/assets/tracks/mario-kart-stadium.png",
+      "image": "/assets/tracks/mario-kart-stadium-large.jpg"
+    },
+    {
+      "id": "water-park",
+      "name": "Water Park",
+      "cupId": "mushroom",
+      "thumb": "/assets/tracks/water-park.png",
+      "image": "/assets/tracks/water-park-large.jpg"
+    },
+    {
+      "id": "sweet-sweet-canyon",
+      "name": "Sweet Sweet Canyon",
+      "cupId": "mushroom",
+      "thumb": "/assets/tracks/sweet-sweet-canyon.png",
+      "image": "/assets/tracks/sweet-sweet-canyon-large.jpg"
+    },
+    {
+      "id": "thwomp-ruins",
+      "name": "Thwomp Ruins",
+      "cupId": "mushroom",
+      "thumb": "/assets/tracks/thwomp-ruins.png",
+      "image": "/assets/tracks/thwomp-ruins-large.jpg"
+    },
+    {
+      "id": "mario-circuit",
+      "name": "Mario Circuit",
+      "cupId": "flower",
+      "thumb": "/assets/tracks/mario-circuit.png",
+      "image": "/assets/tracks/mario-circuit-large.jpg"
+    },
+    {
+      "id": "toad-harbor",
+      "name": "Toad Harbor",
+      "cupId": "flower",
+      "thumb": "/assets/tracks/toad-harbor.png",
+      "image": "/assets/tracks/toad-harbor-large.jpg"
+    },
+    {
+      "id": "twisted-mansion",
+      "name": "Twisted Mansion",
+      "cupId": "flower",
+      "thumb": "/assets/tracks/twisted-mansion.png",
+      "image": "/assets/tracks/twisted-mansion-large.jpg"
+    },
+    {
+      "id": "shy-guy-falls",
+      "name": "Shy Guy Falls",
+      "cupId": "flower",
+      "thumb": "/assets/tracks/shy-guy-falls.png",
+      "image": "/assets/tracks/shy-guy-falls-large.jpg"
+    },
+    {
+      "id": "sunshine-airport",
+      "name": "Sunshine Airport",
+      "cupId": "star",
+      "thumb": "/assets/tracks/sunshine-airport.png",
+      "image": "/assets/tracks/sunshine-airport-large.jpg"
+    },
+    {
+      "id": "dolphin-shoals",
+      "name": "Dolphin Shoals",
+      "cupId": "star",
+      "thumb": "/assets/tracks/dolphin-shoals.png",
+      "image": "/assets/tracks/dolphin-shoals-large.jpg"
+    },
+    {
+      "id": "electrodrome",
+      "name": "Electrodrome",
+      "cupId": "star",
+      "thumb": "/assets/tracks/electrodrome.png",
+      "image": "/assets/tracks/electrodrome-large.jpg"
+    },
+    {
+      "id": "mount-wario",
+      "name": "Mount Wario",
+      "cupId": "star",
+      "thumb": "/assets/tracks/mount-wario.png",
+      "image": "/assets/tracks/mount-wario-large.jpg"
+    },
+    {
+      "id": "cloudtop-cruise",
+      "name": "Cloudtop Cruise",
+      "cupId": "special",
+      "thumb": "/assets/tracks/cloudtop-cruise.png",
+      "image": "/assets/tracks/cloudtop-cruise-large.jpg"
+    },
+    {
+      "id": "bone-dry-dunes",
+      "name": "Bone-Dry Dunes",
+      "cupId": "special",
+      "thumb": "/assets/tracks/bone-dry-dunes.png",
+      "image": "/assets/tracks/bone-dry-dunes-large.jpg"
+    },
+    {
+      "id": "bowsers-castle",
+      "name": "Bowser's Castle",
+      "cupId": "special",
+      "thumb": "/assets/tracks/bowsers-castle.png",
+      "image": "/assets/tracks/bowsers-castle-large.jpg"
+    },
+    {
+      "id": "rainbow-road",
+      "name": "Rainbow Road",
+      "cupId": "special",
+      "thumb": "/assets/tracks/rainbow-road.png",
+      "image": "/assets/tracks/rainbow-road-large.jpg"
+    },
+    {
+      "id": "wii-moo-moo-meadows",
+      "name": "Wii Moo Moo Meadows",
+      "cupId": "shell",
+      "thumb": "/assets/tracks/wii-moo-moo-meadows.png",
+      "image": "/assets/tracks/wii-moo-moo-meadows-large.jpg"
+    },
+    {
+      "id": "gba-mario-circuit",
+      "name": "GBA Mario Circuit",
+      "cupId": "shell",
+      "thumb": "/assets/tracks/gba-mario-circuit.png",
+      "image": "/assets/tracks/gba-mario-circuit-large.jpg"
+    },
+    {
+      "id": "ds-cheep-cheep-beach",
+      "name": "DS Cheep Cheep Beach",
+      "cupId": "shell",
+      "thumb": "/assets/tracks/ds-cheep-cheep-beach.png",
+      "image": "/assets/tracks/ds-cheep-cheep-beach-large.jpg"
+    },
+    {
+      "id": "n64-toads-turnpike",
+      "name": "N64 Toad's Turnpike",
+      "cupId": "shell",
+      "thumb": "/assets/tracks/n64-toads-turnpike.png"
+    },
+    {
+      "id": "gcn-dry-dry-desert",
+      "name": "GCN Dry Dry Desert",
+      "cupId": "banana",
+      "thumb": "/assets/tracks/gcn-dry-dry-desert.png",
+      "image": "/assets/tracks/gcn-dry-dry-desert-large.jpg"
+    },
+    {
+      "id": "snes-donut-plains-3",
+      "name": "SNES Donut Plains 3",
+      "cupId": "banana",
+      "thumb": "/assets/tracks/snes-donut-plains-3.png",
+      "image": "/assets/tracks/snes-donut-plains-3-large.jpg"
+    },
+    {
+      "id": "n64-royal-raceway",
+      "name": "N64 Royal Raceway",
+      "cupId": "banana",
+      "thumb": "/assets/tracks/n64-royal-raceway.png",
+      "image": "/assets/tracks/n64-royal-raceway-large.jpg"
+    },
+    {
+      "id": "3ds-dk-jungle",
+      "name": "3DS DK Jungle",
+      "cupId": "banana",
+      "thumb": "/assets/tracks/3ds-dk-jungle.png",
+      "image": "/assets/tracks/3ds-dk-jungle-large.jpg"
+    },
+    {
+      "id": "ds-wario-stadium",
+      "name": "DS Wario Stadium",
+      "cupId": "leaf",
+      "thumb": "/assets/tracks/ds-wario-stadium.png",
+      "image": "/assets/tracks/ds-wario-stadium-large.jpg"
+    },
+    {
+      "id": "gcn-sherbet-land",
+      "name": "GCN Sherbet Land",
+      "cupId": "leaf",
+      "thumb": "/assets/tracks/gcn-sherbet-land.png",
+      "image": "/assets/tracks/gcn-sherbet-land-large.jpg"
+    },
+    {
+      "id": "3ds-music-park",
+      "name": "3DS Music Park",
+      "cupId": "leaf",
+      "thumb": "/assets/tracks/3ds-music-park.png",
+      "image": "/assets/tracks/3ds-music-park-large.jpg"
+    },
+    {
+      "id": "n64-yoshi-valley",
+      "name": "N64 Yoshi Valley",
+      "cupId": "leaf",
+      "thumb": "/assets/tracks/n64-yoshi-valley.png",
+      "image": "/assets/tracks/n64-yoshi-valley-large.jpg"
+    },
+    {
+      "id": "ds-tick-tock-clock",
+      "name": "DS Tick-Tock Clock",
+      "cupId": "lightning",
+      "thumb": "/assets/tracks/ds-tick-tock-clock.png",
+      "image": "/assets/tracks/ds-tick-tock-clock-large.jpg"
+    },
+    {
+      "id": "3ds-piranha-plant-slide",
+      "name": "3DS Piranha Plant Slide",
+      "cupId": "lightning",
+      "thumb": "/assets/tracks/3ds-piranha-plant-slide.png",
+      "image": "/assets/tracks/3ds-piranha-plant-slide-large.jpg"
+    },
+    {
+      "id": "wii-grumble-volcano",
+      "name": "Wii Grumble Volcano",
+      "cupId": "lightning",
+      "thumb": "/assets/tracks/wii-grumble-volcano.png",
+      "image": "/assets/tracks/wii-grumble-volcano-large.jpg"
+    },
+    {
+      "id": "n64-rainbow-road",
+      "name": "N64 Rainbow Road",
+      "cupId": "lightning",
+      "thumb": "/assets/tracks/n64-rainbow-road.png",
+      "image": "/assets/tracks/n64-rainbow-road-large.jpg"
+    },
+    {
+      "id": "gcn-yoshi-circuit",
+      "name": "GCN Yoshi Circuit",
+      "cupId": "egg",
+      "thumb": "/assets/tracks/gcn-yoshi-circuit.png",
+      "image": "/assets/tracks/gcn-yoshi-circuit-large.jpg"
+    },
+    {
+      "id": "excitebike-arena",
+      "name": "Excitebike Arena",
+      "cupId": "egg",
+      "thumb": "/assets/tracks/excitebike-arena.png",
+      "image": "/assets/tracks/excitebike-arena-large.jpg"
+    },
+    {
+      "id": "dragon-driftway",
+      "name": "Dragon Driftway",
+      "cupId": "egg",
+      "thumb": "/assets/tracks/dragon-driftway.png"
+    },
+    {
+      "id": "mute-city",
+      "name": "Mute City",
+      "cupId": "egg",
+      "thumb": "/assets/tracks/mute-city.png",
+      "image": "/assets/tracks/mute-city-large.jpg"
+    },
+    {
+      "id": "wii-warios-gold-mine",
+      "name": "Wii Wario's Gold Mine",
+      "cupId": "triforce",
+      "thumb": "/assets/tracks/wii-warios-gold-mine.png"
+    },
+    {
+      "id": "snes-rainbow-road",
+      "name": "SNES Rainbow Road",
+      "cupId": "triforce",
+      "thumb": "/assets/tracks/snes-rainbow-road.png",
+      "image": "/assets/tracks/snes-rainbow-road-large.jpg"
+    },
+    {
+      "id": "ice-ice-outpost",
+      "name": "Ice Ice Outpost",
+      "cupId": "triforce",
+      "thumb": "/assets/tracks/ice-ice-outpost.png",
+      "image": "/assets/tracks/ice-ice-outpost-large.jpg"
+    },
+    {
+      "id": "hyrule-circuit",
+      "name": "Hyrule Circuit",
+      "cupId": "triforce",
+      "thumb": "/assets/tracks/hyrule-circuit.png",
+      "image": "/assets/tracks/hyrule-circuit-large.jpg"
+    },
+    {
+      "id": "gcn-baby-park",
+      "name": "GCN Baby Park",
+      "cupId": "crossing",
+      "thumb": "/assets/tracks/gcn-baby-park.png",
+      "image": "/assets/tracks/gcn-baby-park-large.jpg"
+    },
+    {
+      "id": "gba-cheese-land",
+      "name": "GBA Cheese Land",
+      "cupId": "crossing",
+      "thumb": "/assets/tracks/gba-cheese-land.png",
+      "image": "/assets/tracks/gba-cheese-land-large.jpg"
+    },
+    {
+      "id": "wild-woods",
+      "name": "Wild Woods",
+      "cupId": "crossing",
+      "thumb": "/assets/tracks/wild-woods.png",
+      "image": "/assets/tracks/wild-woods-large.jpg"
+    },
+    {
+      "id": "animal-crossing",
+      "name": "Animal Crossing",
+      "cupId": "crossing",
+      "thumb": "/assets/tracks/animal-crossing.png"
+    },
+    {
+      "id": "3ds-neo-bowser-city",
+      "name": "3DS Neo Bowser City",
+      "cupId": "bell",
+      "thumb": "/assets/tracks/3ds-neo-bowser-city.png",
+      "image": "/assets/tracks/3ds-neo-bowser-city-large.jpg"
+    },
+    {
+      "id": "gba-ribbon-road",
+      "name": "GBA Ribbon Road",
+      "cupId": "bell",
+      "thumb": "/assets/tracks/gba-ribbon-road.png",
+      "image": "/assets/tracks/gba-ribbon-road-large.jpg"
+    },
+    {
+      "id": "super-bell-subway",
+      "name": "Super Bell Subway",
+      "cupId": "bell",
+      "thumb": "/assets/tracks/super-bell-subway.png",
+      "image": "/assets/tracks/super-bell-subway-large.jpg"
+    },
+    {
+      "id": "big-blue",
+      "name": "Big Blue",
+      "cupId": "bell",
+      "thumb": "/assets/tracks/big-blue.png",
+      "image": "/assets/tracks/big-blue-large.jpg"
+    },
+    {
+      "id": "tour-paris-promenade",
+      "name": "Tour Paris Promenade",
+      "cupId": "golden-dash",
+      "thumb": "/assets/tracks/tour-paris-promenade.png",
+      "image": "/assets/tracks/tour-paris-promenade-large.jpg"
+    },
+    {
+      "id": "3ds-toad-circuit",
+      "name": "3DS Toad Circuit",
+      "cupId": "golden-dash",
+      "thumb": "/assets/tracks/3ds-toad-circuit.png",
+      "image": "/assets/tracks/3ds-toad-circuit-large.jpg"
+    },
+    {
+      "id": "n64-choco-mountain",
+      "name": "N64 Choco Mountain",
+      "cupId": "golden-dash",
+      "thumb": "/assets/tracks/n64-choco-mountain.png",
+      "image": "/assets/tracks/n64-choco-mountain-large.jpg"
+    },
+    {
+      "id": "wii-coconut-mall",
+      "name": "Wii Coconut Mall",
+      "cupId": "golden-dash",
+      "thumb": "/assets/tracks/wii-coconut-mall.png",
+      "image": "/assets/tracks/wii-coconut-mall-large.jpg"
+    },
+    {
+      "id": "tour-tokyo-blur",
+      "name": "Tour Tokyo Blur",
+      "cupId": "lucky-cat",
+      "thumb": "/assets/tracks/tour-tokyo-blur.png",
+      "image": "/assets/tracks/tour-tokyo-blur-large.jpg"
+    },
+    {
+      "id": "ds-shroom-ridge",
+      "name": "DS Shroom Ridge",
+      "cupId": "lucky-cat",
+      "thumb": "/assets/tracks/ds-shroom-ridge.png",
+      "image": "/assets/tracks/ds-shroom-ridge-large.jpg"
+    },
+    {
+      "id": "gba-sky-garden",
+      "name": "GBA Sky Garden",
+      "cupId": "lucky-cat",
+      "thumb": "/assets/tracks/gba-sky-garden.png",
+      "image": "/assets/tracks/gba-sky-garden-large.jpg"
+    },
+    {
+      "id": "ninja-hideaway",
+      "name": "Ninja Hideaway",
+      "cupId": "lucky-cat",
+      "thumb": "/assets/tracks/ninja-hideaway.png",
+      "image": "/assets/tracks/ninja-hideaway-large.jpg"
+    },
+    {
+      "id": "tour-new-york-minute",
+      "name": "Tour New York Minute",
+      "cupId": "turnip",
+      "thumb": "/assets/tracks/tour-new-york-minute.png",
+      "image": "/assets/tracks/tour-new-york-minute-large.jpg"
+    },
+    {
+      "id": "snes-mario-circuit-3",
+      "name": "SNES Mario Circuit 3",
+      "cupId": "turnip",
+      "thumb": "/assets/tracks/snes-mario-circuit-3.png",
+      "image": "/assets/tracks/snes-mario-circuit-3-large.jpg"
+    },
+    {
+      "id": "n64-kalimari-desert",
+      "name": "N64 Kalimari Desert",
+      "cupId": "turnip",
+      "thumb": "/assets/tracks/n64-kalimari-desert.png",
+      "image": "/assets/tracks/n64-kalimari-desert-large.jpg"
+    },
+    {
+      "id": "ds-waluigi-pinball",
+      "name": "DS Waluigi Pinball",
+      "cupId": "turnip",
+      "thumb": "/assets/tracks/ds-waluigi-pinball.png",
+      "image": "/assets/tracks/ds-waluigi-pinball-large.jpg"
+    },
+    {
+      "id": "tour-sydney-sprint",
+      "name": "Tour Sydney Sprint",
+      "cupId": "propeller",
+      "thumb": "/assets/tracks/tour-sydney-sprint.png"
+    },
+    {
+      "id": "gba-snow-land",
+      "name": "GBA Snow Land",
+      "cupId": "propeller",
+      "thumb": "/assets/tracks/gba-snow-land.png",
+      "image": "/assets/tracks/gba-snow-land-large.jpg"
+    },
+    {
+      "id": "wii-mushroom-gorge",
+      "name": "Wii Mushroom Gorge",
+      "cupId": "propeller",
+      "thumb": "/assets/tracks/wii-mushroom-gorge.png",
+      "image": "/assets/tracks/wii-mushroom-gorge-large.jpg"
+    },
+    {
+      "id": "sky-high-sundae",
+      "name": "Sky-High Sundae",
+      "cupId": "propeller",
+      "thumb": "/assets/tracks/sky-high-sundae.png",
+      "image": "/assets/tracks/sky-high-sundae-large.jpg"
+    },
+    {
+      "id": "tour-london-loop",
+      "name": "Tour London Loop",
+      "cupId": "rock",
+      "thumb": "/assets/tracks/tour-london-loop.png",
+      "image": "/assets/tracks/tour-london-loop-large.jpg"
+    },
+    {
+      "id": "gba-boo-lake",
+      "name": "GBA Boo Lake",
+      "cupId": "rock",
+      "thumb": "/assets/tracks/gba-boo-lake.png",
+      "image": "/assets/tracks/gba-boo-lake-large.jpg"
+    },
+    {
+      "id": "3ds-rock-rock-mountain",
+      "name": "3DS Rock Rock Mountain",
+      "cupId": "rock",
+      "thumb": "/assets/tracks/3ds-rock-rock-mountain.png",
+      "image": "/assets/tracks/3ds-rock-rock-mountain-large.jpg"
+    },
+    {
+      "id": "wii-maple-treeway",
+      "name": "Wii Maple Treeway",
+      "cupId": "rock",
+      "thumb": "/assets/tracks/wii-maple-treeway.png",
+      "image": "/assets/tracks/wii-maple-treeway-large.jpg"
+    },
+    {
+      "id": "tour-berlin-byways",
+      "name": "Tour Berlin Byways",
+      "cupId": "moon",
+      "thumb": "/assets/tracks/tour-berlin-byways.png",
+      "image": "/assets/tracks/tour-berlin-byways-large.jpg"
+    },
+    {
+      "id": "ds-peach-gardens",
+      "name": "DS Peach Gardens",
+      "cupId": "moon",
+      "thumb": "/assets/tracks/ds-peach-gardens.png",
+      "image": "/assets/tracks/ds-peach-gardens-large.jpg"
+    },
+    {
+      "id": "merry-mountain",
+      "name": "Merry Mountain",
+      "cupId": "moon",
+      "thumb": "/assets/tracks/merry-mountain.png",
+      "image": "/assets/tracks/merry-mountain-large.jpg"
+    },
+    {
+      "id": "3ds-rainbow-road",
+      "name": "3DS Rainbow Road",
+      "cupId": "moon",
+      "thumb": "/assets/tracks/3ds-rainbow-road.png",
+      "image": "/assets/tracks/3ds-rainbow-road-large.jpg"
+    },
+    {
+      "id": "tour-amsterdam-drift",
+      "name": "Tour Amsterdam Drift",
+      "cupId": "fruit",
+      "thumb": "/assets/tracks/tour-amsterdam-drift.png",
+      "image": "/assets/tracks/tour-amsterdam-drift-large.jpg"
+    },
+    {
+      "id": "gba-riverside-park",
+      "name": "GBA Riverside Park",
+      "cupId": "fruit",
+      "thumb": "/assets/tracks/gba-riverside-park.png",
+      "image": "/assets/tracks/gba-riverside-park-large.jpg"
+    },
+    {
+      "id": "wii-dk-summit",
+      "name": "Wii DK Summit",
+      "cupId": "fruit",
+      "thumb": "/assets/tracks/wii-dk-summit.png",
+      "image": "/assets/tracks/wii-dk-summit-large.jpg"
+    },
+    {
+      "id": "yoshis-island",
+      "name": "Yoshi's Island",
+      "cupId": "fruit",
+      "thumb": "/assets/tracks/yoshis-island.png"
+    },
+    {
+      "id": "tour-bangkok-rush",
+      "name": "Tour Bangkok Rush",
+      "cupId": "boomerang",
+      "thumb": "/assets/tracks/tour-bangkok-rush.png",
+      "image": "/assets/tracks/tour-bangkok-rush-large.jpg"
+    },
+    {
+      "id": "ds-mario-circuit",
+      "name": "DS Mario Circuit",
+      "cupId": "boomerang",
+      "thumb": "/assets/tracks/ds-mario-circuit.png",
+      "image": "/assets/tracks/ds-mario-circuit-large.jpg"
+    },
+    {
+      "id": "gcn-waluigi-stadium",
+      "name": "GCN Waluigi Stadium",
+      "cupId": "boomerang",
+      "thumb": "/assets/tracks/gcn-waluigi-stadium.png",
+      "image": "/assets/tracks/gcn-waluigi-stadium-large.jpg"
+    },
+    {
+      "id": "tour-singapore-speedway",
+      "name": "Tour Singapore Speedway",
+      "cupId": "boomerang",
+      "thumb": "/assets/tracks/tour-singapore-speedway.png",
+      "image": "/assets/tracks/tour-singapore-speedway-large.jpg"
+    },
+    {
+      "id": "tour-athens-dash",
+      "name": "Tour Athens Dash",
+      "cupId": "feather",
+      "thumb": "/assets/tracks/tour-athens-dash.png",
+      "image": "/assets/tracks/tour-athens-dash-large.jpg"
+    },
+    {
+      "id": "gcn-daisy-cruiser",
+      "name": "GCN Daisy Cruiser",
+      "cupId": "feather",
+      "thumb": "/assets/tracks/gcn-daisy-cruiser.png",
+      "image": "/assets/tracks/gcn-daisy-cruiser-large.jpg"
+    },
+    {
+      "id": "wii-moonview-highway",
+      "name": "Wii Moonview Highway",
+      "cupId": "feather",
+      "thumb": "/assets/tracks/wii-moonview-highway.png",
+      "image": "/assets/tracks/wii-moonview-highway-large.jpg"
+    },
+    {
+      "id": "squeaky-clean-sprint",
+      "name": "Squeaky Clean Sprint",
+      "cupId": "feather",
+      "thumb": "/assets/tracks/squeaky-clean-sprint.png",
+      "image": "/assets/tracks/squeaky-clean-sprint-large.jpg"
+    },
+    {
+      "id": "tour-los-angeles-laps",
+      "name": "Tour Los Angeles Laps",
+      "cupId": "cherry",
+      "thumb": "/assets/tracks/tour-los-angeles-laps.png",
+      "image": "/assets/tracks/tour-los-angeles-laps-large.jpg"
+    },
+    {
+      "id": "gba-sunset-wilds",
+      "name": "GBA Sunset Wilds",
+      "cupId": "cherry",
+      "thumb": "/assets/tracks/gba-sunset-wilds.png",
+      "image": "/assets/tracks/gba-sunset-wilds-large.jpg"
+    },
+    {
+      "id": "wii-koopa-cape",
+      "name": "Wii Koopa Cape",
+      "cupId": "cherry",
+      "thumb": "/assets/tracks/wii-koopa-cape.png",
+      "image": "/assets/tracks/wii-koopa-cape-large.jpg"
+    },
+    {
+      "id": "tour-vancouver-velocity",
+      "name": "Tour Vancouver Velocity",
+      "cupId": "cherry",
+      "thumb": "/assets/tracks/tour-vancouver-velocity.png",
+      "image": "/assets/tracks/tour-vancouver-velocity-large.jpg"
+    },
+    {
+      "id": "tour-rome-avanti",
+      "name": "Tour Rome Avanti",
+      "cupId": "acorn",
+      "thumb": "/assets/tracks/tour-rome-avanti.png"
+    },
+    {
+      "id": "gcn-dk-mountain",
+      "name": "GCN DK Mountain",
+      "cupId": "acorn",
+      "thumb": "/assets/tracks/gcn-dk-mountain.png",
+      "image": "/assets/tracks/gcn-dk-mountain-large.jpg"
+    },
+    {
+      "id": "wii-daisy-circuit",
+      "name": "Wii Daisy Circuit",
+      "cupId": "acorn",
+      "thumb": "/assets/tracks/wii-daisy-circuit.png",
+      "image": "/assets/tracks/wii-daisy-circuit-large.jpg"
+    },
+    {
+      "id": "piranha-plant-cove",
+      "name": "Piranha Plant Cove",
+      "cupId": "acorn",
+      "thumb": "/assets/tracks/piranha-plant-cove.png",
+      "image": "/assets/tracks/piranha-plant-cove-large.jpg"
+    },
+    {
+      "id": "tour-madrid-drive",
+      "name": "Tour Madrid Drive",
+      "cupId": "spiny",
+      "thumb": "/assets/tracks/tour-madrid-drive.png",
+      "image": "/assets/tracks/tour-madrid-drive-large.jpg"
+    },
+    {
+      "id": "3ds-rosalinas-ice-world",
+      "name": "3DS Rosalina's Ice World",
+      "cupId": "spiny",
+      "thumb": "/assets/tracks/3ds-rosalinas-ice-world.png"
+    },
+    {
+      "id": "snes-bowser-castle-3",
+      "name": "SNES Bowser Castle 3",
+      "cupId": "spiny",
+      "thumb": "/assets/tracks/snes-bowser-castle-3.png",
+      "image": "/assets/tracks/snes-bowser-castle-3-large.jpg"
+    },
+    {
+      "id": "wii-rainbow-road",
+      "name": "Wii Rainbow Road",
+      "cupId": "spiny",
+      "thumb": "/assets/tracks/wii-rainbow-road.png",
+      "image": "/assets/tracks/wii-rainbow-road-large.jpg"
+    }
+  ]
+}
