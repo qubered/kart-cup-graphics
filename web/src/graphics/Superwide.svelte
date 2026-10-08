@@ -11,13 +11,13 @@
 
 <div id="superwide" style="width:{W}px;height:{H}px">
   <div class="box" data-box="left" style="left:0;width:{TWIN}px">
-    <Output part="left" embedded payload={left.payload} firstPaint={left.firstPaint} connected={left.connected} {lowfx} debug={false} />
+    <Output part="left" embedded stage={{ w: W, x: 0 }} payload={left.payload} firstPaint={left.firstPaint} connected={left.connected} {lowfx} debug={false} />
   </div>
   <div class="box" data-box="wide" style="left:{TWIN}px;width:3840px">
-    <Output embedded payload={wide.payload} firstPaint={wide.firstPaint} connected={wide.connected} {lowfx} debug={false} />
+    <Output embedded stage={{ w: W, x: TWIN }} payload={wide.payload} firstPaint={wide.firstPaint} connected={wide.connected} {lowfx} debug={false} />
   </div>
   <div class="box" data-box="right" style="left:{W - TWIN}px;width:{TWIN}px">
-    <Output part="right" embedded payload={right.payload} firstPaint={right.firstPaint} connected={right.connected} {lowfx} debug={false} />
+    <Output part="right" embedded stage={{ w: W, x: W - TWIN - 960 }} payload={right.payload} firstPaint={right.firstPaint} connected={right.connected} {lowfx} debug={false} />
   </div>
 </div>
 

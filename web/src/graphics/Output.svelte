@@ -17,8 +17,10 @@
     part?: 'left' | 'right'
     /** Superwide composite: no fixed debug panel / head styles (the parent provides them). */
     embedded?: boolean
+    /** Superwide: width of the whole stage and this canvas's x offset in it, so backgrounds line up across outputs. */
+    stage?: { w: number; x: number }
   }
-  let { payload, firstPaint, lowfx, debug, connected, part, embedded = false }: Props = $props()
+  let { payload, firstPaint, lowfx, debug, connected, part, embedded = false, stage }: Props = $props()
 
   // ?key=1: the matte of an opaque layer is flat white, so don't render (and filter) animated art for it.
   const keyMode = typeof document !== 'undefined' && document.documentElement.getAttribute('data-matte') === 'key'
@@ -50,9 +52,9 @@
           {#if keyMode}
             <div class="key-solid"></div>
           {:else if view.background.id === 'A'}
-            <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} dur={enter} />
+            <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} dur={enter} stageW={stage?.w} stageX={stage?.x} />
           {:else if view.background.id === 'B'}
-            <IconPattern w={view.canvas.w} h={view.canvas.h} mattify={payload?.mattify ?? false} />
+            <IconPattern w={view.canvas.w} h={view.canvas.h} mattify={payload?.mattify ?? false} stageW={stage?.w} stageX={stage?.x} />
           {:else if view.background.id === 'C'}
             <StickerWall watermark={view.background.watermark} title={view.background.title} titleFont={view.fonts.eventTitle} labelFont={view.fonts.labels} {lowfx} w={view.canvas.w} h={view.canvas.h} />
           {/if}
