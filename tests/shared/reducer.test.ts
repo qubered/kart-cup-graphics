@@ -15,6 +15,15 @@ const taken = () => {
 }
 
 describe('reducer', () => {
+  it('score changes update an on-air standings scene without a take', () => {
+    let s = reduce(base, { type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } }, ctx)
+    s = reduce(reduce(s, { type: 'arm', outputIds: ['wide'] }, ctx), { type: 'take', mode: 'cut' }, ctx)
+    const takenAt = s.program.wide.takenAt
+    s = reduce(s, { type: 'setAdjustment', index: 1, value: 7 }, { ...ctx, now: 5000 })
+    const scene = s.program.wide.view.scene
+    expect(scene?.kind === 'standings' && scene.rows[0].total).toBe(7)
+    expect(s.program.wide.takenAt).toBe(takenAt)
+  })
   it('setPlayer does not touch program and is pure', () => {
     const frozen = structuredClone(base)
     const s = reduce(base, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, ctx)
