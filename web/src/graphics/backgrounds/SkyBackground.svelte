@@ -25,7 +25,7 @@
   // Soft drifting circles for depth (deterministic, fewer with lowfx).
   const bokeh = $derived.by(() => {
     const r = rng(23)
-    const n = lowfx ? 5 : 12
+    const n = Math.round((lowfx ? 5 : 12) * w / 3840)
     return Array.from({ length: n }, () => {
       const size = h * (0.12 + r() * 0.26)
       return { x: r() * w - size / 2, y: r() * h - size / 2, size, dur: 16 + r() * 18, delay: -r() * 30, o: 0.07 + r() * 0.1 }
@@ -35,7 +35,7 @@
 </script>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>{@html ICON_SYMBOLS}</defs></svg>
-<div class="bg-sky" bind:this={root} style:left="{-stageX}px" style:width="{w}px" style:height="{h}px" style:--h="{h}px" style:font-family={font}>
+<div class="bg-sky" class:stage={w > 3840} bind:this={root} style:left="{-stageX}px" style:width="{w}px" style:height="{h}px" style:--h="{h}px" style:font-family={font}>
   <div class="checker"><div class="checker-move"></div></div>
   <div class="bokeh">
     {#each bokeh as b, i (i)}
@@ -43,8 +43,10 @@
     {/each}
   </div>
   <div class="wm w1"><Swap key={text} {dur} block>{text}</Swap></div><div class="wm w2"><Swap key={text} {dur} block>{text}</Swap></div>
+  {#if w > 3840}<div class="wm w3"><Swap key={text} {dur} block>{text}</Swap></div><div class="wm w4"><Swap key={text} {dur} block>{text}</Swap></div>{/if}
   <svg class="crest c1" viewBox="0 0 400 400" aria-hidden="true"><use href="#i-crest" /></svg>
   <svg class="crest c2" viewBox="0 0 400 400" aria-hidden="true"><use href="#i-crest" /></svg>
+  {#if w > 3840}<svg class="crest c3" viewBox="0 0 400 400" aria-hidden="true"><use href="#i-crest" /></svg><svg class="crest c4" viewBox="0 0 400 400" aria-hidden="true"><use href="#i-crest" /></svg>{/if}
   <div class="sweep-track"><div class="sweep"></div></div>
   <div class="sparkles">
     {#each sparkles as s, i (i)}
@@ -74,9 +76,17 @@
   @keyframes wm-drift { from { transform: rotate(-12deg) translateX(-110px); } to { transform: rotate(-12deg) translateX(110px); } }
   .wm.w1 { left: -5.2%; top: 3.5%; }          /* (-200, 40) on wide */
   .wm.w2 { left: 49.5%; top: 66%; }           /* (1900, 760) on wide */
+  :global(.bg-sky.stage) .wm.w1 { left: 13.2%; }   /* superwide stage: keep main-LED art where it was on wide... */
+  :global(.bg-sky.stage) .wm.w2 { left: 49.7%; }
+  .wm.w3 { left: 63%; top: 6%; animation-duration: 16s; }
+  .wm.w4 { left: -3%; top: 62%; animation-duration: 20s; animation-direction: alternate-reverse; }
   .crest { position: absolute; color: var(--sky-crest); will-change: transform; animation: crest-drift 11s ease-in-out infinite alternate; }
   .crest.c1 { left: 3.1%; top: 45%; width: calc(var(--h) * .66); height: calc(var(--h) * .66); }               /* 760px */
   .crest.c2 { left: 76.8%; top: -15.6%; width: calc(var(--h) * .78); height: calc(var(--h) * .78); animation-duration: 15s; } /* 900px */
+  .crest.c3 { left: 41%; top: 52%; width: calc(var(--h) * .5); height: calc(var(--h) * .5); animation-duration: 13s; }
+  .crest.c4 { left: 4%; top: -8%; width: calc(var(--h) * .6); height: calc(var(--h) * .6); animation-duration: 17s; }
+  :global(.bg-sky.stage) .crest.c1 { left: 18.7%; }
+  :global(.bg-sky.stage) .crest.c2 { left: 67.9%; }
   @keyframes crest-drift { from { transform: rotate(-16deg) translate(-30px, 0); } to { transform: rotate(-2deg) translate(40px, -130px); } }
   .sweep-track { position: absolute; inset: 0; will-change: transform; animation: sweep 5.5s ease-in-out infinite; }
   .sweep { position: absolute; top: -200px; left: 0; width: 700px; height: calc(var(--h) + 400px); transform: skewX(-22deg);
