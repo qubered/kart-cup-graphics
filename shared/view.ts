@@ -35,7 +35,7 @@ function raceInfo(data: ShowData, catalog: CatalogIndex): RaceInfo {
   const track = catalog.track(trackId)
   const cup = catalog.cup(r.mode === 'cup' ? r.cupId : (track?.cupId ?? r.cupId))
   return {
-    raceLabel: r.mode === 'cup' ? `RACE ${r.raceIndex + 1} / 4` : `RACE ${data.scores.races.length + 1}`,
+    raceLabel: `RACE ${r.raceNo} / ${r.raceTotal}`,
     cupName: cup?.name ?? '?',
     cupEmblem: cup?.emblem ?? '',
     trackName: track?.name ?? '?',
@@ -59,7 +59,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
       case 'nextRace':
         scene = {
           kind: 'nextRace', raceLabel: info.raceLabel, cupName: info.cupName, cupEmblem: info.cupEmblem,
-          trackName: info.trackName, trackImage: info.trackImage,
+          trackName: info.trackName, trackImage: info.trackImage, single: data.race.mode === 'track',
           cupTracks: catalog.tracksOfCup(info.cupId).map((t) => ({ name: t.name, thumb: t.thumb, current: t.id === info.trackId })),
         }
         break

@@ -19,6 +19,7 @@
   let imgFailed = $state('')
   const showImg = $derived(!!scene.trackImage && imgFailed !== scene.trackImage)
   const hasTrack = $derived(!!scene.trackName)
+  const single = $derived(scene.single)
   const imgKey = $derived(!hasTrack ? `g:${scene.cupTracks.map((t) => t.name).join('|')}` : showImg ? `i:${scene.trackImage}` : 'f')
   const curIdx = $derived(scene.cupTracks.findIndex((t) => t.current))
 </script>
@@ -42,7 +43,7 @@
         {/if}
       </Swap>
     </div>
-    <div class="nr-cup" in:pop|global={{ duration: enter, delay: 2 * st }}><Medallion image={scene.cupEmblem} size={360} emblem dur={enter} /></div>
+    {#if !single}<div class="nr-cup" in:pop|global={{ duration: enter, delay: 2 * st }}><Medallion image={scene.cupEmblem} size={360} emblem dur={enter} /></div>{/if}
 
     <div class="nr-text" style:width="{textW}px">
       <div in:slideIn|global={{ duration: enter, dx: 120, delay: st }}>
@@ -53,10 +54,12 @@
           <Heading text={scene.trackName.toUpperCase()} look={view.headingLook} font={view.fonts.headings} upright={view.headingUpright} size={headSize} dur={enter} />
         </div>
       {/if}
-      <div in:slideIn|global={{ duration: enter, dx: 160, delay: 3 * st }}>
-        <Swap key={scene.cupName} dur={enter} block><div class="nr-cupname" style:font-family={view.fonts.labels}>{scene.cupName}</div></Swap>
-      </div>
-      {#if hasTrack}
+      {#if !single}
+        <div in:slideIn|global={{ duration: enter, dx: 160, delay: 3 * st }}>
+          <Swap key={scene.cupName} dur={enter} block><div class="nr-cupname" style:font-family={view.fonts.labels}>{scene.cupName}</div></Swap>
+        </div>
+      {/if}
+      {#if hasTrack && !single}
         <div class="nr-strip" in:slideIn|global={{ duration: enter, dx: 160, delay: 4 * st }}>
           {#each scene.cupTracks as t, i (i)}
             <Swap key={`${t.name}|${t.thumb}`} dur={enter}>
