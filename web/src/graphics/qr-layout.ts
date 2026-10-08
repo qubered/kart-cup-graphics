@@ -18,15 +18,15 @@ export interface QrLayout {
 export function qrLayout(format: OutputFormat, style: QrStyle): QrLayout {
   if (format === 'twin') {
     return {
-      panels: [0, 1].map((i) => ({ box: { x: i * 960 + 60, y: 120, w: 840, h: 780 }, kind: 'col' as const, items: [i], qr: 400, text: 36 })),
+      panels: [0, 1].map((i) => ({ box: { x: i * 960 + 60, y: 120, w: 840, h: 780 }, kind: 'col' as const, items: [i], qr: 300, text: 28 })),
       title: null,
     }
   }
   if (format === 'wide') {
     if (style === 'center') {
-      return { panels: [{ box: { x: 520, y: 150, w: 2800, h: 700 }, kind: 'trio', items: [0, 1], qr: 440, text: 54 }], title: null }
+      return { panels: [{ box: { x: 520, y: 150, w: 2800, h: 700 }, kind: 'trio', items: [0, 1], qr: 320, text: 40 }], title: null }
     }
-    const sides: QrPanel[] = [0, 1].map((i) => ({ box: { x: i ? 2640 : 100, y: 150, w: 1100, h: 700 }, kind: 'row' as const, items: [i], qr: 400, text: 40 }))
+    const sides: QrPanel[] = [0, 1].map((i) => ({ box: { x: i ? 2640 : 100, y: 150, w: 1100, h: 700 }, kind: 'row' as const, items: [i], qr: 300, text: 32 }))
     return {
       panels: sides,
       title: style === 'title'
@@ -36,9 +36,9 @@ export function qrLayout(format: OutputFormat, style: QrStyle): QrLayout {
   }
   if (style === 'title') {
     return {
-      panels: [{ box: { x: 160, y: 520, w: 1600, h: 470 }, kind: 'duo', items: [0, 1], qr: 250, text: 34 }],
+      panels: [{ box: { x: 160, y: 520, w: 1600, h: 470 }, kind: 'duo', items: [0, 1], qr: 200, text: 28 }],
       title: { box: { x: 0, y: 0, w: 1920, h: 500 }, top: '50%', layout: { layout: 'stack', ts: 130, ps: 40, max: 1600, maxLines: 2, maxH: 400 } },
     }
   }
-  return { panels: [{ box: { x: 160, y: 100, w: 1600, h: 780 }, kind: 'duo', items: [0, 1], qr: 400, text: 44 }], title: null }
+  return { panels: [{ box: { x: 160, y: 100, w: 1600, h: 780 }, kind: 'duo', items: [0, 1], qr: 300, text: 34 }], title: null }
 }
