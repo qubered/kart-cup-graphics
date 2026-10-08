@@ -14,6 +14,12 @@
       .catch(() => {})
   })
 
+  /** Cut & fill feeds for a keyer: the fill (graphics over black) and the matching key (matte) of each page URL. */
+  const cutFill = (urls: string[]) => urls.flatMap((u) => [
+    { label: u.replace(/^https?:\/\/[^/]+/, ''), kind: 'Fill', href: `${u}?fill=1` },
+    { label: u.replace(/^https?:\/\/[^/]+/, ''), kind: 'Key', href: `${u}?key=1` },
+  ])
+
   let copied = $state('')
   async function copy(text: string, id: string) {
     try {
@@ -50,6 +56,16 @@
   }
 </script>
 
+{#snippet cutFillList(urls: string[], id: string)}
+  <details class="cutfill" data-cutfill={id}>
+    <summary>Cut &amp; fill URLs</summary>
+    {#each cutFill(urls) as c (c.href)}
+      <div class="urlrow"><b class="kind">{c.kind}</b> <code>{c.href}</code>
+        <button type="button" onclick={() => copy(c.href, c.href)}>{copied === c.href ? 'Copied' : 'Copy'}</button></div>
+    {/each}
+  </details>
+{/snippet}
+
 {#if st}
   <div class="card">
     <h2>Outputs</h2>
@@ -77,6 +93,7 @@
                     <button type="button" onclick={() => copy(`${url}/${half}`, `${o.id}/${half}`)}>{copied === `${o.id}/${half}` ? 'Copied' : 'Copy'}</button></div>
                 {/each}
               {/if}
+              {@render cutFillList(o.format === 'twin' ? [url, `${url}/left`, `${url}/right`] : [url], o.id)}
             </td>
             <td data-clients>{presence[o.id]?.program ?? 0}{#if o.format === 'twin'}<div class="dim">L {presence[o.id]?.left ?? 0} · R {presence[o.id]?.right ?? 0}</div>{/if}</td>
             <td>
@@ -102,6 +119,7 @@
       <code>wide</code> and <code>twins</code> outputs, so arm and take those as usual. Use <code>?wide=&lt;id&gt;&amp;twins=&lt;id&gt;</code> for other output ids.</p>
     <div class="urlrow"><code>{base}/out/superwide</code>
       <button type="button" onclick={() => copy(`${base}/out/superwide`, 'superwide')}>{copied === 'superwide' ? 'Copied' : 'Copy'}</button></div>
+    {@render cutFillList([`${base}/out/superwide`], 'superwide')}
   </div>
 
   <form class="card" onsubmit={add}>
@@ -122,4 +140,7 @@
 
 <style>
   .urlrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 0; }
+  .cutfill { margin-top: 4px; }
+  .cutfill summary { cursor: pointer; font-size: 12px; color: var(--ui-dim, #9ca3af); }
+  .kind { display: inline-block; min-width: 34px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 </style>

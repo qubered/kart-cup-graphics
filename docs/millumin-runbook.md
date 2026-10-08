@@ -39,6 +39,26 @@ The twins output is one 1920x1152 canvas, but the two LED screens can each get t
 - [ ] Use this **instead of** the separate wide and twin pages. It counts as a full connection for both outputs.
 - [ ] Check the frame rate at this size on the output Mac: it is 50% more pixels than the wide alone. If it falls short, use `?lowfx=1`.
 
+## Cut & fill into the E2 (Millumin web sources, then key + fill into the E2)
+
+A keyer needs two feeds per overlay output. Every output page (full, `/left`, `/right`, and `/out/superwide`) can render both, from the same live state, so they always stay in sync:
+
+| Feed | URL | What the page draws |
+|---|---|---|
+| **Fill** | `/out/<id>?fill=1` | The graphics over opaque black |
+| **Key (cut)** | `/out/<id>?key=1` | The matte: **white** where the graphics are opaque, **black** elsewhere, grey on soft edges |
+| Plain | `/out/<id>` | Transparent page (for Millumin's `transparent` web source, no keyer) |
+
+The Outputs tab lists all of these under **Cut & fill URLs** for each output and for the superwide, with copy buttons.
+
+- [ ] Add **two Web media** per overlay output in Millumin: one on the `?fill=1` URL and one on the `?key=1` URL. Same render size as the output (twin halves 960x1152, wide 3840x1152, superwide 5760x1152).
+- [ ] **`transparent` OFF** on both. The pages draw their own opaque black, so the key and fill are already complete images.
+- [ ] Send the fill and the key from Millumin to the E2 as the **fill** and **key (cut)** inputs of the same layer, with the E2 key set to luma / external key.
+- [ ] Keep both web media on the same framerate (60) and the same Millumin output, so the key and fill never drift a frame apart.
+- [ ] **FTB** fades the whole output to black, so on a keyed layer it blacks out the screen. Use CLEAR to take only the graphics away.
+- [ ] Full-frame backgrounds are opaque, so their key is solid white. The key page draws a flat white rectangle instead of the animated art, which is why it costs almost nothing.
+- [ ] Check on the E2 that the key is not inverted and no gamma is applied to it. If the graphics show as a hole, invert the key in the E2.
+
 Query options: `?lowfx=1` halves the particle counts, `?debug=1` shows a small status panel, `?view=preview` shows Preview instead of Program.
 
 ## Show day

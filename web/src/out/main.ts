@@ -12,6 +12,12 @@ const part = m?.[2] === 'left' || m?.[2] === 'right' ? m[2] : undefined
 const lowfx = params.get('lowfx') === '1'
 const debug = params.get('debug') === '1'
 const viewKind = params.get('view') === 'preview' ? 'preview' : 'program'
+
+// Cut & fill for keyers (e.g. Barco E2): ?fill=1 = graphics premultiplied over black,
+// ?key=1 = the matching matte (white = opaque, black = transparent, greys for soft edges).
+// Without either the page stays transparent (for Millumin's `transparent` web source).
+const matte = params.get('key') === '1' ? 'key' : params.get('fill') === '1' ? 'fill' : null
+if (matte) document.documentElement.setAttribute('data-matte', matte)
 const target = document.getElementById('app')!
 
 if (outputId === 'superwide') {
