@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Wide · lower thirds (scaled ×1.5) + track card</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Wide canvas 3840×1152. Derived from the layout rules (not separately reviewed in brainstorming):
+     lower thirds scaled ×1.5 (645×240), gap 30, centred; y = 1152−70−240 = 842. Track card (40,40). */
+  const slots = MK.param('players', '0,1,2,3').split(',').map(Number).sort((a, b) => a - b);
+  MK.page('wide', (f, S) => {
+    let h = MK.param('camera', '1') === '0' ? '' : MK.camera('wide');
+    h += `<div class="layer" data-layer="trackcard">${MK.trackCardSlots('wide').map((p) => MK.trackCard(S.race, p)).join('')}</div>`;
+    h += `<div class="layer" data-layer="lowerthirds">${MK.lowerThirdSlots('wide', slots).map((p) => MK.lowerThird(S.players[p.slot], p)).join('')}</div>`;
+    return h;
+  }, 'Wide · lower thirds ×1.5 + track card (derived)');
+</script>
+</body>
+</html>

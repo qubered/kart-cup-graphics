@@ -11,9 +11,14 @@
 
 **Tech Stack:** Node 20+, TypeScript (strict, ESM), `ws`, `zod`, Svelte 5 (runes), Vite + `@sveltejs/vite-plugin-svelte`, lightningcss, `@fontsource/*`, `tsx`, Vitest, Playwright, `sharp` (asset script only), `puppeteer@14` (Chromium 103 smoke test only).
 
-**Spec:** `docs/superpowers/specs/2026-10-08-mario-kart-event-graphics-design.md`. Visual references are the mockups in `.superpowers/brainstorm/76763-1791418741/content/` (listed in spec §2). Read both before starting a graphics task.
+**Spec:** `docs/superpowers/specs/2026-10-08-mario-kart-event-graphics-design.md`. **Visual source of truth: `docs/mockups/`.** Read `docs/mockups/README.md` before any graphics or UI task, and serve the repo root (`python3 -m http.server 8765`) to view the pages at <http://localhost:8765/docs/mockups/>.
 
 ## Global Constraints
+
+### Visual reference
+
+- Copy `docs/mockups/shared/tokens.css` verbatim to `web/src/graphics/tokens.css`. Port the blocks of `docs/mockups/shared/graphics.css` into the Svelte components, **keeping every number and class name**.
+- Each graphics task names its reference page. Compare the result side by side with that page, using the same sample data, before accepting screenshots as baselines.
 
 ### Runtime and build
 
@@ -704,7 +709,11 @@ ctlA.send({ type: 'ping' }); await expect.poll(() => ctlA.messages.some(m => m.t
   - `send` while disconnected drops the command.
 - `whenReady(imageUrls: string[], timeoutMs = 3000): Promise<void>`: waits for `document.fonts.ready` and decodes each image, whichever finishes first versus the timeout.
 - `fit` (Svelte action): `use:fit={{ width, height }}` scales the first child to the node's width.
-- `fitText` (Svelte action): `use:fitText={{ max: number }}` reduces font-size until `scrollWidth <= max`, and re-runs when the text changes.
+- `fitText` (Svelte action): `use:fitText={{ max: number; minRatio?: number }}`. It's the same rule as `fitText` in `docs/mockups/shared/mockup.js`:
+  1. Shrink font-size 1 px at a time down to `minRatio` × the base size (default **0.6**; `0` = no floor).
+  2. If it still overflows, set `transform: scaleX(max / width)` on the inner `<span>`.
+  - Re-runs when the text changes.
+  - Fitted elements wrap their text in a `<span>` (`[data-fit] > span { display: inline-block; transform-origin: left center }`).
 - `fonts.css`:
   - `@fontsource` imports: Rubik 400/500/700/800/900 + 800/900 italic; Exo 2 900 + 900 italic; Saira 800/900 + italics; Roboto 900 + italic; Lexend Zetta 800/900; Titan One; Lilita One; Russo One; Baloo 2 800; Luckiest Guy.
   - `@font-face { font-family: "MK F2"; src: url(/assets/fonts/mario_kart_f2.ttf); unicode-range: U+0041-005A, U+0061-007A; }`
@@ -796,7 +805,7 @@ test('debug panel only with ?debug=1', async ({ page }) => { await page.goto('/o
 ```
 
 - [ ] **Step 2: Run `npx playwright test tests/e2e/output.spec.ts` and confirm it FAILS.**
-- [ ] **Step 3: Implement the files listed above.** Port the look from `backgrounds-v3.html` (A, B) and `command-centre.html` (hold slide).
+- [ ] **Step 3: Implement the files listed above.** Reference pages: `docs/mockups/backgrounds/a-menu-sky.html` and `b-icon-pattern.html` (check `?format=twin` and `?format=hd`), and `docs/mockups/overlays/hold.html` (wide, hd, twin).
 - [ ] **Step 4: Run the tests and confirm they PASS.**
 - [ ] **Step 5: Write `docs/millumin-runbook.md`.** It's a checklist covering:
   - Web media URL `http://<control>.local:8080/out/<id>`
@@ -847,7 +856,8 @@ test('twin lower thirds at fixed slots with player colours', async ({ page }) =>
 // Review Focus 1: long text never overflows
 test('long names and track names fit', async ({ page }) => { await command({ type: 'setPlayer', index: 0, patch: { name: 'ALEXANDRIA-ROSE FEATHERSTONE' } })
   await command({ type: 'setRace', patch: { mode: 'track', trackId: 'tour-singapore-speedway' } }); await command({ type: 'take', mode: 'cut', outputIds: ['twins'] }); await page.goto('/out/twins'); await page.waitForSelector('body[data-ready]')
-  for (const sel of ['.lower-third[data-slot="0"] .name', '.track-card .track-name']) expect(await page.locator(sel).first().evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true) })
+  for (const sel of ['.lower-third[data-slot="0"] .name', '.track-card .track-name']) expect(await page.locator(sel).first().evaluate(e => e.firstElementChild!.getBoundingClientRect().width <= e.getBoundingClientRect().width + 1)).toBe(true)
+  expect(await page.locator('.lower-third[data-slot="0"] .name').evaluate(e => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(26) })   // 60% floor of 44px
 test('on-air rename updates without remount', async ({ page }) => { await command({ type: 'take', mode: 'cut', outputIds: ['twins'] }); await page.goto('/out/twins'); await page.waitForSelector('body[data-ready]'); const h = await page.locator('.lower-third[data-slot="1"]').elementHandle()
   await command({ type: 'setPlayer', index: 1, patch: { name: 'PRIYA' } }); await command({ type: 'take', mode: 'auto', outputIds: ['twins'] })
   await expect(page.locator('.lower-third[data-slot="1"]')).toContainText('PRIYA'); expect(await h!.evaluate(e => e.isConnected)).toBe(true) })
@@ -859,7 +869,23 @@ test('visual: twin + hd snapshots', async ({ page }) => { await command({ type: 
 ```
 
 - [ ] **Step 2: Run `npx playwright test tests/e2e/graphics.spec.ts` and confirm it FAILS.**
-- [ ] **Step 3: Implement the components**, porting the look from `lower-thirds-v2.html` (#1 Medallion) and `track-and-title-v2.html` (T1, S1, S3).
+- [ ] **Step 3: Implement the components.** Reference pages: `docs/mockups/overlays/twin-lower-thirds.html`, `hd-lower-thirds.html`, `wide-lower-thirds.html` (with `?guides=1` for exact boxes), `docs/mockups/titles/title-lockup.html` (S1/S3 × wide/hd/twin) and `titles/headings.html`.
+  - `TitleLockup` gets the format's layout from `TITLE_LAYOUT` (`web/src/graphics/title-layout.ts`):
+
+    | Format | Layout | ts | ps | max | maxLines | maxH |
+    |---|---|---|---|---|---|---|
+    | wide | `line` | 210 | 58 | 3600 | 1 | — |
+    | hd | `stack` | 190 | 50 | 1700 | 2 | 640 |
+    | twin | `stack` | 170 | 40 | 860 | 3 | 760 |
+
+  - `breakTitle(title, accent, layout, measure): { lines: string[]; accentLine: boolean; size: number }` is pure and unit-tested. `measure(text)` = width at 100 px.
+    - Try every split into ≤ maxLines at spaces. Score = min(ts, max ÷ (w/100 + 0.28) for each line incl. the accent, maxH ÷ (lines × 1.16)).
+    - Pick the fewest lines with score ≥ 0.85 × ts; else the highest score.
+    - Port it from `layoutTitles()` in `docs/mockups/shared/mockup.js`.
+  - Each line then gets `fitText` with `minRatio: 0`, and all lines take the smallest size. Outline and drop shadow are in `em`.
+  - Unit tests with a fake measure where each char = 118 px at 100 px:
+    - `breakTitle('KART CUP','2026','stack',…)` → hd: lines `['KART CUP']`; twin: lines `['KART','CUP']`.
+    - Wide → a single line containing the accent.
 - [ ] **Step 4: Run the tests and confirm they PASS.** Run `--update-snapshots` once to create the baselines, check them by eye against the mockups, then re-run without the flag.
 - [ ] **Step 5: Commit.** `git commit -m "feat: medallion lower thirds, T1 track card, title lockup and headings"`
 
@@ -887,7 +913,7 @@ test('visual: twin + hd snapshots', async ({ page }) => { await command({ type: 
 | Shift + `'Escape'` | `{type:'clear'}` | **Yes** |
 | Shift + `'B'` | `{type:'ftb',on:!ftb}` | **Yes** |
 
-- **Layout** (reference `control-v3.html`):
+- **Layout** (reference `docs/mockups/ui/control.html`):
   - Top bar: title, "Now: Race n / 4 · Cup · Track", connection lights per output, clock.
   - Left: tabs **Show** | **Text & Fonts** | **Outputs** | **Settings**. Only Show in this task; the others are placeholders.
   - Right: output tabs, each with a light and a pending badge from `payload.pending`.
@@ -1015,7 +1041,7 @@ test('results with a duplicate and a blank', async ({ page }) => { await page.go
 | Standings | `STANDINGS`; `.standing-row[data-slot]` per row keyed by `player.slot` with `animate:flip` (duration = enter); `.first` on every row with position 1 (yellow `#fff27a → #ffeb02 → #fede01`, text `#281c03`); player-colour edge; name in `.name` with `fitText`; `+N` chip when `lastRacePoints` isn't null; total; footer text |
 | Winner | Rotating ray burst (40 s/rev), bobbing medallion, confetti (90, or 20 with lowfx), `WINNER` heading, name, character, `<total> PTS` |
 
-Port each from `wide-scenes-v2.html`.
+Reference pages: `docs/mockups/scenes/lineup.html`, `next-race.html`, `standings.html` and `winner.html`. HD layouts aren't mocked: derive them from the wide pages with the same parts and proportions, and compare against `docs/mockups/overlays/hd-lower-thirds.html` for scale.
 
 - [ ] **Step 1: Write failing e2e tests.**
 
@@ -1034,7 +1060,7 @@ test('hd scenes stay inside 1920×1080', async ({ page }) => { await command({ t
   const out = await page.locator('[data-layer=scene] *').evaluateAll(els => els.filter(e => { const r = e.getBoundingClientRect(); return r.right > 1920 + 1 || r.bottom > 1080 + 1 }).length); expect(out).toBe(0) })
 test('long name fits standings row', async ({ page }) => { await command({ type: 'setPlayer', index: 0, patch: { name: 'ALEXANDRIA-ROSE FEATHERSTONE' } })
   await command({ type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } }); await command({ type: 'take', mode: 'cut', outputIds: ['wide'] }); await page.goto('/out/wide'); await page.waitForSelector('body[data-ready]')
-  expect(await page.locator('.standing-row .name').first().evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true) })
+  expect(await page.locator('.standing-row .name').first().evaluate(e => e.firstElementChild!.getBoundingClientRect().width <= e.getBoundingClientRect().width + 1)).toBe(true) })
 ```
 
 - [ ] **Step 2: Run `npx playwright test tests/e2e/scenes.spec.ts` and confirm it FAILS.**
@@ -1098,14 +1124,14 @@ test('watermark text reaches background A', async ({ page }) => { await page.got
 **Interfaces:**
 - `StickerWall` props: `{ watermark: string; title: TitleView; titleFont: string; labelFont: string; w: number; h: number; lowfx: boolean }`
 
-**Layout.** Port it from `backgrounds-v3.html` card C.
+**Layout.** Reference page: `docs/mockups/backgrounds/c-sticker-wall.html` (`STICKER_TILE` in `docs/mockups/shared/mockup.js`). Keep the sticker classes **unscoped** (`.st-o`, not `.bg-stickers .st-o`): selectors with ancestors don't match inside SVG `<use>` copies.
 - `#f3f3f3` background; a 1280×1152 sticker tile on a 24 px grid.
 - Rows A, C and E are stickers; B and D are wordmark bands showing `watermark` (D offset by 640).
 - Repeat the tile across the width and translate by −1280 px over 80 s.
 - Sticker texts use `fitText` against their box. The wordmark font-size scales down so it fits 980 px.
 - A kart parade (7 karts/bikes, ×2 for looping, 55 s) and a road line, with the logo plate (title, accent `#e60012`, pre-title).
 
-- [ ] **Step 1: Write a failing test.** Taking background C shows `[data-bg=C]` containing the watermark text, and no `[data-sticker-text]` element has `scrollWidth > clientWidth`.
+- [ ] **Step 1: Write a failing test.** Taking background C shows `[data-bg=C]` containing the watermark text, and every sticker `text[data-max]` has `getBBox().width <= data-max + 1` once the page is ready.
 - [ ] **Step 2: Run `npx playwright test -g "background C"` and confirm it FAILS.**
 - [ ] **Step 3: Implement it.**
 - [ ] **Step 4: Run it again and confirm it PASSES.** Check a screenshot by eye against the mockup.
@@ -1125,6 +1151,7 @@ test('watermark text reaches background A', async ({ page }) => { await page.got
   - The info tile (clock, on-air timer from `clocks.onAirSince`, now race) sits to the right of the Preview.
   - The standings tile is right-aligned, w = 410.
   - The other outputs' Program tiles share the bottom row at equal height.
+- Reference page: `docs/mockups/ui/multiview.html` (and `?hold=1`).
 - Tiles are iframes of `/out/<id>?lowfx=1` (plus `&view=preview` for Preview), scaled with `use:fit`.
 - Borders: Program `#dc2626`, Preview `#16a34a`; all `#f59e0b` while `overlay.hold.on`.
 - Each tile is labelled `<NAME> · PROGRAM` or `<NAME> · PREVIEW`, with a connection light from `presence`.

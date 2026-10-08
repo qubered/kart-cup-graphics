@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Control page (approved layout v3)</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    /* Standard operator UI — NOT game-styled. Designed at 1600×1000, must work from 1440×900 up. */
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+    .ui { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; transform-origin: 0 0; background: var(--ui-bg); color: var(--ui-text); font: 400 14px/1.35 var(--ui-font); }
+    .ui * { box-sizing: border-box; }
+    .lab { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ui-muted); }
+    .led { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; } .led.off { background: #4b5563; }
+    .clock { font: 600 18px/1 var(--ui-mono); color: #fff; }
+    /* top bar 48px */
+    .top { position: absolute; left: 0; right: 0; top: 0; height: 48px; display: flex; align-items: center; gap: 18px; padding: 0 18px; border-bottom: 1px solid var(--ui-line); }
+    .top .ttl { font-weight: 700; color: #fff; } .top .now { color: var(--ui-muted); } .top .now b { color: #fff; font-weight: 600; }
+    .top .stat { margin-left: auto; display: flex; gap: 14px; align-items: center; color: var(--ui-muted); font-size: 13px; }
+    /* left: settings tabs (614 wide) */
+    .left { position: absolute; left: 18px; top: 66px; width: 614px; bottom: 146px; background: var(--ui-panel); border: 1px solid var(--ui-line); border-radius: 10px; overflow: hidden; }
+    .tabs { display: flex; border-bottom: 1px solid var(--ui-line); padding: 0 8px; } .tab { padding: 12px 14px; color: var(--ui-muted); font-weight: 500; } .tab.on { color: #fff; box-shadow: inset 0 -2px 0 var(--ui-accent); }
+    .body { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .card { border: 1px solid var(--ui-line); border-radius: 9px; background: var(--ui-panel-2); }
+    .card .ch { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--ui-line); } .card .ch .lab { color: #cbd5e1; } .card .ch .r { margin-left: auto; display: flex; gap: 6px; }
+    .b { padding: 5px 10px; border: 1px solid var(--ui-field); border-radius: 6px; background: #1b1f27; color: var(--ui-text); font-size: 12.5px; white-space: nowrap; } .b.acc { background: var(--ui-accent); border-color: var(--ui-accent); color: #fff; }
+    .f { background: var(--ui-bg); border: 1px solid var(--ui-field); border-radius: 6px; padding: 6px 9px; color: #fff; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .f img { width: 24px; height: 24px; object-fit: contain; } .f .car { margin-left: auto; color: var(--ui-muted); } .f .dot { width: 16px; height: 16px; border-radius: 4px; display: block; }
+    .prow { display: grid; grid-template-columns: 34px 1fr 190px 112px; gap: 8px; align-items: center; padding: 6px 12px; }
+    .prow .n { text-align: center; font-weight: 700; font-size: 12px; color: #fff; padding: 5px 0; border-radius: 5px; }
+    .note { font-size: 12px; color: var(--ui-pending); }
+    .seg { display: flex; border: 1px solid var(--ui-field); border-radius: 7px; overflow: hidden; width: max-content; }
+    .seg span { padding: 6px 12px; border-right: 1px solid var(--ui-field); font-size: 12.5px; color: #cbd5e1; white-space: nowrap; } .seg span:last-child { border-right: 0; }
+    .seg.sel span.on { background: #1e3a8a; color: #fff; }
+    .rrow { display: flex; gap: 10px; align-items: center; padding: 10px 12px; }
+    .races { display: grid; grid-template-columns: 28px 1fr 1fr 1fr 1fr 28px; gap: 6px; padding: 0 12px 12px; }
+    .race { border: 1px solid var(--ui-field); border-radius: 7px; overflow: hidden; background: var(--ui-bg); font-size: 12px; }
+    .race img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: cover; } .race div { padding: 5px 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #cbd5e1; }
+    .race div small { display: block; color: var(--ui-muted); font-size: 10.5px; } .race.done { opacity: .55; } .race.cur { border-color: var(--ui-accent); box-shadow: 0 0 0 1px var(--ui-accent); }
+    .arrow { display: flex; align-items: center; justify-content: center; border: 1px solid var(--ui-field); border-radius: 7px; color: #cbd5e1; }
+    table.res { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .res th { text-align: left; font-size: 10.5px; letter-spacing: .08em; color: var(--ui-muted); font-weight: 600; padding: 7px 12px; border-bottom: 1px solid var(--ui-line); }
+    .res td { padding: 6px 12px; border-bottom: 1px solid #1c1f26; } .res td.num { font-family: var(--ui-mono); color: #fff; } .res .plus { color: #4ade80; }
+    .res .sel2 { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--ui-field); border-radius: 6px; padding: 4px 9px; background: var(--ui-bg); color: #fff; min-width: 74px; } .res .sel2 span { margin-left: auto; color: var(--ui-muted); }
+    .res .pc { display: inline-block; width: 8px; height: 22px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+    .foot { padding: 9px 12px; font-size: 12px; color: var(--ui-muted); }
+    /* right: monitors for the selected output (932 wide) */
+    .right { position: absolute; left: 650px; top: 66px; width: 932px; bottom: 146px; display: flex; flex-direction: column; gap: 12px; }
+    .otabs { display: flex; gap: 6px; } .otab { padding: 8px 14px; border-radius: 7px; border: 1px solid var(--ui-line); color: var(--ui-muted); display: flex; gap: 8px; align-items: center; font-weight: 500; }
+    .otab.on { background: #1d2430; color: #fff; border-color: #3a4455; } .otab .p { font-size: 11px; color: #111; background: var(--ui-pending); border-radius: 8px; padding: 1px 6px; font-weight: 700; }
+    .mon { position: relative; border: 2px solid; border-radius: 6px; overflow: hidden; background: #000; } .mon.pv { border-color: var(--ui-preview); } .mon.pg { border-color: var(--ui-program); }
+    .mon .t { position: absolute; left: 0; top: 0; z-index: 5; font: 600 11px/1 var(--ui-font); letter-spacing: .05em; padding: 5px 8px; color: #fff; } .mon.pv .t { background: var(--ui-preview); } .mon.pg .t { background: var(--ui-program); }
+    .mon iframe { display: block; width: 100%; aspect-ratio: 10/3; border: 0; }
+    .layers { background: var(--ui-panel); border: 1px solid var(--ui-line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .lrow { display: flex; align-items: center; gap: 8px; } .lrow .k { width: 110px; color: var(--ui-muted); font-size: 13px; }
+    .seg.lay span.on { background: #14532d; color: #fff; } .seg.lay span.pg { box-shadow: inset 0 -3px 0 var(--ui-program); }
+    .sw { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--ui-field); border-radius: 7px; font-size: 13px; color: #cbd5e1; }
+    .sw i { width: 30px; height: 16px; border-radius: 8px; background: #374151; position: relative; display: block; } .sw i::after { content: ''; position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #9ca3af; }
+    .legend { margin-left: auto; font-size: 12px; color: var(--ui-muted); display: flex; gap: 12px; } .legend b { display: inline-block; width: 10px; height: 3px; margin-right: 5px; vertical-align: 3px; }
+    /* master bar 128px, always visible */
+    .mbar { position: absolute; left: 0; right: 0; bottom: 0; height: 128px; border-top: 1px solid var(--ui-line); background: #0c0e12; display: flex; }
+    .ms { padding: 12px 18px; border-right: 1px solid var(--ui-line); display: flex; flex-direction: column; gap: 9px; justify-content: center; }
+    .ochips { display: flex; gap: 8px; } .oc { width: 124px; padding: 8px 10px; border: 2px solid #2c313c; border-radius: 8px; background: var(--ui-panel); position: relative; }
+    .oc.arm { border-color: var(--ui-accent); background: #172554; } .oc .nn { display: flex; gap: 6px; align-items: center; font-weight: 700; color: #fff; font-size: 13px; }
+    .oc .s { font-size: 11px; color: var(--ui-muted); margin-top: 5px; white-space: nowrap; } .oc .p { position: absolute; right: 7px; top: 7px; font-size: 10px; font-weight: 700; color: #111; background: var(--ui-pending); border-radius: 8px; padding: 2px 6px; }
+    .oc.all { width: auto; display: flex; align-items: center; font-weight: 700; color: #e5e7eb; }
+    .bb { width: 118px; height: 62px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 19px; letter-spacing: .04em; }
+    .bb small { font-size: 10px; font-weight: 500; margin-top: 4px; opacity: .8; letter-spacing: 0; }
+    .bb.cut { background: #e5e7eb; color: #111; } .bb.auto { background: var(--ui-accent); color: #fff; width: 146px; }
+    .bb.hold { background: var(--ui-hold); color: #1f1300; width: 100px; } .bb.clear { border: 2px solid #ef4444; color: #f87171; width: 100px; } .bb.ftb { background: #000; border: 2px solid #374151; color: #e5e7eb; width: 100px; }
+    .durs { display: flex; flex-direction: column; gap: 4px; justify-content: center; } .durs span { padding: 4px 8px; border: 1px solid #2c313c; border-radius: 4px; font-size: 11px; color: var(--ui-muted); text-align: center; } .durs span.on { border-color: var(--ui-accent); color: #fff; }
+    .kb { font-size: 11px; color: #6b7280; } .kb kbd { font: 600 10px/1 var(--ui-font); background: #1f2430; color: #cbd5e1; padding: 2px 5px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="ui" id="ui">
+  <div class="top"><div class="ttl">Kart Cup 2026 — Control</div><div class="now">Now: <b>Race 2 / 4</b> · Mushroom Cup · Water Park</div>
+    <div class="stat"><span><span class="led"></span> Wide</span><span><span class="led"></span> Twins</span><span><span class="led"></span> Stream</span><span><span class="led off"></span> Pillars</span><span class="clock" id="clk">00:00:00</span></div></div>
+
+  <div class="left">
+    <div class="tabs"><div class="tab on">Show</div><div class="tab">Text &amp; Fonts</div><div class="tab">Outputs</div><div class="tab">Settings</div></div>
+    <div class="body">
+      <div class="card"><div class="ch"><span class="lab">Players</span><span class="note">● P2 changed — not on air yet</span></div><div id="players"></div><div style="height:6px"></div></div>
+      <div class="card"><div class="ch"><span class="lab">Race</span><div class="r"><span class="b">Random</span></div></div>
+        <div class="rrow"><div class="seg sel"><span class="on">Cup</span><span>Single track</span></div><div class="f" style="flex:1"><img id="cupimg" alt="">Mushroom Cup<span class="car">▾</span></div></div>
+        <div class="races" id="races"></div></div>
+      <div class="card"><div class="ch"><span class="lab">Results · Race 2 · Water Park</span><div class="r"><span class="b">Edit totals…</span><span class="b acc">Save results</span></div></div>
+        <table class="res" id="results"></table>
+        <div class="foot">Positions 1st–12th score 15, 12, 10, 9 … 1. Saving updates Standings in Preview.</div></div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="otabs"><div class="otab on"><span class="led"></span>Wide <span class="p">2</span></div><div class="otab"><span class="led"></span>Twins <span class="p">1</span></div><div class="otab"><span class="led"></span>Stream</div><div class="otab"><span class="led off"></span>Pillars</div><div class="otab" style="margin-left:auto">Open Multiview ↗</div></div>
+    <div class="mon pv"><span class="t">PREVIEW</span><iframe src="../scenes/standings.html?embed=1&amp;lowfx=1" loading="lazy" title="preview"></iframe></div>
+    <div class="mon pg"><span class="t">PROGRAM · ON AIR</span><iframe src="../titles/title-lockup.html?embed=1&amp;lowfx=1" loading="lazy" title="program"></iframe></div>
+    <div class="layers">
+      <div class="lrow"><span class="k">Background</span><div class="seg lay"><span class="pg">A · Sky</span><span class="on">B · Icons</span><span>C · Stickers</span><span>None</span></div><span class="legend"><span><b style="background:var(--ui-preview)"></b>preview</span><span><b style="background:var(--ui-program)"></b>on air</span></span></div>
+      <div class="lrow"><span class="k">Scene</span><div class="seg lay"><span>None</span><span class="pg">Title</span><span>Line-up</span><span>Next race</span><span class="on">Standings</span><span>Winner</span></div></div>
+      <div class="lrow"><span class="k">Overlays</span><div class="sw"><i></i>Track card</div><div class="sw"><i></i>Lower thirds</div></div>
+    </div>
+  </div>
+
+  <div class="mbar">
+    <div class="ms"><span class="lab">Take to · click to arm</span><div class="ochips">
+      <div class="oc arm"><span class="p">2</span><div class="nn"><span class="led"></span>WIDE</div><div class="s">3840×1152 · armed</div></div>
+      <div class="oc arm"><span class="p">1</span><div class="nn"><span class="led"></span>TWINS</div><div class="s">1920×1152 · armed</div></div>
+      <div class="oc"><div class="nn"><span class="led"></span>STREAM</div><div class="s">1920×1080</div></div>
+      <div class="oc"><div class="nn"><span class="led off"></span>PILLARS</div><div class="s">offline</div></div>
+      <div class="oc all">ALL</div></div></div>
+    <div class="ms"><span class="lab">Transition</span><div style="display:flex;gap:8px"><div class="bb cut">CUT<small>instant</small></div><div class="bb auto">AUTO<small>animated</small></div><div class="durs"><span>FAST</span><span class="on">NORMAL</span><span>SLOW</span></div></div>
+      <div class="kb"><kbd>Space</kbd> AUTO · <kbd>Enter</kbd> CUT · <kbd>1</kbd>–<kbd>9</kbd> arm</div></div>
+    <div class="ms" style="border-right:0"><span class="lab">Emergency · all outputs · instant</span><div style="display:flex;gap:8px"><div class="bb hold">HOLD<small>"Back shortly"</small></div><div class="bb clear">CLEAR<small>graphics off</small></div><div class="bb ftb">FTB<small>to black</small></div></div>
+      <div class="kb"><kbd>H</kbd> hold · <kbd>⇧Esc</kbd> clear · <kbd>⇧B</kbd> FTB</div></div>
+  </div>
+</div>
+<script>
+  const G = 'https://mario.wiki.gallery/images/';
+  const P = [['SAM', 'Mario', '4/4f/MK8DX_Mario_Icon.png', '#e60012', 'Red'], ['PRIYA', 'Peach', '1/1f/MK8DX_Peach_Icon.png', '#1e6cff', 'Blue'],
+             ['TOM', 'Yoshi', '3/38/MK8DX_Yoshi_Icon.png', '#22b14c', 'Green'], ['ALEX', 'Bowser', 'd/d9/MK8DX_Bowser_Icon.png', '#ffc400', 'Yellow']];
+  document.getElementById('players').innerHTML = P.map((p, i) => `<div class="prow"><div class="n" style="background:${p[3]}${i === 3 ? ';color:#14213d' : ''}">P${i + 1}</div><div class="f">${p[0]}</div><div class="f"><img src="${G + p[2]}" alt="">${p[1]}<span class="car">▾</span></div><div class="f"><i class="dot" style="background:${p[3]}"></i>${p[4]}<span class="car">▾</span></div></div>`).join('');
+  document.getElementById('cupimg').src = G + '1/15/MK8_MushroomCup.png';
+  const T = [['Mario Kart Stadium', '5/50/MK8D_Mario_Kart_Stadium_Course_Icon_Full.png', 'Race 1 · done', 'done'], ['Water Park', '7/7d/MK8D_Water_Park_Course_Icon_Full.png', 'Race 2 · now', 'cur'],
+             ['Sweet Sweet Canyon', 'a/af/MK8D_Sweet_Sweet_Canyon_Course_Icon_Full.png', 'Race 3', ''], ['Thwomp Ruins', '8/8b/MK8D_Thwomp_Ruins_Course_Icon_Full.png', 'Race 4', '']];
+  document.getElementById('races').innerHTML = '<div class="arrow">◀</div>' + T.map((t) => `<div class="race ${t[3]}"><img src="${G + t[1]}" alt=""><div>${t[0]}<small>${t[2]}</small></div></div>`).join('') + '<div class="arrow">▶</div>';
+  const R = [['1st', 15, 27], ['3rd', 10, 19], ['4th', 9, 18], ['2nd', 12, 22]];
+  document.getElementById('results').innerHTML = '<tr><th>PLAYER</th><th>FINISHED</th><th>POINTS</th><th>TOTAL</th></tr>' + P.map((p, i) => `<tr><td><span class="pc" style="background:${p[3]}"></span>${p[0]} <span style="color:var(--ui-muted)">· ${p[1]}</span></td><td><span class="sel2">${R[i][0]}<span>▾</span></span></td><td class="num plus">+${R[i][1]}</td><td class="num">${R[i][2]}</td></tr>`).join('');
+  const ui = document.getElementById('ui');
+  const fit = () => { const s = Math.min(innerWidth / 1600, innerHeight / 1000); ui.style.transform = `scale(${s})`; ui.style.left = (innerWidth - 1600 * s) / 2 + 'px'; ui.style.top = (innerHeight - 1000 * s) / 2 + 'px'; };
+  addEventListener('resize', fit); fit();
+  setInterval(() => { document.getElementById('clk').textContent = new Date().toTimeString().slice(0, 8); }, 1000);
+</script>
+</body>
+</html>

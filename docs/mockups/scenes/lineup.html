@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scene · Line-up</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Wide 3840×1152 on background B. Heading "THE RACERS" 120px centred at y 50 (Headings role, look classic).
+     Cards 780×860 at x 240/1100/1960/2820, y 250: medallion 420 (centred), P# chip, name 112px, character 40px. */
+  MK.page('wide', (f, S) => {
+    const look = MK.param('look', 'classic');
+    let h = MK.bgPattern(f) + `<div class="layer" data-layer="scene">`;
+    h += `<div style="position:absolute;left:0;right:0;top:50px;text-align:center">${MK.heading('THE RACERS', look, 120)}</div>`;
+    [240, 1100, 1960, 2820].forEach((x, i) => { const p = S.players[i];
+      h += `<div class="lineup-card" data-guide="lineup-card P${i + 1}" style="left:${x}px;--pc:${p.colour};--pt:${p.text}">
+        <div class="panel"><div class="chk"></div></div>${MK.medallion(p.icon)}
+        <div class="info"><span class="pchip">P${i + 1}</span><div class="name" data-fit="740"><span>${MK.esc(p.name)}</span></div><div class="char">${MK.esc(p.character)}</div></div></div>`; });
+    return h + '</div>';
+  }, 'Scene · Line-up (wide)');
+</script>
+</body>
+</html>

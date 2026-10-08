@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Background C · Sticker Wall</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Role: alternate holding background. Sticker tile 1280×1152 on a 24px grid (STICKER_TILE in shared/mockup.js):
+     rows A/C/E stickers, rows B/D wordmark bands (= watermark text, auto-shrunk to 980px). Sticker text is squeezed
+     to its box (data-max). Kart parade + road + logo plate (event title + pre-title) on top. */
+  MK.page(MK.param('format', 'wide'), (f, S) => MK.bgStickers(f, S.event), 'Background C · Sticker Wall');
+</script>
+</body>
+</html>

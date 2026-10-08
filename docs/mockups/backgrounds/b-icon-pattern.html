@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Background B · Icon Pattern</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Role: base behind content scenes AND the empty background behind the Switch gameplay pip on the Wide LED.
+     Tile 1250×280 (see #pattern-tile in shared/mockup.js), drifts diagonally one tile per 38s. */
+  MK.page(MK.param('format', 'wide'), (f) => MK.bgPattern(f), 'Background B · Icon Pattern');
+</script>
+</body>
+</html>
