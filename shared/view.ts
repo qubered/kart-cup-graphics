@@ -13,8 +13,8 @@ export const FORMAT_CANVAS: Record<OutputFormat, { w: number; h: number }> = {
 }
 
 export const SUPPORTED_SCENES: Record<OutputFormat, SceneId[]> = {
-  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner'],
-  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner'],
+  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice'],
+  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice'],
   twin: ['none', 'title'],
 }
 
@@ -75,6 +75,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
         scene = { kind: 'winner', player: pv(top.playerIndex), total: top.total }
         break
       }
+      case 'notice': scene = { kind: 'notice', doc: structuredClone(data.notice) }; break
       default: scene = null
     }
   }

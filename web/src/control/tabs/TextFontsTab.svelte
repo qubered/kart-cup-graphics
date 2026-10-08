@@ -3,6 +3,7 @@
   import { sync } from '../sync'
   import { BUNDLED_FONTS, fontStack } from '../../../../shared/fonts'
   import type { EventText } from '../../../../shared/types'
+  import NoticeEditor from '../notice/NoticeEditor.svelte'
 
   const st = $derived($control.payload?.state)
   const ev = $derived(st?.draft.event)
@@ -70,6 +71,12 @@
         {/each}
       </div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Notice board</h2>
+    <NoticeEditor doc={st.draft.notice} {fonts} />
+    <div class="dim" style="margin-top:8px; font-size:12px">Shown by the Notice scene. Sizes are px on a 1080p canvas.</div>
   </div>
 
   <div class="card">

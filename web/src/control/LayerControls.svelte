@@ -22,6 +22,7 @@
     { id: 'nextRace', label: 'Next race' },
     { id: 'standings', label: 'Standings' },
     { id: 'winner', label: 'Winner' },
+    { id: 'notice', label: 'Notice' },
   ]
   const progBg = $derived<BackgroundId>(prog?.background?.id ?? 'none')
   const progScene = $derived<SceneId>((prog?.scene?.kind as SceneId | undefined) ?? 'none')
