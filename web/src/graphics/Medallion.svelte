@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { fade } from 'svelte/transition'
   import { cubicIn } from 'svelte/easing'
   import { bounceIn } from './motion'
@@ -8,8 +9,8 @@
   const showImg = $derived(!!image && failedFor !== image)
   // The first image of a medallion arrives with its parent (which has its own entrance): no bounce/fade then.
   // Only later image changes animate.
-  let settled = false
-  $effect(() => { settled = true })
+  let settled = $state(false)
+  onMount(() => { settled = true })
 </script>
 
 <div class="medallion" class:emblem style:--s="{size}px">
