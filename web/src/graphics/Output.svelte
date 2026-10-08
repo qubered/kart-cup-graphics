@@ -26,6 +26,23 @@
   const keyMode = typeof document !== 'undefined' && document.documentElement.getAttribute('data-matte') === 'key'
 
   const view = $derived(payload?.view ?? null)
+
+  // Backgrounds are slices of the 5760-wide LED stage [left twin 960 | wide 3840 | right twin 960], so separate outputs line up
+  // without the superwide page. A full twin canvas holds both halves side by side, so it draws two slices (left end / right end).
+  const STAGE_W = 5760, TWIN_HALF = 960
+  const segments = $derived.by(() => {
+    if (stage) return [{ left: 0, width: '100%', x: stage.x, w: stage.w }]
+    if (view?.format === 'wide') return [{ left: 0, width: '100%', x: TWIN_HALF, w: STAGE_W }]
+    if (view?.format === 'twin') {
+      if (part === 'left') return [{ left: 0, width: '100%', x: 0, w: STAGE_W }]
+      if (part === 'right') return [{ left: 0, width: '100%', x: STAGE_W - TWIN_HALF * 2, w: STAGE_W }]
+      return [
+        { left: 0, width: `${TWIN_HALF}px`, x: 0, w: STAGE_W },
+        { left: TWIN_HALF, width: `${TWIN_HALF}px`, x: STAGE_W - TWIN_HALF, w: STAGE_W },
+      ]
+    }
+    return [{ left: 0, width: '100%', x: 0, w: undefined as number | undefined }]
+  })
   // First render after (re)load is always a CUT: every duration is 0.
   const enter = $derived(!payload || firstPaint ? 0 : enterDuration(payload.frame.mode, payload.frame.speed))
   const exit = $derived(!payload || firstPaint ? 0 : exitDuration(payload.frame.mode, payload.frame.speed))
@@ -52,9 +69,17 @@
           {#if keyMode}
             <div class="key-solid"></div>
           {:else if view.background.id === 'A'}
-            <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} dur={enter} stageW={stage?.w} stageX={stage?.x} />
+            {#each segments as seg (seg.left)}
+              <div class="seg" style:left="{seg.left}px" style:width={seg.width}>
+                <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} dur={enter} stageW={seg.w} stageX={seg.x} />
+              </div>
+            {/each}
           {:else if view.background.id === 'B'}
-            <IconPattern w={view.canvas.w} h={view.canvas.h} mattify={payload?.mattify ?? false} stageW={stage?.w} stageX={stage?.x} />
+            {#each segments as seg (seg.left)}
+              <div class="seg" style:left="{seg.left}px" style:width={seg.width}>
+                <IconPattern w={view.canvas.w} h={view.canvas.h} mattify={payload?.mattify ?? false} stageW={seg.w} stageX={seg.x} />
+              </div>
+            {/each}
           {:else if view.background.id === 'C'}
             <StickerWall watermark={view.background.watermark} title={view.background.title} titleFont={view.fonts.eventTitle} labelFont={view.fonts.labels} {lowfx} w={view.canvas.w} h={view.canvas.h} />
           {/if}
@@ -97,6 +122,7 @@
   .crop { position: relative; overflow: hidden; background: transparent; }
   .canvas { position: relative; overflow: hidden; background: transparent; }
   /* Each layer is its own stacking context so z-indexes inside a layer never escape above later layers (scene, HOLD, ...). */
+  .seg { position: absolute; top: 0; height: 100%; overflow: hidden; }
   .key-solid { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #fff; }
   .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; isolation: isolate; }
   [data-debug] {
