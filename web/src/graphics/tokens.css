@@ -3,17 +3,9 @@
  * Every value here is the approved value from brainstorming. The real app should
  * copy these verbatim into its own CSS (web/src/graphics/tokens.css).
  *
- * Mockup-only: Google Fonts @import below. The real app self-hosts via @fontsource.
+ * App copy: Google Fonts @import and the MK F2 @font-face removed (see web/src/lib/fonts.css).
  */
-@import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,400;0,500;0,700;0,800;0,900;1,800;1,900&family=Exo+2:ital,wght@0,900;1,900&family=Lexend+Zetta:wght@800;900&family=Saira:ital,wght@0,900;1,900&family=Roboto:ital,wght@0,900;1,900&family=Titan+One&family=Lilita+One&family=Russo+One&family=Baloo+2:wght@800&family=Luckiest+Guy&family=JetBrains+Mono:wght@500;700&display=swap');
 
-/* Mario Kart F2: LETTERS ONLY. Its digits are serif placeholders, so digits,
-   spaces and punctuation fall through to Lexend Zetta. */
-@font-face {
-  font-family: "MK F2";
-  src: url("../../../assets/fonts/mario_kart_f2.ttf") format("truetype");
-  unicode-range: U+0041-005A, U+0061-007A;
-}
 
 :root {
   /* ---------- font roles (defaults) ---------- */

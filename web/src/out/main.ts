@@ -1,5 +1,6 @@
 import { mount, tick } from 'svelte'
 import '../lib/fonts.css'
+import '../graphics/tokens.css'
 import Output from '../graphics/Output.svelte'
 import { connect } from '../lib/socket'
 import { whenReady } from '../lib/ready'
