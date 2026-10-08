@@ -567,6 +567,47 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       if (!state.tournaments.some((t) => t.id === cmd.id)) throw new CommandError(`Unknown tournament: ${cmd.id}`)
       return { ...state, tournaments: state.tournaments.filter((t) => t.id !== cmd.id), activeTournamentId: state.activeTournamentId === cmd.id ? null : state.activeTournamentId }
     }
+    case 'duplicateTournament': {
+      const src = state.tournaments.find((t) => t.id === cmd.id)
+      if (!src) throw new CommandError(`Unknown tournament: ${cmd.id}`)
+      const wasActive = state.activeTournamentId === src.id
+      const id = nextId('tournament', state.tournaments.map((t) => t.id))
+      // Fresh match ids that are unused by any tournament, so a ref can never point into the wrong one.
+      const used = state.tournaments.flatMap((t) => t.matches.map((m) => m.id))
+      const idMap = new Map<string, string>()
+      for (const m of src.matches) { const nid = nextId('match', [...used, ...idMap.values()]); idMap.set(m.id, nid) }
+      const remap = (mid: string) => idMap.get(mid) ?? mid
+      const reset = cmd.resetScores === true
+      // The active tournament's live match lives in the draft; liveMatches folds it in.
+      const from = structuredClone(wasActive ? liveMatches(src, state.draft) : src.matches)
+      const matches: Match[] = from.map((m, i) => ({
+        ...m, id: remap(m.id),
+        ...(m.slotSources ? { slotSources: m.slotSources.map((x) => (x ? { ...x, matchId: remap(x.matchId) } : x)) } : {}),
+        data: reset ? { ...m.data, race: racePatch(m.data.race, { raceIndex: 0 }, ctx), scores: blankScores() } : m.data,
+        status: reset ? (i === 0 ? 'live' : 'pending') : m.status,
+        winnerOverride: reset ? null : m.winnerOverride,
+      }))
+      const activeMatchId = reset ? matches[0].id : remap(src.activeMatchId)
+      const copy: Tournament = {
+        ...structuredClone(src), id, name: cmd.name ?? `${src.name} (copy)`, matches, activeMatchId,
+      }
+      // Scene references that pointed into the source follow the copy.
+      let layers = state.layers
+      if (wasActive) {
+        const fix = (l: Layers): Layers => {
+          const out = { ...l }
+          if (l.matchRef && typeof l.matchRef === 'object') out.matchRef = { matchId: remap(l.matchRef.matchId) }
+          if (l.matchSet?.ids) out.matchSet = { ...l.matchSet, ids: l.matchSet.ids.map(remap) }
+          return out
+        }
+        layers = Object.fromEntries(Object.entries(state.layers).map(([k, l]) => [k, fix(l)]))
+      }
+      const d = copy.matches.find((m) => m.id === activeMatchId)!.data
+      return {
+        ...state, layers, tournaments: [...state.tournaments, copy], activeTournamentId: id,
+        draft: { ...state.draft, players: structuredClone(d.players), race: structuredClone(d.race), scores: structuredClone(d.scores) },
+      }
+    }
     case 'addMatch': {
       const t = requireTournament(state)
       const round = cmd.round ?? t.matches.reduce((m, x) => Math.max(m, x.round), 0)

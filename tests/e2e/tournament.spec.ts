@@ -70,6 +70,25 @@ test('create tournament, edit a match, switch active match, edit results', async
   await expect.poll(async () => (await state()).tournaments[0].winScreen.blocks.cupEmblem).toBe(false)
 })
 
+test('duplicate a tournament, with and without scores', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'Orig' })
+  await command({ type: 'setMatchResults', matchId: 'match-1', races: [{ raceNo: 1, trackId: 'rainbow-road', positions: [1, 2, 3, 4] }] })
+  await page.goto('/control')
+  await page.getByRole('tab', { name: 'Tournament' }).click()
+  await page.locator('[data-tournament=tournament-1] [data-duplicate]').click()
+  await expect.poll(async () => (await state()).tournaments.length).toBe(2)
+  let s = await state()
+  expect(s.activeTournamentId).toBe('tournament-2')
+  expect(s.tournaments[1].name).toBe('Orig (copy)')
+  expect(s.tournaments[1].matches[0].data.scores.races).toHaveLength(1)
+  await page.locator('[data-tournament=tournament-1] [data-duplicate-clear]').click()
+  await expect.poll(async () => (await state()).tournaments.length).toBe(3)
+  s = await state()
+  expect(s.activeTournamentId).toBe('tournament-3')
+  expect(s.tournaments[2].matches[0].data.scores.races).toHaveLength(0)
+  expect(s.tournaments[0].matches[0].data.scores.races).toHaveLength(1)
+})
+
 test('scene controls: cup win part, split across outputs, matches set; cue action', async ({ page }) => {
   await command({ type: 'createTournament', name: 'T' })
   await page.goto('/control')

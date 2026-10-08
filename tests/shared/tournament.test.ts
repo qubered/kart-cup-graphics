@@ -19,6 +19,74 @@ const L = { background: 'none' as const, scene: 'none' as const, trackCard: fals
 /** positions: slot 0 wins every race by default */
 const race = (raceNo: number, positions = [1, 2, 3, 4]) => ({ raceNo, trackId: 'rainbow-road', positions })
 
+describe('duplicateTournament', () => {
+  const played = () => {
+    let s = run(base, { type: 'createTournament', name: 'Cup' }, { type: 'setPlayer', index: 0, patch: { name: 'ALPHA' } },
+      { type: 'setMatchResults', matchId: 'match-1', races: [race(1)] })
+    s = run(s, { type: 'setActiveMatch', matchId: 'match-2' }, { type: 'setWinnerOverride', matchId: 'match-1', slot: 2 })
+    return s
+  }
+  it('is accepted by the command schema', () => {
+    expect(commandSchema.safeParse({ type: 'duplicateTournament', id: 't', name: 'X', resetScores: true }).success).toBe(true)
+    expect(commandSchema.safeParse({ type: 'duplicateTournament' }).success).toBe(false)
+  })
+  it('copies with fresh ids, remapped sources and active match, and becomes active', () => {
+    const s0 = played()
+    const s = run(s0, { type: 'duplicateTournament', id: 'tournament-1' })
+    expect(s.tournaments).toHaveLength(2)
+    const [a, b] = s.tournaments
+    expect(s.activeTournamentId).toBe(b.id)
+    expect(b.id).not.toBe(a.id)
+    expect(b.name).toBe('Cup (copy)')
+    const oldIds = new Set(a.matches.map((m) => m.id))
+    expect(b.matches.every((m) => !oldIds.has(m.id))).toBe(true)
+    expect(b.matches.map((m) => m.label)).toEqual(a.matches.map((m) => m.label))
+    expect(b.activeMatchId).toBe(b.matches[1].id)
+    const fin = b.matches[4]
+    expect(fin.slotSources?.map((x) => x?.matchId)).toEqual(b.matches.slice(0, 4).map((m) => m.id))
+    expect(b.matches[0].winnerOverride).toBe(2)
+    expect(b.matches[0].data.players[0].name).toBe('ALPHA')
+    expect(b.matches[0].data.scores.races).toHaveLength(1)
+    expect(run(s0, { type: 'duplicateTournament', id: 'tournament-1', name: 'Mine' }).tournaments[1].name).toBe('Mine')
+  })
+  it('remaps scene references that pointed into the source', () => {
+    let s = played()
+    s = run(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'cupWin', matchRef: { matchId: 'match-3' } } })
+    s = run(s, { type: 'duplicateTournament', id: 'tournament-1' })
+    expect(s.layers.wide.matchRef).toEqual({ matchId: T(s).matches[2].id })
+  })
+  it('is a deep copy: editing the copy never changes the original', () => {
+    let s = run(played(), { type: 'duplicateTournament', id: 'tournament-1' })
+    const before = JSON.stringify(s.tournaments[0])
+    s = run(s, { type: 'setPlayer', index: 0, patch: { name: 'COPYONLY' } }, { type: 'setMatchResults', matchId: T(s).matches[0].id, races: [race(1), race(2)] },
+      { type: 'updateMatch', matchId: T(s).matches[0].id, patch: { label: 'Changed' } },
+      { type: 'setWinnerOverride', matchId: T(s).matches[0].id, slot: 3 }, { type: 'renameTournament', id: T(s).id, name: 'Other' })
+    expect(JSON.stringify(s.tournaments[0])).toBe(before)
+    // and the other way round: loading the original and editing leaves the copy alone
+    const copyBefore = JSON.stringify(s.tournaments[1])
+    s = run(s, { type: 'loadTournament', id: 'tournament-1' }, { type: 'setPlayer', index: 1, patch: { name: 'ORIG' } })
+    expect(JSON.stringify(s.tournaments[1])).toBe(copyBefore)
+  })
+  it('resetScores clears results, statuses and overrides but keeps players, cups and labels', () => {
+    const s0 = played()
+    const s = run(s0, { type: 'duplicateTournament', id: 'tournament-1', resetScores: true })
+    const b = T(s)
+    expect(b.matches.every((m) => m.data.scores.races.length === 0 && m.data.scores.adjustments.every((x) => x === 0))).toBe(true)
+    expect(b.matches.every((m) => m.winnerOverride === null)).toBe(true)
+    expect(b.matches.map((m) => m.status)).toEqual(['live', 'pending', 'pending', 'pending', 'pending'])
+    expect(b.activeMatchId).toBe(b.matches[0].id)
+    expect(s.draft.scores.races).toEqual([])
+    expect(b.matches[0].data.players[0].name).toBe('ALPHA')
+    expect(b.matches.map((m) => m.label)).toEqual(['Semi 1', 'Semi 2', 'Semi 3', 'Semi 4', 'Final'])
+    // original untouched
+    expect(s.tournaments[0].matches[0].data.scores.races).toHaveLength(1)
+    expect(s.tournaments[0].matches[0].winnerOverride).toBe(2)
+  })
+  it('rejects an unknown tournament', () => {
+    expect(() => run(base, { type: 'duplicateTournament', id: 'nope' })).toThrow()
+  })
+})
+
 describe('tournament reducer', () => {
   const start = () => run(base, { type: 'createTournament', name: 'Cup' })
 

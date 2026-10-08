@@ -206,6 +206,8 @@ export type Command =
   | { type: 'loadTournament'; id: string | null }
   | { type: 'renameTournament'; id: string; name: string }
   | { type: 'deleteTournament'; id: string }
+  /** Deep copy with fresh tournament and match ids; the copy becomes active. resetScores clears races/adjustments/statuses/overrides but keeps players, cups and labels. */
+  | { type: 'duplicateTournament'; id: string; name?: string; resetScores?: boolean }
   | { type: 'addMatch'; label?: string; round?: number }
   | { type: 'updateMatch'; matchId: string; patch: MatchPatch }
   | { type: 'removeMatch'; matchId: string }

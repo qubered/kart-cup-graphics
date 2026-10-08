@@ -250,6 +250,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('loadTournament'), id: z.string().nullable() }),
   z.object({ type: z.literal('renameTournament'), id: z.string(), name: z.string().trim().min(1).max(100) }),
   z.object({ type: z.literal('deleteTournament'), id: z.string() }),
+  z.object({ type: z.literal('duplicateTournament'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), resetScores: z.boolean().optional() }),
   z.object({ type: z.literal('addMatch'), label: z.string().trim().min(1).max(100).optional(), round: z.number().int().min(0).max(20).optional() }),
   z.object({
     type: z.literal('updateMatch'), matchId: z.string(),

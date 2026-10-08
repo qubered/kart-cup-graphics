@@ -45,6 +45,8 @@
           {#if show.activeTournamentId !== t.id}
             <button type="button" data-load disabled={!connected} onclick={() => send({ type: 'loadTournament', id: t.id })}>Load</button>
           {/if}
+          <button type="button" data-duplicate disabled={!connected} onclick={() => send({ type: 'duplicateTournament', id: t.id })}>Duplicate</button>
+          <button type="button" data-duplicate-clear disabled={!connected} onclick={() => send({ type: 'duplicateTournament', id: t.id, resetScores: true })}>Duplicate (clear scores)</button>
           <button type="button" data-rename disabled={!connected} onclick={() => { renameTo = t.name; renamingId = t.id }}>Rename</button>
           <button type="button" class="danger" data-delete disabled={!connected} onclick={() => remove(t.id, t.name)}>Delete</button>
         </span>
