@@ -17,5 +17,5 @@
 
 <style>
   .show { display: flex; flex-direction: column; gap: 12px; }
-  .loading { opacity: .6; padding: 12px; }
+  .loading { color: var(--ui-muted); padding: 12px; }
 </style>

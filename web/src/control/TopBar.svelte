@@ -28,16 +28,15 @@
 </script>
 
 <header class="topbar">
-  <span class="title">Kart Cup Graphics</span>
+  <span class="title">{st ? `${st.draft.event.title} ${st.draft.event.titleAccent}`.trim() : 'Kart Cup'} — Control</span>
   <span class="now" data-now>Now: <b>{nowText}</b></span>
-  <span class="spacer"></span>
-  <div class="lights">
+  <div class="stat">
     {#each st?.outputs ?? [] as o (o.id)}
-      <span class="light" title="{o.name}: {presence[o.id]?.program ?? 0} program, {presence[o.id]?.preview ?? 0} preview clients">
-        <span class="dot" class:on={(presence[o.id]?.program ?? 0) > 0}></span>{o.name}
+      <span title="{o.name}: {presence[o.id]?.program ?? 0} program, {presence[o.id]?.preview ?? 0} preview clients">
+        <span class="led" class:on={(presence[o.id]?.program ?? 0) > 0}></span>{o.name}
       </span>
     {/each}
+    <span>On air <span class="onair">{onAir}</span></span>
+    <span class="clock">{clock}</span>
   </div>
-  <span class="dim">On air <span class="clock">{onAir}</span></span>
-  <span class="clock">{clock}</span>
 </header>

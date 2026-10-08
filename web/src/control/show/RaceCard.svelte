@@ -12,55 +12,47 @@
   const played = $derived(new Set(show.draft.scores.races.map((r) => r.trackId)))
 </script>
 
-<section class="card" aria-label="Race">
-  <h2>Race</h2>
-  <div class="bar">
-    <div class="seg" role="group" aria-label="Race mode">
+<section class="card flush" aria-label="Race">
+  <div class="ch">
+    <h2>Race</h2>
+    <div class="r"><button type="button" disabled={!connected} onclick={() => send({ type: 'randomRace' })}>Random</button></div>
+  </div>
+  <div class="rrow">
+    <div class="seg sel" role="group" aria-label="Race mode">
       <button type="button" class:on={race.mode === 'cup'} disabled={!connected} onclick={() => send({ type: 'setRace', patch: { mode: 'cup' } })}>Cup</button>
       <button type="button" class:on={race.mode === 'track'} disabled={!connected} onclick={() => send({ type: 'setRace', patch: { mode: 'track' } })}>Single track</button>
     </div>
-    <button type="button" class="rand" disabled={!connected} onclick={() => send({ type: 'randomRace' })}>Random</button>
+    {#if race.mode === 'cup'}
+      <div class="cupf">
+        {#if cup}<img src={cup.emblem} alt="" width="24" height="24" />{/if}
+        <select aria-label="Cup" value={race.cupId} disabled={!connected} onchange={(e) => send({ type: 'setRace', patch: { cupId: e.currentTarget.value, raceIndex: 0 } })}>
+          {#each catalog.cups as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
+        </select>
+      </div>
+    {:else}
+      <div class="cupf"><TrackSelect value={race.trackId} {catalog} disabled={!connected} onchange={(id) => send({ type: 'setRace', patch: { trackId: id } })} /></div>
+    {/if}
   </div>
 
   {#if race.mode === 'cup'}
-    <div class="cuprow">
-      {#if cup}<img src={cup.emblem} alt="" width="40" height="40" />{/if}
-      <select aria-label="Cup" value={race.cupId} disabled={!connected} onchange={(e) => send({ type: 'setRace', patch: { cupId: e.currentTarget.value, raceIndex: 0 } })}>
-        {#each catalog.cups as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
-      </select>
-      <button type="button" aria-label="Race back" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: -1 })}>◀</button>
-      <button type="button" aria-label="Race forward" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: 1 })}>▶</button>
-    </div>
-    <div class="tiles">
+    <div class="races">
+      <button type="button" class="arrow" aria-label="Race back" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: -1 })}>◀</button>
       {#each tracks as t, i (t.id)}
-        <button type="button" class="tile" class:done={played.has(t.id)} class:current={race.raceIndex === i} data-race-tile={i} disabled={!connected}
+        <button type="button" class="race" class:done={played.has(t.id)} class:cur={race.raceIndex === i} data-race-tile={i} disabled={!connected}
           onclick={() => send({ type: 'setRace', patch: { raceIndex: i as 0 | 1 | 2 | 3 } })}>
           <img src={t.thumb} alt="" />
-          <span>{i + 1} · {t.name}</span>
+          <span class="rl">{t.name}<small>Race {i + 1}{played.has(t.id) ? ' · done' : race.raceIndex === i ? ' · now' : ''}</small></span>
         </button>
       {/each}
+      <button type="button" class="arrow" aria-label="Race forward" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: 1 })}>▶</button>
     </div>
-  {:else}
-    <TrackSelect value={race.trackId} {catalog} disabled={!connected} onchange={(id) => send({ type: 'setRace', patch: { trackId: id } })} />
   {/if}
 </section>
 
 <style>
-  .card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 12px 14px; }
-  h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; opacity: .8; }
-  .bar { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-  .seg { display: inline-flex; }
-  button, select { font: inherit; color: inherit; background: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
-  button:disabled, select:disabled { opacity: .5; cursor: not-allowed; }
-  .seg button { border-radius: 0; }
-  .seg button:first-child { border-radius: 6px 0 0 6px; }
-  .seg button:last-child { border-radius: 0 6px 6px 0; }
-  .seg .on { background: #3b82f6; border-color: #3b82f6; }
-  .cuprow { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .tile { display: flex; flex-direction: column; gap: 4px; padding: 6px; text-align: left; }
-  .tile img { width: 100%; aspect-ratio: 5 / 3; object-fit: cover; border-radius: 4px; background: #0b1220; }
-  .tile.done { opacity: .45; }
-  .tile.current { outline: 2px solid #3b82f6; opacity: 1; }
-  .tile span { font-size: 12px; }
+  .cupf { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: var(--ui-bg); border: 1px solid var(--ui-field); border-radius: 6px; padding: 0 9px; }
+  .cupf :global(.cur) { border: 0; padding-left: 0; padding-right: 0; }
+  .cupf img { width: 24px; height: 24px; object-fit: contain; flex: none; }
+  .cupf select { flex: 1; border: 0; background: transparent; padding: 6px 0; color: #fff; font-size: 14px; }
+  .cupf select option { background: var(--ui-panel); }
 </style>

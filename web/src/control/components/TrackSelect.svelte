@@ -37,7 +37,7 @@
 <div class="ts" bind:this={root}>
   <button type="button" class="cur" data-track {disabled} onclick={() => (open = !open)} aria-haspopup="listbox" aria-expanded={open}>
     {#if current}<img src={current.thumb} alt="" width="40" height="24" />{/if}
-    <span>{current?.name ?? 'Choose a track…'}</span>
+    <span>{current?.name ?? 'Choose a track…'}</span><span class="car">▾</span>
   </button>
   {#if open}
     <div class="pop">
@@ -61,14 +61,17 @@
 </div>
 
 <style>
-  .ts { position: relative; min-width: 240px; }
-  .cur { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 8px; background: #1f2937; color: inherit; border: 1px solid #374151; border-radius: 6px; cursor: pointer; text-align: left; font: inherit; }
+  .ts { position: relative; min-width: 0; }
+  .cur { display: flex; align-items: center; gap: 6px; width: 100%; padding: 6px 9px; background: var(--ui-bg); color: #fff; border: 1px solid var(--ui-field); border-radius: 6px; white-space: nowrap; cursor: pointer; text-align: left; font: inherit; }
   .cur:disabled { opacity: 0.5; cursor: not-allowed; }
-  .pop { position: absolute; z-index: 20; top: 100%; left: 0; width: 300px; background: #111827; border: 1px solid #374151; border-radius: 6px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-  input { width: 100%; box-sizing: border-box; padding: 4px 6px; background: #1f2937; color: inherit; border: 1px solid #374151; border-radius: 4px; font: inherit; }
+  .pop { position: absolute; z-index: 20; top: 100%; left: 0; width: 300px; background: var(--ui-panel); border: 1px solid var(--ui-field); border-radius: 6px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  input { width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--ui-bg); color: inherit; border: 1px solid var(--ui-field); border-radius: 4px; font: inherit; }
   .list { margin-top: 6px; max-height: 300px; overflow: auto; }
   .grp { display: flex; align-items: center; gap: 6px; padding: 4px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .7; }
   .opt button { display: flex; align-items: center; gap: 6px; width: 100%; padding: 3px 6px; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; }
-  .opt.active button { background: #3b82f6; }
+  .opt.active button { background: var(--ui-accent); }
   .none { padding: 6px; opacity: .6; }
+  .cur span:first-of-type { overflow: hidden; text-overflow: ellipsis; }
+  .car { margin-left: auto; color: var(--ui-muted); }
+  .cur img { width: 24px; height: 24px; object-fit: contain; }
 </style>

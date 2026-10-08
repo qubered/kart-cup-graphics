@@ -43,7 +43,7 @@
   const clock = $derived(new Date(now).toLocaleTimeString('en-GB'))
   const onAir = $derived.by(() => {
     const since = st?.clocks.onAirSince
-    if (!since) return '--:--:--'
+    if (!since) return '00:00:00'
     const s = Math.max(0, Math.floor((now - since) / 1000))
     return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`
   })
@@ -53,11 +53,21 @@
     return r.mode === 'cup' ? (catalog?.tracksOfCup(r.cupId)[r.raceIndex]?.id ?? '') : r.trackId
   })
   const trackName = $derived(catalog?.track(trackId)?.name ?? '')
-  const raceLine = $derived.by(() => {
+  const raceNow = $derived.by(() => {
     if (!st) return ''
     const r = st.draft.race
-    if (r.mode === 'cup') return `Race ${r.raceIndex + 1} / 4 · ${catalog?.cup(r.cupId)?.name ?? ''} · ${trackName}`
-    return `Race ${st.draft.scores.races.length + 1} · ${trackName}`
+    return r.mode === 'cup' ? `Race ${r.raceIndex + 1} / 4` : `Race ${st.draft.scores.races.length + 1}`
+  })
+  const raceSub = $derived.by(() => {
+    if (!st) return ''
+    const r = st.draft.race
+    return r.mode === 'cup' ? `${catalog?.cup(r.cupId)?.name ?? ''} · ${trackName}` : trackName
+  })
+  const upNext = $derived.by(() => {
+    if (!st) return '—'
+    const r = st.draft.race
+    if (r.mode !== 'cup' || r.raceIndex >= 3) return '—'
+    return catalog?.tracksOfCup(r.cupId)[r.raceIndex + 1]?.name ?? '—'
   })
   const rows = $derived(st ? standings(st.draft.scores) : [])
 
@@ -79,28 +89,31 @@
         {@const o = outputOf(t)}
         {#if o}
           {@const c = CANVAS[o.format]}
+          {@const up = lit(t)}
           <div class="tile {t.view}" class:hold data-tile style="left:{t.x}px;top:{t.y}px;width:{t.w}px;height:{t.h}px">
             <div class="vp" use:fit={{ width: c.w, height: c.h }}>
               <div class="frame" style="width:{c.w}px;height:{c.h}px"><iframe title="{o.name} {t.view}" src={src(t)} width={c.w} height={c.h} scrolling="no"></iframe></div>
             </div>
-            <div class="label"><i class="light" class:up={lit(t)}></i>{o.name.toUpperCase()} · {t.view.toUpperCase()}</div>
+            <div class="lbl"><i class="swatch"></i>{o.name.toUpperCase()} · {t.view.toUpperCase()}</div>
+            <div class="stat"><span class="led" class:off={!up}></span>{up ? 'connected' : 'offline'}</div>
           </div>
         {/if}
       {:else if t.kind === 'info'}
-        <div class="tile panel" class:hold data-tile style="left:{t.x}px;top:{t.y}px;width:{t.w}px;height:{t.h}px">
-          <div class="clock">{clock}</div>
-          <div class="kv"><span>ON AIR</span><b>{onAir}</b></div>
-          <div class="kv"><span>NOW</span><b>{raceLine}</b></div>
+        <div class="tile info" class:hold data-tile style="left:{t.x}px;top:{t.y}px;width:{t.w}px;height:{t.h}px">
+          <div><div class="k">Time of day</div><div class="big">{clock}</div></div>
+          <div><div class="k">On air</div><div class="onair">{onAir}</div></div>
+          <div><div class="k">Now</div><div class="v">{raceNow}</div><div class="sub">{raceSub}</div></div>
           {#if !connected}<div class="warn">Disconnected — reconnecting…</div>{/if}
         </div>
       {:else}
-        <div class="tile panel" class:hold data-tile style="left:{t.x}px;top:{t.y}px;width:{t.w}px;height:{t.h}px">
-          <div class="ttl">STANDINGS</div>
+        <div class="tile stand" class:hold data-tile style="left:{t.x}px;top:{t.y}px;width:{t.w}px;height:{t.h}px">
+          <div class="k">Standings</div>
           {#each rows as r (r.playerIndex)}
             {@const p = st!.draft.players[r.playerIndex]}
-            <div class="srow"><span class="pos">{r.position}</span><i class="dot" style="background:{colourHex(p.colour)}"></i><span class="nm">{p.name}</span><b>{r.total}</b></div>
+            <div class="srow"><span class="n">{r.position}</span><span class="c" style="background:{colourHex(p.colour)}"></span><span class="nm">{p.name}</span><span class="pt">{r.total}</span></div>
           {/each}
-          <div class="next">Up next: {trackName}</div>
+          <div class="k" style="margin-top:auto">Up next</div>
+          <div class="v">{upNext}</div>
         </div>
       {/if}
     {/each}
@@ -108,28 +121,38 @@
 </div>
 
 <style>
-  :global(html), :global(body) { margin: 0; background: #05080f; overflow: hidden; height: 100%; }
-  .stage-wrap { position: fixed; inset: 0; overflow: hidden; }
-  .stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; font-family: system-ui, sans-serif; color: #e5e7eb; }
-  .tile { position: absolute; box-sizing: border-box; overflow: hidden; background: #000; border: 3px solid #374151; }
-  .tile.program { border-color: #dc2626; }
-  .tile.preview { border-color: #16a34a; }
-  .tile.hold { border-color: #f59e0b; }
+  :global(html), :global(body) { margin: 0; background: #000; overflow: hidden; height: 100%; }
+  .stage-wrap { position: fixed; inset: 0; overflow: hidden; background: #000; }
+  .stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0;
+    font: 600 14px/1 var(--ui-font); color: #fff; }
+  .stage :global(*) { box-sizing: border-box; }
+  .tile { position: absolute; overflow: hidden; background: #000; border: 3px solid #333; }
+  .tile.program { border-color: var(--ui-program); }
+  .tile.preview { border-color: var(--ui-preview); }
+  .tile.hold { border-color: var(--ui-hold); }
   .vp { width: 100%; overflow: hidden; }
   .frame { position: relative; }
   iframe { color-scheme: normal; border: 0; display: block; background: transparent; }
-  .label { position: absolute; left: 6px; top: 6px; padding: 2px 8px; font-size: 14px; font-weight: 700; letter-spacing: .05em; background: rgba(0,0,0,.65); border-radius: 4px; display: flex; align-items: center; gap: 6px; }
-  .light { width: 9px; height: 9px; border-radius: 50%; background: #6b7280; display: inline-block; }
-  .light.up { background: #22c55e; }
-  .panel { background: #0f172a; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
-  .clock { font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .kv { display: flex; gap: 10px; align-items: baseline; font-size: 20px; }
-  .kv span { opacity: .6; font-size: 14px; width: 64px; }
-  .warn { color: #f59e0b; }
-  .ttl { font-size: 13px; letter-spacing: .08em; opacity: .7; }
-  .srow { display: flex; align-items: center; gap: 8px; font-size: 18px; }
-  .pos { width: 18px; opacity: .7; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; }
-  .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .next { margin-top: auto; font-size: 13px; opacity: .7; }
+  .lbl { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 9; background: rgba(0,0,0,.75); padding: 6px 12px; border-radius: 4px; font-size: 15px; letter-spacing: .06em; white-space: nowrap; display: flex; gap: 8px; align-items: center; }
+  .swatch { width: 10px; height: 10px; border-radius: 50%; display: block; }
+  .program .swatch { background: var(--ui-program); }
+  .preview .swatch { background: var(--ui-preview); }
+  .stat { position: absolute; right: 8px; top: 8px; z-index: 9; background: rgba(0,0,0,.7); padding: 4px 8px; border-radius: 4px; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+  .led { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+  .led.off { background: #4b5563; }
+  .info { display: flex; gap: 40px; align-items: center; padding: 24px; border-color: #222; background: #0b0d11; }
+  .stand { display: flex; flex-direction: column; gap: 14px; padding: 24px; border-color: #222; background: #0b0d11; }
+  .tile.hold.info, .tile.hold.stand { border-color: var(--ui-hold); }
+  .k { font-size: 13px; letter-spacing: .12em; color: var(--ui-muted); text-transform: uppercase; }
+  .big { font: 700 76px/1 var(--ui-mono); font-variant-numeric: tabular-nums; }
+  .onair { white-space: nowrap; font: 700 40px/1 var(--ui-mono); margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .v { font-size: 24px; font-weight: 700; }
+  .info .v { margin-top: 8px; }
+  .sub { color: var(--ui-muted); margin-top: 6px; }
+  .warn { color: var(--ui-hold); }
+  .srow { display: flex; align-items: center; gap: 14px; font-size: 30px; font-weight: 700; }
+  .srow .n { width: 30px; color: var(--ui-muted); }
+  .srow .c { width: 10px; height: 36px; border-radius: 2px; }
+  .srow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .srow .pt { font-family: var(--ui-mono); }
 </style>

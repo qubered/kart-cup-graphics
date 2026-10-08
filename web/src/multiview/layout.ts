@@ -35,14 +35,15 @@ export function multiviewLayout(outputs: OutputConfig[]): Tile[] {
   }
   const sx = MV_W - M - sw
   tiles.push({ kind: 'info', x: ix, y, w: sx - M - ix, h: rowH })
-  tiles.push({ kind: 'standings', x: sx, y, w: sw, h: rowH })
+  // Standings runs the full height of the lower area (mockup); the bottom row sits to its left.
+  tiles.push({ kind: 'standings', x: sx, y, w: sw, h: MV_H - M - y })
   y += rowH + M
 
   const rest = outputs.filter((o) => o !== wide)
   if (rest.length) {
     const aspects = rest.map((o) => CANVAS[o.format].w / CANVAS[o.format].h)
     const sum = aspects.reduce((a, b) => a + b, 0)
-    const avail = inner - M * (rest.length - 1)
+    const avail = sx - 2 * M - M * (rest.length - 1)
     const maxH = MV_H - M - y
     const h = Math.max(1, Math.floor(Math.min(maxH, avail / sum)))
     let x = M

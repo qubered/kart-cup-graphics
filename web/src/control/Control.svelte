@@ -52,25 +52,28 @@
           <button class="tab" role="tab" aria-selected={tab === t} onclick={() => (tab = t)}>{t}</button>
         {/each}
       </div>
-      {#if tab === 'Show'}
-        <ShowTab />
-      {:else if tab === 'Text & Fonts'}
-        <TextFontsTab />
-      {:else if tab === 'Outputs'}
-        <OutputsTab />
-      {:else}
-        <SettingsTab />
-      {/if}
+      <div class="body">
+        {#if tab === 'Show'}
+          <ShowTab />
+        {:else if tab === 'Text & Fonts'}
+          <TextFontsTab />
+        {:else if tab === 'Outputs'}
+          <OutputsTab />
+        {:else}
+          <SettingsTab />
+        {/if}
+      </div>
     </section>
     <section class="right">
       <div class="otabs" role="tablist" aria-label="Outputs">
         {#each st?.outputs ?? [] as o (o.id)}
           <button class="otab" role="tab" data-output-tab={o.id} aria-selected={$control.selectedOutput === o.id}
             onclick={() => selectOutput(o.id)}>
-            <span class="dot" class:on={(presence[o.id]?.program ?? 0) > 0}></span>{o.name}
+            <span class="led" class:on={(presence[o.id]?.program ?? 0) > 0}></span>{o.name}
             {#if (pending[o.id] ?? 0) > 0}<span class="badge" data-pending>{pending[o.id]}</span>{/if}
           </button>
         {/each}
+        <a class="otab" href="/multiview" target="_blank" rel="noopener">Open Multiview ↗</a>
       </div>
       <Monitors />
       <LayerControls />

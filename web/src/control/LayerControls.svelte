@@ -41,39 +41,41 @@
 </script>
 
 {#if out && layers}
-  <div class="card">
-    <h2>Layers · {out.name}</h2>
-    <div class="layer">
-      <span class="lbl">Background</span>
-      <div class="seg">
+  <div class="layers">
+    <div class="lrow">
+      <span class="k">Background</span>
+      <div class="seg lay">
         {#each BGS as b (b.id)}
           <button class:draft={layers.background === b.id} class:live={progBg === b.id}
             onclick={() => patch({ background: b.id })}>{b.label}</button>
         {/each}
       </div>
-      <span class="lbl">Scene</span>
-      <div class="seg">
+      <span class="legend">
+        <span><b style="background:var(--ui-preview)"></b>preview</span>
+        <span><b style="background:var(--ui-program)"></b>on air</span>
+      </span>
+    </div>
+    <div class="lrow">
+      <span class="k">Scene</span>
+      <div class="seg lay">
         {#each scenes as s (s.id)}
           <button class:draft={layers.scene === s.id} class:live={progScene === s.id}
             onclick={() => patch({ scene: s.id })}>{s.label}</button>
         {/each}
       </div>
-      <span class="lbl">Overlays</span>
-      <div class="seg">
-        <button class:draft={layers.trackCard} class:live={progTrack}
-          onclick={() => patch({ trackCard: !layers.trackCard })}>Track card</button>
-        <button class:draft={layers.lowerThirds.on} class:live={progLT.length > 0}
-          onclick={() => patch({ lowerThirds: { ...layers.lowerThirds, on: !layers.lowerThirds.on } })}>Lower thirds</button>
-        {#if out.format !== 'twin'}
-          {#each [0, 1, 2, 3] as i (i)}
-            <label class="pchk"><input type="checkbox" checked={layers.lowerThirds.players.includes(i)}
-              onchange={() => togglePlayer(i)} />P{i + 1}</label>
-          {/each}
-        {/if}
-      </div>
     </div>
-    <div class="row" style="margin-top:12px">
-      <a href="/multiview" target="_blank" rel="noopener"><button type="button">Open Multiview</button></a>
+    <div class="lrow">
+      <span class="k">Overlays</span>
+      <button class="sw" class:draft={layers.trackCard} class:live={progTrack} aria-pressed={layers.trackCard}
+        onclick={() => patch({ trackCard: !layers.trackCard })}><i></i>Track card</button>
+      <button class="sw" class:draft={layers.lowerThirds.on} class:live={progLT.length > 0} aria-pressed={layers.lowerThirds.on}
+        onclick={() => patch({ lowerThirds: { ...layers.lowerThirds, on: !layers.lowerThirds.on } })}><i></i>Lower thirds</button>
+      {#if out.format !== 'twin'}
+        {#each [0, 1, 2, 3] as i (i)}
+          <label class="pchk"><input type="checkbox" checked={layers.lowerThirds.players.includes(i)}
+            onchange={() => togglePlayer(i)} />P{i + 1}</label>
+        {/each}
+      {/if}
     </div>
   </div>
 {/if}
