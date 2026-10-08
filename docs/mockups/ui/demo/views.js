@@ -1,49 +1,79 @@
 'use strict'
 /* Shared views: graphics stand-ins, monitors, top bar, transport, Show data, Setup. Layout-specific views are in layout-a.js / layout-b.js. */
 
-/* ── graphics stand-ins (schematic; driven by the demo's live state so names and scores show up) ── */
-function gfx(Lr, o = {}) {
-  const part = o.part ?? Lr.part
-  const st = standing(), maxT = Math.max(1, st[0]?.t || 1)
-  const board = (right) => `<div class="st${right ? ' r' : ''}">${st.map((s) => `<i style="--w:${Math.max(10, (s.t / maxT) * 100)}%;--c:${PCOL[s.i]}"><em>${esc(s.name)}</em><u>${s.t}</u></i>`).join('')}</div>`
-  const hero = (name, big, cls = '') => `<div class="hero ${cls}"><div class="med">${big}</div><div class="nm2">${esc(name)}</div></div>`
-  const race = S.scores.races[S.race.index] ?? []
-  const raceWinner = S.players[race.indexOf(1)]?.name ?? st[0]?.name ?? ''
+/* ── graphics stand-ins (schematic; driven by the data in ctx so names, scores and matches show up) ──
+   ctx = { draft: the active match, tour: the active tournament (or null), event }. On-air frames keep the ctx they were taken with. */
+function refMatch(Lr, ctx) {
+  const t = ctx.tour, act = ctx.draft, ref = Lr.matchRef ?? 'active'
+  if (!t || ref === 'active') return act
+  if (ref === 'previous') { const i = t.matches.findIndex((m) => m.id === act.id); return t.matches[i - 1] ?? act }
+  return t.matches.find((m) => m.id === ref) ?? act
+}
+function gfx(Lr, ctx = liveCtx(), o = {}) {
+  const A = ctx.draft, ev = ctx.event ?? S.event, t = ctx.tour, part = o.part ?? Lr.part, cfg = t?.winScreen ?? WIN_DEFAULT()
+  const board = (M, cls, withPts) => {
+    const st = standingOf(M), maxT = Math.max(1, st[0]?.t || 1), li = lastRowIdx(M), row = li >= 0 ? M.scores.races[li] : null
+    return `<div class="st ${cls}">${st.map((s) => `<i style="--w:${Math.max(10, (s.t / maxT) * 100)}%;--c:${PCOL[s.i]}"><em>${esc(s.name)}</em><u>${withPts && cfg.blocks.racePoints && row ? '+' + (POINTS[row[s.i] - 1] ?? 0) + ' · ' : ''}${s.t}</u></i>`).join('')}</div>`
+  }
+  const hero = (name, big, cls) => `<div class="hero ${cls}"><div class="med">${big}</div><div class="nm2">${esc(name)}</div></div>`
+  const winLayout = (M, who, big, withPts, extra) => {
+    const showHero = cfg.blocks.hero && part !== 'board', showBoard = cfg.blocks.board && part !== 'hero', centre = cfg.layout === 'heroCentre'
+    let h = ''
+    if (showHero) h += hero(who, big, centre ? 'mid top' : '')
+    if (showBoard) h += board(M, showHero ? (centre ? 'low' : 'r') : '', withPts)
+    if (cfg.blocks.cupEmblem) h += '<div class="emb"></div>'
+    if (cfg.blocks.trackName && extra) h += `<div class="ttag">${esc(extra)}</div>`
+    return h
+  }
   let h = `<div class="gfx"><div class="bgl bg${Lr.bg}"></div>`
   switch (Lr.scene) {
     case 'title':
-      h += `<div class="ttl2" style="${Lr.logo === 'title' ? 'padding-left:24%' : ''}"><b>${esc(S.event.title)}</b><span>${esc(S.event.accent)} CHAMPIONSHIP</span></div>`
+      h += `<div class="ttl2" style="${Lr.logo === 'title' ? 'padding-left:24%' : ''}"><b>${esc(ev.title)}</b><span>${esc(ev.accent)} CHAMPIONSHIP</span></div>`
       if (Lr.logo === 'corner') h += '<div class="logo corner"></div>'
       if (Lr.logo === 'title') h += '<div class="logo intitle"></div>'
       break
     case 'lineup':
-      h += `<div class="lu">${S.players.map((p, i) => `<i style="--c:${PCOL[i]};${i < (Lr.reveal ?? 4) ? '' : 'visibility:hidden'}">${esc(p.name)}</i>`).join('')}</div>`; break
+      h += `<div class="lu">${A.players.map((p, i) => `<i style="--c:${PCOL[i]};${i < (Lr.reveal ?? 4) ? '' : 'visibility:hidden'}">${esc(p.name)}</i>`).join('')}</div>`; break
     case 'nextRace':
-      h += `<div class="nr"><div class="card2">${esc(trackName()).replace(' ', '<br>')}</div><div class="tx"><b>RACE ${S.race.index + 1}</b><span>${esc(S.race.cup).toUpperCase()}</span></div></div>`; break
-    case 'standings': h += board(false); break
-    case 'winner': h += hero(st[0]?.name ?? '', '1', 'mid'); break
-    case 'raceWin': h += part === 'board' ? board(false) : hero(raceWinner, '1') + (part === 'full' ? board(true) : ''); break
-    case 'cupWin': h += part === 'board' ? board(false) : hero(st[0]?.name ?? '', '★') + (part === 'full' ? board(true) : ''); break
-    case 'bracket': h += '<div class="br"><div><i></i><i></i><i></i><i></i></div><div><i></i><i></i></div><div><i></i></div></div>'; break
-    case 'matches': h += '<div class="mt"><i></i><i></i><i></i><i></i></div>'; break
+      h += `<div class="nr"><div class="card2">${esc(trackOf(A)).replace(' ', '<br>')}</div><div class="tx"><b>RACE ${A.race.index + 1}</b><span>${esc(A.race.cup).toUpperCase()}</span></div></div>`; break
+    case 'standings': h += board(A, '', false); break
+    case 'winner': h += hero(standingOf(A)[0]?.name ?? '', '1', 'mid') ; break
+    case 'raceWin': { const M = refMatch(Lr, ctx), li = lastRowIdx(M), who = li >= 0 ? M.players[M.scores.races[li].indexOf(1)]?.name : standingOf(M)[0]?.name
+      h += winLayout(M, who ?? '', '1', true, li >= 0 ? `Race ${li + 1} · ${trackOf(M, li)}` : ''); break }
+    case 'cupWin': { const M = refMatch(Lr, ctx), w = winnerSlot(M), who = w != null ? M.players[w].name : standingOf(M)[0]?.name
+      h += winLayout(M, who ?? '', '★', false, `${M.label} · ${M.race.cup}`); break }
+    case 'bracket': {
+      if (!t) { h += '<div class="nt"><i></i><i></i></div>'; break }
+      const bc = t.bracket ?? BRACKET_DEFAULT()
+      const node = (m) => { const st = matchStatus(t, m), ws = winnerSlot(m), has = recordedCount(m) > 0
+        return `<div class="bnode ${st}"><b>${esc(m.label)}${bc.showStatus && st === 'live' ? ' ●' : ''}</b><span>${has && ws != null ? esc(m.players[ws].name) + (bc.showScores ? ' · ' + totalsOf(m)[ws] : '') : 'TBD'}</span></div>` }
+      h += `<div class="brx">${rounds(t).map((r) => `<div class="brc">${t.matches.filter((m) => m.round === r).map(node).join('')}</div>`).join('')}</div>`; break }
+    case 'matches': {
+      const mc = t?.matchesScene ?? MATCHES_DEFAULT(), all = t?.matches ?? [A], rs = t ? rounds(t) : [0]
+      const list = Lr.matchSet === 'r0' ? all.filter((m) => m.round === rs[0]) : Lr.matchSet === 'r1' ? all.filter((m) => m.round === rs[rs.length - 1]) : all
+      const kind = o.kind ?? 'wide', detail = mc.detail[kind] ?? 'full', cols = mc.layout === 'row' ? list.length : mc.layout === 'stack' ? 1 : Math.min(2, list.length)
+      h += `<div class="mgr" style="grid-template-columns:repeat(${Math.max(1, cols)},1fr)">${list.map((m) => { const st = standingOf(m), has = recordedCount(m) > 0, live = t && m.id === t.activeMatchId
+        const rows = detail === 'winner' ? st.slice(0, 1) : st
+        return `<div class="mcd ${live && mc.liveMarker ? 'live' : ''}"><b>${esc(m.label)}${live && mc.liveMarker ? ' ●' : ''}</b>${rows.map((s) => `<div><i style="background:${PCOL[s.i]}"></i><span>${esc(s.name)}</span><u>${has || mc.pendingScores === 'zeros' ? s.t : ''}</u></div>`).join('')}</div>` }).join('')}</div>`; break }
     case 'notice': h += `<div class="nt"><i></i><i></i><i></i></div>${Lr.qr ? '<div class="qr sm"></div>' : ''}`; break
     case 'qr': h += '<div class="qr"></div>'; break
   }
-  if (Lr.lt) h += `<div class="lts">${S.players.map((p, i) => ((Lr.ltp ?? [0, 1, 2, 3]).includes(i) ? `<i style="--c:${PCOL[i]}">${esc(p.name)}</i>` : '<i style="visibility:hidden"></i>')).join('')}</div>`
-  if (Lr.track) h += `<div class="tcard">${esc(trackName()).toUpperCase()}</div>`
+  if (Lr.lt) h += `<div class="lts">${A.players.map((p, i) => ((Lr.ltp ?? [0, 1, 2, 3]).includes(i) ? `<i style="--c:${PCOL[i]}">${esc(p.name)}</i>` : '<i style="visibility:hidden"></i>')).join('')}</div>`
+  if (Lr.track) h += `<div class="tcard">${esc(trackOf(A)).toUpperCase()}</div>`
   return h + '</div>'
 }
-/** Thumbnail for a look (uses the wide layers). */
+/** Thumbnail for a look (uses the wide layers and the live data). */
 const thumb = (look, extra = '') => `<div class="th">${gfx(look.layers.wide)}${extra}</div>`
+
 
 /* ── monitors ── */
 function monitor(kind, o) {
   const pv = kind === 'pv'
-  const Lr = pv ? S.layers[o.id] : (S.program[o.id]?.layers ?? blank())
-  let inner = gfx(Lr)
+  const Lr = pv ? S.layers[o.id] : (S.program[o.id]?.layers ?? blank()), ctx = pv ? liveCtx() : (S.program[o.id]?.ctx ?? liveCtx())
+  let inner = gfx(Lr, ctx, { kind: o.kind })
   if (!pv) {
     const t = S.lastTake, age = t ? Date.now() - t.t0 : 0
-    if (t && t.dur && age < t.dur && t.outs.includes(o.id)) inner += `<div class="fadeprev" style="animation-duration:${t.dur}ms;animation-delay:-${age}ms">${gfx(t.prev[o.id])}</div>`
+    if (t && t.dur && age < t.dur && t.outs.includes(o.id)) { const pr = t.prev[o.id]; inner += `<div class="fadeprev" style="animation-duration:${t.dur}ms;animation-delay:-${age}ms">${gfx(pr.layers, pr.ctx ?? ctx, { kind: o.kind })}</div>` }
     if (S.hold) inner += `<div class="gfx holdov"><b>HOLD</b><span>${esc(S.event.hold)}</span></div>`
     if (S.ftb) inner += '<div class="gfx ftbov"></div>'
   }
@@ -78,8 +108,14 @@ function sceneOptions(compact) {
   const l = S.layers[S.outSel], o = out(S.outSel), pg = S.program[S.outSel]?.layers ?? blank(), rows = []
   if (l.scene === 'lineup') { const seg = `<div class="seg">${[0, 1, 2, 3, 4].map((n) => `<button class="${(l.reveal ?? 4) === n ? 'sel' : ''} ${(pg.reveal ?? 4) === n && pg.scene === 'lineup' ? 'livedot' : ''}" data-act="layer" data-k="reveal" data-v="${n}">${n === 4 ? 'All' : n === 0 ? 'None' : 'P1' + (n > 1 ? '–' + n : '')}</button>`).join('')}</div>`, nx = '<button class="btn" data-act="reveal-next">Next player ▸</button>'
     rows.push(['Reveal', compact ? `<div class="two" style="grid-template-columns:2.2fr 1fr">${seg}${nx}</div>` : `${seg}<div style="margin-top:8px">${nx}</div>`]) }
-  if (l.scene === 'raceWin' || l.scene === 'cupWin') { const seg = `<div class="seg">${['full', 'hero', 'board'].map((p) => opt('layer', 'part', p, p[0].toUpperCase() + p.slice(1), l.part)).join('')}</div>`, m = '<div class="field">Active match<span class="car">▾</span></div>', sp = '<button class="btn" data-act="say" data-m="Split: hero on this output, scoreboard on another">Split outputs</button>'
-    rows.push(['Part', compact ? `<div class="two" style="grid-template-columns:1.3fr 1fr 1fr">${seg}${m}${sp}</div>` : `${seg}<div class="grid2" style="margin-top:8px">${m}${sp}</div>`]) }
+  if (l.scene === 'raceWin' || l.scene === 'cupWin') {
+    const seg = `<div class="seg">${['full', 'hero', 'board'].map((p) => opt('layer', 'part', p, p[0].toUpperCase() + p.slice(1), l.part)).join('')}</div>`
+    const ref = `<div class="seg">${[['active', 'Active'], ['previous', 'Previous']].map(([v, t]) => opt('layer', 'matchRef', v, t, l.matchRef ?? 'active')).join('')}</div>`
+    const sp = '<button class="btn" data-act="say" data-m="Split: hero on this output, scoreboard on another">Split outputs</button>'
+    if (compact) rows.push(['Part', `<div class="two" style="grid-template-columns:1.2fr 1fr 1fr">${seg}${ref}${sp}</div>`])
+    else { rows.push(['Part', `${seg}<div style="margin-top:8px">${sp}</div>`]); rows.push(['Match shown', ref]) }
+  }
+  if (l.scene === 'matches') rows.push(['Matches', `<div class="seg">${[['all', 'All'], ['r0', 'Round 1'], ['r1', 'Final round']].map(([v, t]) => opt('layer', 'matchSet', v, t, l.matchSet ?? 'all')).join('')}</div>`])
   if (l.scene === 'notice') rows.push(['Notice', tgl('layerflip', 'qr', 'Show QR codes', l.qr, pg.qr && pg.scene === 'notice')])
   if (l.scene === 'qr' && o.kind !== 'twin') rows.push(['Layout', `<div class="seg">${[['center', 'Centre'], ['title', 'Title + QR'], ['sides', 'Sides']].filter((x) => o.kind === 'wide' || x[0] !== 'sides').map(([v, t]) => opt('layer', 'qrStyle', v, t, l.qrStyle)).join('')}</div>`])
   if (l.scene === 'title') rows.push(['Logo', `<div class="seg">${[['off', 'Off'], ['corner', 'Corner'], ['title', 'In title']].map(([v, t]) => opt('layer', 'logo', v, t, l.logo)).join('')}</div>`])
@@ -91,9 +127,9 @@ const sectionHtml = (title, sum, body) => `<div class="sec"><div class="sh"><spa
 /* ── top bar / transport / chrome ── */
 const clockText = () => new Date().toLocaleTimeString([], { hour12: false })
 function topBar() {
-  const items = [['Live', 'live'], ['Show data', 'data'], ['Setup', 'setup']], r = S.race
+  const items = [['Live', 'live'], ['Race', 'race'], ['Tournament', 'tour'], ['Setup', 'setup']], m = activeMatch(), t = activeTournament()
   return `<div class="top"><div class="ttl">${esc(S.event.title)} ${esc(S.event.accent)}</div><div class="nav">${items.map(([l, v]) => `<button data-act="view" data-v="${v}" class="${S.view === v ? 'on' : ''}">${l}</button>`).join('')}</div>
-    <div class="now">Now: <b>Race ${r.index + 1} / 4</b> · ${esc(r.cup)} · ${esc(trackName())}</div>
+    <div class="now">Now: <b>${t ? esc(m.label) + ' · ' : ''}${raceLabel(m)}</b> · ${esc(m.race.cup)} · ${esc(trackOf(m))}</div>
     <div class="stat">${OUTS.map((o) => `<span><i class="led ${S.outOnline[o.id] ? 'on' : ''}"></i>${o.name}</span>`).join('')}<span>On air <span class="onair" id="onair">${hhmmss(Date.now() - S.onAirSince)}</span></span><span class="clock" id="clock">${clockText()}</span></div></div>`
 }
 function transport() {
@@ -109,26 +145,6 @@ function transport() {
 }
 function chrome() {
   return `${S.connected ? '' : '<div class="banner" role="alert">Disconnected — reconnecting… controls are disabled</div>'}${S.toast ? `<div class="toast" role="status"><span>${esc(S.toast.text)}</span>${S.toast.undo ? '<button class="tundo" data-act="undo">Undo</button>' : ''}<button class="tx" data-act="toastx" aria-label="Dismiss">✕</button></div>` : ''}`
-}
-
-/* ── Show data workspace ── */
-const posSelect = (i) => `<select class="field sel44" data-chg="pos" data-i="${i}">${[1, 2, 3, 4].map((p) => `<option value="${p}" ${S.scores.races[S.race.index]?.[i] === p ? 'selected' : ''}>${p}</option>`).join('')}</select>`
-function raceCard() {
-  return `<div class="card"><div class="ch"><span class="lab">Race</span><span class="dim" style="margin-left:auto;font-size:12px">${esc(S.race.cup)}</span></div><div style="padding:12px;display:grid;gap:10px">
-    <div class="field">${esc(trackName())}<span class="car">▾</span></div>
-    <div class="racepick"><button class="btn sm" data-act="raceidx" data-d="-1" aria-label="Previous race">◀</button>${[0, 1, 2, 3].map((n) => `<button class="btn sm ${n === S.race.index ? 'acc' : ''}" style="opacity:${n < S.race.index ? .55 : 1}" data-act="raceidx" data-i="${n}">${n + 1}</button>`).join('')}<button class="btn sm" data-act="raceidx" data-d="1" aria-label="Next race">▶</button></div></div></div>`
-}
-function playersCard() {
-  return `<div class="card"><div class="ch"><span class="lab">Players</span></div>${S.players.map((p, i) => `<div class="prow"><span class="n" style="background:${PCOL[i]}">P${i + 1}</span><input class="field inp" data-in="pn${i}" value="${esc(p.name)}" maxlength="14" aria-label="Player ${i + 1} name"><select class="field sel44" data-chg="pchar" data-i="${i}">${CHARS.map((c) => `<option ${c === p.char ? 'selected' : ''}>${c}</option>`).join('')}</select><span class="sw8" style="background:${PCOL[i]}"></span></div>`).join('')}</div>`
-}
-function resultsCard() {
-  const t = totals()
-  return `<div class="card flush"><div class="ch"><span class="lab">Results · Race ${S.race.index + 1}</span></div><table class="res"><tr><th>PLAYER</th><th>POS</th><th>+/−</th><th>TOTAL</th></tr>
-    ${S.players.map((p, i) => `<tr><td><i class="pc" style="background:${PCOL[i]}"></i>${esc(p.name)}</td><td>${posSelect(i)}</td><td><input class="field inp adj" type="number" data-in="adj${i}" value="${S.scores.adj[i] || 0}" aria-label="Adjustment ${esc(p.name)}"></td><td class="num">${t[i]}</td></tr>`).join('')}</table>
-    <div style="padding:12px;display:grid;gap:8px"><button class="btn acc" data-act="confirmres">Confirm results &amp; show standings →</button><span class="dim" style="font-size:12px">Loads the Standings look into Preview. Nothing goes to air.</span></div></div>`
-}
-function tournamentCard() {
-  return `<div class="card flush"><div class="ch"><span class="lab">Matches</span><button class="btn sm" style="margin-left:auto" data-act="nextmatch">Next match ▸</button></div>${S.tour.matches.map((m, i) => `<button class="mrow ${i === S.tour.active ? 'act' : ''}" data-act="tmatch" data-i="${i}"><span>${esc(m.label)}</span><span class="pill ${i < S.tour.active ? '' : i === S.tour.active ? 'auto' : 'none'}">${i < S.tour.active ? 'DONE' : i === S.tour.active ? 'ACTIVE' : 'NEXT'}</span></button>`).join('')}</div>`
 }
 
 /* ── Setup workspace ── */

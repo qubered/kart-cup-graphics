@@ -33,8 +33,8 @@ function cueEditor(r, c, i) {
 function rundownRail() {
   const r = R(), n = r.cues.length
   const pos = r.pvw >= 0 ? r.pvw + 1 : Math.max(0, r.pgm + 1)
-  const head = `<div class="ph"><span class="lab">Rundown</span><button class="btn sm rdbtn" data-act="rdmenu" aria-expanded="${S.rdMenu}"><span class="rdn">${esc(r.name)}</span> <span class="dim">${S.rdMenu ? '▴' : '▾'}</span></button><span class="dim cnt">${pos}/${n}</span>
-    <div class="seg s36 modeseg" style="margin-left:auto;width:112px"><button data-act="mode" data-m="run" class="${S.edit ? '' : 'sel'}">Run</button><button data-act="mode" data-m="edit" class="${S.edit ? 'sel e' : ''}">Edit</button></div></div>`
+  const head = `<div class="ph"><button class="btn sm rdbtn" data-act="rdmenu" aria-expanded="${S.rdMenu}"><span class="rdn">${esc(r.name)}</span> <span class="dim">${S.rdMenu ? '▴' : '▾'}</span></button><span class="dim cnt">${pos}/${n}</span>
+    <div class="seg s36 modeseg" style="margin-left:auto;width:108px"><button data-act="mode" data-m="run" class="${S.edit ? '' : 'sel'}">Run</button><button data-act="mode" data-m="edit" class="${S.edit ? 'sel e' : ''}">Edit</button></div></div>`
   let rows = ''
   r.cues.forEach((c, i) => {
     const look = lookById(c.lookId), st = cueStatus(r, i), name = esc(look?.name ?? '(missing look)')
@@ -114,13 +114,10 @@ function inspectorA() {
   return `<section class="panel"><div class="tabs2"><button data-act="rtab" data-t="look" class="${S.rtab === 'look' ? 'on' : ''}">Look</button><button data-act="rtab" data-t="library" class="${S.rtab === 'library' ? 'on' : ''}">Library <span class="ct">${S.looks.length}</span></button></div>${S.rtab === 'look' ? lookTabA() : libTabA()}</section>`
 }
 
-/* ── Show data (A) ── */
+/* ── workspace dispatch (A) ── */
 function viewA() {
   if (S.view === 'setup') return setupView()
-  if (S.view === 'data') {
-    return `<div class="main"><section class="panel"><div class="tabs2"><button data-act="dtab" data-t="race" class="${S.dtab === 'race' ? 'on' : ''}">Race &amp; players</button><button data-act="dtab" data-t="tour" class="${S.dtab === 'tour' ? 'on' : ''}">Tournament</button></div>
-      <div class="grow" style="overflow:auto;padding-bottom:12px">${S.dtab === 'race' ? raceCard() + playersCard() : tournamentCard()}</div></section>${centreA()}
-      <section class="panel"><div class="ph"><span class="lab">Results</span></div><div class="grow" style="overflow:auto">${resultsCard()}</div></section></div>`
-  }
+  if (S.view === 'race') return raceView()
+  if (S.view === 'tour') return tourView()
   return `<div class="main">${rundownRail()}${centreA()}${inspectorA()}</div>`
 }

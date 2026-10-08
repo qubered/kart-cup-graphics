@@ -14,14 +14,16 @@ function tweakB() {
     ${so.map(([k, h]) => `<div class="tr"><span class="lab">${k}</span><div>${h}</div></div>`).join('')}
     ${o.kind !== 'twin' && l.lt ? `<div class="tr"><span class="lab">Players</span><div class="chips4">${[0, 1, 2, 3].map((i) => `<button class="${l.ltp.includes(i) ? 'sel' : ''}" data-act="ltp" data-i="${i}">P${i + 1}</button>`).join('')}</div></div>` : ''}</section>`
 }
-function cueEditorB() {
+function cueEditPanelB() {
   const r = R(), i = S.selCue, c = r.cues[i]
-  if (!c) return `<section class="panel"><div class="ph"><span class="lab">Edit sequence</span></div><div class="empty"><b>Tap a chip to edit it</b><span>Drag the grip to reorder. Take, After and the look are edited here.</span></div></section>`
-  return `<section class="panel" style="overflow:auto"><div class="ph"><span class="lab">Cue ${i + 1}</span><b style="color:#fff">${esc(lookById(c.lookId)?.name ?? '')}</b><button class="xbtn" style="margin-left:auto" data-act="rmcue" data-i="${i}" aria-label="Remove cue ${i + 1}">✕</button></div>${cueEditor(r, c, i)}</section>`
+  if (!c) return `<section class="panel bank"><div class="ph"><span class="lab">Edit sequence</span></div><div class="empty" style="margin:auto;max-width:420px"><b>Tap a chip below to edit that cue</b><span>Drag a chip’s grip to reorder. Look, take, after and recall scope are edited here. The bank comes back when you switch to Run.</span></div></section>`
+  const look = lookById(c.lookId)
+  return `<section class="panel bank"><div class="ph"><span class="lab">Cue ${i + 1}</span><b style="color:#fff">${esc(look?.name ?? '')}</b><button class="xbtn" style="margin-left:auto" data-act="rmcue" data-i="${i}" aria-label="Remove cue ${i + 1}">✕</button></div>
+    <div class="grow" style="overflow:auto;display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px;align-content:start"><div class="curthumb">${look ? thumb(look) : ''}</div><div style="max-width:560px">${cueEditor(r, c, i)}</div></div></section>`
 }
 function leftColB() {
   const o = out(S.outSel)
-  return `<div class="lcol">${outTabs()}${monitorsBlock()}${S.seqEdit ? cueEditorB() : tweakB()}${o.kind !== 'wide' && !S.seqEdit ? logPanel() : ''}</div>`
+  return `<div class="lcol">${outTabs()}${monitorsBlock()}${tweakB()}${o.kind !== 'wide' ? logPanel() : ''}</div>`
 }
 
 /* ── bank ── */
@@ -70,9 +72,7 @@ function seqB() {
 
 function viewB() {
   if (S.view === 'setup') return setupView()
-  if (S.view === 'data') {
-    return `<div class="mainb data"><div class="lcol">${outTabs()}${monitorsBlock()}${logPanel()}</div>
-      <section class="panel"><div class="dgrid"><div>${raceCard()}${playersCard()}</div><div>${resultsCard()}${tournamentCard()}</div></div></section></div>`
-  }
-  return `<div class="mainb">${leftColB()}${bankB()}${seqB()}</div>`
+  if (S.view === 'race') return raceView()
+  if (S.view === 'tour') return tourView()
+  return `<div class="mainb">${leftColB()}${S.seqEdit ? cueEditPanelB() : bankB()}${seqB()}</div>`
 }

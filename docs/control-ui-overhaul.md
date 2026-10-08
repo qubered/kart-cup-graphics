@@ -1,6 +1,6 @@
 # Control page overhaul: options
 
-Status: **pitch, nothing built yet.** Three directions, each mocked at 1600×1000. Interactive prototypes: `docs/mockups/ui/control-v2-{a,b,c}.html` (serve the repo root, see `docs/mockups/README.md`). Screenshots live in `docs/mockups/ui/control-v2/`.
+Status: **pitch plus an interactive demo of options A and B (round 2). Nothing is built in the app yet.** Three directions were mocked at 1600×1000 in round 1; round 2 expands A and B and adds the Race page and Tournament workspace. Interactive prototypes: `docs/mockups/ui/control-v2-{a,b,c}.html` (serve the repo root, see `docs/mockups/README.md`). Screenshots live in `docs/mockups/ui/control-v2/`.
 
 ## What is wrong today
 
@@ -108,6 +108,65 @@ The effort row is my judgement, not a measured estimate.
 
 Companion keeps working for A, C and D as long as existing commands are unchanged.
 
+## Round 2: A and B in depth, plus Race and Tournament
+
+### The demo
+
+`docs/mockups/ui/demo/index.html` is a click-through prototype with simulated show state (no server, no real renderer; the graphics are stand-ins). Open it directly in a browser, or serve the repo root as described in `docs/mockups/README.md`.
+
+- The bar at the top switches **A (Rundown-first)** and **B (Look bank)**, opens a **Guide** of things to try, shows the bank page as a **Stream Deck**, simulates a **disconnect**, and resets. State is kept in the browser until reset.
+- `?layout=a|b`, `?view=live|race|tour|setup`, `?chrome=0` (hide the prototype bar), `?fit=0` (render 1:1), `?fresh=1` (ignore saved state).
+- `node docs/mockups/ui/demo/tools/flows.mjs` drives it like a user (clicks, keys, real pointer drags) and checks 100+ behaviours; `tools/capture.mjs` regenerates `demo/shots/`. Both need Chromium (`CHROMIUM_PATH`, default `/opt/pw-browsers/chromium`).
+
+### What A and B gained over the static mockups
+
+Shared: Undo (toast and Ctrl/Cmd+Z) for loads, saves, overwrites, deletes, moves; two-tap for overwrite and delete; pointer-based drag and drop (works with a finger); keyboard map; a disconnect state that disables controls; on-air graphics keep the data they were taken with, so editing scores never changes Program.
+
+- **A:** several rundowns with an inline switcher; per-cue editor with tri-state recall override; Library filter, rename, duplicate, delete; drag a Library grip onto the rundown; twin and HD outputs show Preview and Program side by side with a "recent takes" log.
+- **B:** bank pages (Pre-show, Races, Tournament, Sponsors); STORE with a two-tap overwrite; Edit bank (drag to swap, rename, clear, delete); REC to record a sequence; sequence Edit with a roomy cue editor; the bank page as a Stream Deck (5×3 keys = Companion page).
+
+### Race page (shared by A and B)
+
+Just three things, per your steer:
+
+1. **Live race and map.** The match's races as tiles with their maps. Tap a tile to make it the live race. A map picker changes the map for the live race ("Back to cup order" undoes it).
+2. **Players and result.** Each player's name and character are editable in place; tap a finishing place per player (a taken place moves, never duplicates); adjustment steppers. Everything saves as you tap, like the real results table.
+3. **Scoreboard.** Ranked table with per-race points, adjustments and totals. When the match is complete it shows the winner (tie-breaks noted) and **Next match ▶**.
+
+It does not touch the graphics and does not switch matches. Graphics scenes stay on **Live** (scene tiles; "Match shown: Previous" keeps a finished match on screen), and match switching lives on the Tournament Overview. Free play (no tournament) uses the same page.
+
+### Tournament workspace (shared by A and B)
+
+Replaces today's single long scroll (picker, match list, setup, results, three config panels stacked) with an **outline on the left and one focused page on the right**:
+
+- **Overview:** bracket at a glance (tap a match to edit its round), a readiness check with "Fix ›" links, the live-match selector, **Next match ▶**.
+- **One entry per round** (Semi-finals, Final, …) with LIVE and progress markers and a warning badge. A round page has the round name, a **tab per match**, and for the selected match its settings and players on the left and its results (with winner override) on the right. Later rounds fill players from earlier winners (per slot, or "fill from the previous round" in one tap).
+- **＋ Add round**, and **Graphics** (win screen, matches scene, bracket, each with a live preview and Send to Preview).
+- **All ›** (top of the outline) opens the tournament library: load, close, rename, duplicate, duplicate with scores cleared, delete (two-tap), new from a template.
+
+### Decisions the demo makes (please confirm)
+
+1. The Race page is only race and map, players, and scoreboard. "Next match" appears once, on the scoreboard's winner state; everything else about switching matches is on the Tournament Overview.
+2. **Save scope default changes:** Race & players and Scores are **off**; Look and Outputs armed are on (today's default has race and players on). A tournament already forces them off on recall, and recalling them mid-event would reset the race number.
+3. The rundown's last cue carries "then next match" (resets the rundown and stands by on its first cue), as the real cue action does.
+4. **GO is `G`**; Space stays AUTO and Enter stays CUT.
+5. Toasts sit top-right (like today's error toast) so they never cover GO, the race pad or the transport.
+
+### Additions this needs beyond round 1
+
+| Need | Used by | Notes |
+|---|---|---|
+| Round names | Tournament | Optional `Tournament.roundNames`; falls back to "Round n". Cosmetic. |
+| Per-race map override | Race | `RaceResult.trackId` already exists per saved race; this adds a way to set it before results exist (for example `Match.race.tracks`). |
+| Slot sources in one tap | Tournament | Client-side: one `setSlotSource` per slot. No new command. |
+| Result entry, next race, next match, overrides | Race, Tournament | Existing: `setMatchResults`, `updateMatch`, `nextMatch`, `setActiveMatch`, `setWinnerOverride`, `setSlotSource`, scene config commands. |
+
+Screenshots: `docs/mockups/ui/demo/shots/`. Option A: `a-live`, `a-library-update`, `a-save`, `a-edit`, `a-drag`, `a-library-manage`, `a-twin`, `a-hold`, `a-disconnected`, `a-live-previous-match`. Race: `a-race-start`, `a-race-complete`, `a-race-winner`, `a-race-map-changed`, `a-race-freeplay`. Tournament: `a-tour-overview`, `a-tour-round`, `a-tour-final`, `a-tour-graphics`, `a-tour-library`, `a-tour-new-round`, `a-tour-overview-todo`, `a-setup`. Option B: `b-live`, `b-store`, `b-bank-edit`, `b-sequence-edit`, `b-deck`, `b-rundowns`.
+
+### Where this leaves the recommendation
+
+The Race and Tournament workspaces are identical in A and B, so the **Live layout choice is independent** and can be made last. A is still my pick for a scripted show; B wins if the operator already thinks in Stream Deck pages. A hybrid is natural: A's layout with the Library offered as a numbered bank (B's slots and STORE) so a look has the same position on screen and on the deck.
+
 ## Research
 
 **Mobbin** has no broadcast-switcher products, so it is used for narrow UI mechanics only. Patterns I *rejected* for a live show: hover-reveal actions, floating popovers, modal confirms, ⌘K palettes.
@@ -128,8 +187,9 @@ The graphics in the mockups are schematic stand-ins, not the real renderer.
 
 ## Open questions
 
-1. Which option, or which mix? (A is my pick.)
-2. OK to call presets **Looks** in the UI?
-3. Do you run this on a touchscreen, or mouse and keyboard plus Stream Deck? That decides how aggressive the 44px targets need to be.
-4. Should Space become GO when a rundown is active, or stay AUTO with GO on `G`?
-5. Is anything on the Show data / Setup tabs used live that I have under Setup? (The mockups only restructure those; contents are unchanged.)
+1. A, B, or the hybrid (A's layout, Library as a numbered bank)? The Live layout is the only thing that differs.
+2. Touchscreen, or mouse and keyboard plus Stream Deck? That decides how strictly the 44px targets matter.
+3. Is the Race page scope right (race and map, players, scoreboard), and is it fine that only the winner state offers **Next match ▶**?
+4. Do you want the per-race **map override**, and optional **round names**?
+5. OK to flip the save-scope default (Race & players off)?
+6. Should Space become GO when a rundown has a standby cue, or stay AUTO with GO on `G`?

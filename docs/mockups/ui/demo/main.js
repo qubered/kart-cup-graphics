@@ -6,6 +6,7 @@ const params = new URLSearchParams(location.search)
 
 /* ── render ── */
 function render() {
+  normalize()
   const ui = $('ui')
   const ae = document.activeElement, fid = ae?.dataset?.in, sel = fid ? [ae.selectionStart, ae.selectionEnd] : null
   const scrolls = [...ui.querySelectorAll('.grow')].map((e) => e.scrollTop)
@@ -46,11 +47,44 @@ function act(a, d) {
     case 'online': S.outOnline[d.o] = !S.outOnline[d.o]; break
     case 'snav': S.snav = d.n; break
     case 'reset': try { localStorage.removeItem(STORE_KEY) } catch (e) { /* ignore */ } { const layout = S.layout; boot(true); S.layout = layout } toast('Demo reset'); break
-    case 'dtab': S.dtab = d.t; break
-    case 'raceidx': S.race.index = d.i != null ? +d.i : Math.max(0, Math.min(3, S.race.index + +d.d)); break
-    case 'confirmres': { const st = S.looks.find((x) => x.layers.wide.scene === 'standings'); if (st) { loadLook(st.id); toast('Standings loaded into Preview — nothing is on air yet') } break }
-    case 'tmatch': S.tour.active = +d.i; break
-    case 'nextmatch': S.tour.active = Math.min(S.tour.matches.length - 1, S.tour.active + 1); break
+    /* race control (operate the live match) */
+    case 'setmatch': setActiveMatch(d.id); break
+    case 'gotour': S.view = 'tour'; S.tpage = d.p || 'overview'; break
+    case 'mapreset': { const mm = activeMatch(), def = (CUPS[mm.race.cup] ?? CUPS['Mushroom Cup'])[+d.i % 4]; setMap(+d.i, def); break }
+    case 'setrace': setRaceIndex(+d.i); break
+    case 'place': setPlace(+d.s, +d.p); break
+    case 'adj': adjust(+d.s, +d.d); break
+    case 'clearrace': clearRace(); break
+    case 'nextrace': nextRace(); break
+    case 'nextmatch': nextMatch(); break
+    case 'showscene': showScene(d.s); if (d.go) S.view = 'live'; break
+
+    /* tournament set-up */
+    case 'tpage': S.tpage = d.p; S.confirm = null; break
+    case 'tfix': S.tpage = d.p; if (d.id) S.tmatch = d.id; break
+    case 'tmatchsel': S.tmatch = d.id; break
+    case 'tnew': S.tnew = { name: '', template: 'bracket' }; break
+    case 'tnewtpl': S.tnew.template = d.v; break
+    case 'tnewcancel': S.tnew = null; break
+    case 'tnewgo': if (S.tnew.name.trim()) { createTournament(S.tnew.name.trim(), S.tnew.template); S.tnew = null } break
+    case 'tload': loadTournament(d.id); break
+    case 'tclose': loadTournament(null); break
+    case 'trename': { const t = S.tournaments.find((x) => x.id === d.id); S.trename = { id: d.id, name: t.name }; break }
+    case 'trenamego': { const t = S.tournaments.find((x) => x.id === S.trename.id); if (t && S.trename.name.trim()) { pushUndo('rename tournament'); t.name = S.trename.name.trim() } S.trename = null; break }
+    case 'tdup': duplicateTournament(d.id, false); break
+    case 'tdupclean': duplicateTournament(d.id, true); break
+    case 'tdel': if (twoTap('tdel:' + d.id)) deleteTournament(d.id); break
+    case 'addmatch': addMatch(+d.r); break
+    case 'addround': addRound(); break
+    case 'rmround': if (twoTap('rr:' + d.r)) removeRound(+d.r); break
+    case 'fillprev': fillFromPrevious(+d.r); break
+    case 'rmmatch': if (twoTap('rm:' + d.id)) removeMatch(d.id); break
+    case 'wincfg': activeTournament().winScreen[d.k] = d.v; break
+    case 'winblock': { const w = activeTournament().winScreen.blocks; w[d.k] = !w[d.k]; break }
+    case 'mscfg': activeTournament().matchesScene[d.k] = d.v; break
+    case 'msdetail': activeTournament().matchesScene.detail[d.f] = d.v; break
+    case 'msmarker': { const ms = activeTournament().matchesScene; ms.liveMarker = !ms.liveMarker; break }
+    case 'brcfg': { const br = activeTournament().bracket; br[d.k] = !br[d.k]; break }
 
     /* rundown (A and B) */
     case 'mode': S.edit = d.m === 'edit'; S.openCue = null; S.advCue = null; S.rdMenu = false; break
@@ -131,8 +165,14 @@ document.addEventListener('click', (e) => {
 document.addEventListener('change', (e) => {
   const t = e.target, k = t.dataset?.chg; if (!k) return
   const r = R(), i = +t.dataset.i
-  if (k === 'pos') { const row = S.scores.races[S.race.index] ?? (S.scores.races[S.race.index] = [1, 2, 3, 4]), v = Number(t.value), j = row.indexOf(v); if (j >= 0 && j !== i) row[j] = row[i]; row[i] = v }
-  else if (k === 'pchar') S.players[i].char = t.value
+  if (k === 'mapsel') setMap(+t.dataset.i, t.value)
+  else if (k === 'mcup') { const mt = matchById(t.dataset.id); pushUndo('change cup'); mt.race.cup = t.value }
+  else if (k === 'mraces') { const mt = matchById(t.dataset.id); pushUndo('change races'); const n = +t.value; mt.race.count = n; while (mt.scores.races.length < n) mt.scores.races.push(null); mt.scores.races.length = n; mt.race.index = Math.min(mt.race.index, n - 1) }
+  else if (k === 'pchar2') { const mt = matchById(t.dataset.id); mt.players[+t.dataset.i].char = t.value }
+  else if (k === 'psrc') { pushUndo('change slot source'); setSlotSource(t.dataset.id, +t.dataset.i, t.value) }
+  else if (k === 'rpos') { const mt = matchById(t.dataset.id), ri = +t.dataset.r, pi = +t.dataset.i, v = +t.value; pushUndo('edit result'); const row = mt.scores.races[ri] ?? (mt.scores.races[ri] = [0, 0, 0, 0]); if (v) { const j = row.indexOf(v); if (j >= 0 && j !== pi) row[j] = 0 } row[pi] = v; if (row.every((p) => p === 0)) mt.scores.races[ri] = null }
+  else if (k === 'mwin') { const mt = matchById(t.dataset.id); pushUndo('set winner'); mt.winnerOverride = t.value === '' ? null : +t.value }
+  else if (k === 'livematch') setActiveMatch(t.value)
   else if (k === 'cuelook') { pushUndo('change look'); r.cues[i].lookId = t.value; if (r.pvw === i) loadLook(t.value, r.cues[i], true) }
   else if (k === 'cueafter') { pushUndo('change after'); r.cues[i].after = t.value || null }
   render()
@@ -140,8 +180,14 @@ document.addEventListener('change', (e) => {
 document.addEventListener('input', (e) => {
   const t = e.target, k = t.dataset?.in; if (!k) return
   let rerender = true
-  if (/^pn\d$/.test(k)) S.players[+k[2]].name = t.value.toUpperCase().slice(0, 14)
-  else if (/^adj\d$/.test(k)) S.scores.adj[+k[3]] = Number(t.value) || 0
+  if (k.startsWith('pfree:')) { setPlayerName(null, +k.slice(6), t.value) }
+  else if (k.startsWith('pname:')) { const [, id, i] = k.split(':'); setPlayerName(id, +i, t.value) }
+  else if (k.startsWith('adj2:')) { const [, id, i] = k.split(':'); matchById(id).scores.adj[+i] = Number(t.value) || 0 }
+  else if (k.startsWith('mlabel:')) { const mt = matchById(k.slice(7)); mt.label = t.value }
+  else if (k === 'tnewname') S.tnew.name = t.value
+  else if (k === 'tname') { activeTournament().name = t.value }
+  else if (k.startsWith('rname:')) { const tt = activeTournament(); tt.roundNames = tt.roundNames || {}; tt.roundNames[+k.slice(6)] = t.value }
+  else if (k === 'trename') S.trename.name = t.value
   else if (k === 'title') S.event.title = t.value
   else if (k === 'accent') S.event.accent = t.value
   else if (k === 'hold') S.event.hold = t.value
@@ -240,20 +286,21 @@ document.addEventListener('pointercancel', () => dragEnd(false))
 /* ── prototype chrome (outside the design) ── */
 const GUIDE = {
   A: [
-    ['Fire the show', 'Tap cue 6 “Standings” in the rundown: it loads into Preview (green). Press <kbd>G</kbd> or the big GO: it goes to Program with the cue’s Cut/Auto and the next cue loads. Cue 5 has “then next race” so the race number moves on.'],
+    ['Fire the show', 'Tap cue 5 “Standings” in the rundown: it loads into Preview (green). Press <kbd>G</kbd> or the big GO: it goes to Program with the cue’s Cut/Auto and the next cue loads. Cue 7 has “then next race”, the last cue “then next match”.'],
     ['Change Preview, then save or update', 'Tap a different scene tile. Preview shows MODIFIED. Open <b>Library</b>: “Update …” needs two taps and says how many cues it affects; “Save as new…” opens the inline form. Try the Undo toast.'],
-    ['Build a rundown from what you see', 'Switch the rundown to <b>Edit</b>. “Add cue from Preview” saves a look and appends a cue in one tap. Drag a Library card’s grip onto the rundown, or tap “＋ Cue”.'],
-    ['Reorder and edit a cue', 'In Edit, drag the grip to reorder, tap a row to open its editor (look, take, after, recalls). “Make unique” appears when a look is shared.'],
-    ['Show data', 'Open <b>Show data</b>: change a player name and a result position; the monitors and standings follow. “Confirm results” loads Standings into Preview only.'],
+    ['Build a rundown from what you see', 'Switch the rundown to <b>Edit</b>. “Add cue from Preview” saves a look and appends a cue in one tap. Drag a Library card’s grip onto the rundown, or tap “＋ Cue”. Drag a cue grip to reorder.'],
+    ['Run a race', 'Open <b>Race</b>. Left: pick the live race and its map. Middle: tap each player’s finishing place (names and characters are editable here too). Right: the scoreboard updates as you tap. Then <b>Next race ▶</b>; after the last race the winner appears with <b>Next match ▶</b>.'],
+    ['Show the result on the graphics', 'The Race page never touches the graphics. Use the <b>Live</b> scene tiles (Race win, Standings, Cup win, Bracket, Matches). “Match shown: Previous” keeps the match you just finished on screen after you move on.'],
+    ['Set up a tournament', 'Open <b>Tournament</b>. The left outline lists each round: click one to edit its matches (tabs), players and results. The Final’s players fill automatically from the semis. <b>Overview</b> lists anything still to fix; <b>All ›</b> manages tournaments.'],
     ['Emergency and safety', 'Try HOLD, CLEAR and FTB. Keys: Space = AUTO, Enter = CUT, H, Shift+Esc, Shift+B, 1–4 arm outputs, Ctrl/Cmd+Z undo. Use “Simulate disconnect” above.'],
   ],
   B: [
     ['Load and take', 'Tap a slot: it loads into Preview only. Tap CUT or AUTO (or press Space / Enter) to put it on air. A red outline marks the on-air look.'],
     ['STORE a look', 'Tap <b>STORE</b>, then an empty slot to save Preview there. Change Preview, STORE again and tap a filled slot twice to overwrite it.'],
     ['Edit the bank', 'Tap <b>Edit bank</b>: drag a grip to swap slots, tap a slot to rename, clear or delete. Use “Show deck” to see the page as a Stream Deck.'],
-    ['Record a sequence', 'Tap <b>REC</b>, then tap looks in the order you want. Or use “Add Preview as cue”. GO steps through the sequence.'],
-    ['Edit the sequence', 'Switch the strip to <b>Edit</b>: drag chip grips to reorder; tap a chip to edit its look, take and after in the panel on the left.'],
-    ['Pages', 'Use the page tabs (Pre-show, Races, Results, Sponsors) and ＋ to add a page. Pages map to Companion pages.'],
+    ['Record and edit a sequence', 'Tap <b>REC</b>, then tap looks in the order you want, or use “Add Preview as cue”. Switch the strip to <b>Edit</b> to drag chips and edit a cue’s take and after on the left. GO steps through the sequence.'],
+    ['Run a race', 'Open <b>Race</b> (same page as option A): pick the live race and map, tap finishing places, watch the scoreboard. The “Tournament” bank page holds Bracket and All matches looks.'],
+    ['Set up a tournament', 'Open <b>Tournament</b>: the outline on the left lists the rounds; each opens its matches, players and results. The Overview shows what is still to fix.'],
   ],
 }
 function protoRender() {
