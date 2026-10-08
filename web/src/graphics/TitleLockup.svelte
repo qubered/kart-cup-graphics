@@ -55,7 +55,7 @@
 
   // Every line is fitted without a floor, then all lines take the smallest fitted size.
   const natural: (number | undefined)[] = []
-  const sig = $derived(`${title.preTitle}\u0001${title.title}\u0001${title.accent}`)
+  const sig = $derived(`${title.preTitle}\u0001${title.title}\u0001${title.accent}\u0001${style}\u0001${font}\u0001${logo}\u0001${logoSrc ?? ''}`)
   // A new lockup instance fits itself from scratch: drop the previous instance's fitted sizes.
   $effect.pre(() => { void sig; natural.length = 0 })
   let box: HTMLElement | undefined = $state()

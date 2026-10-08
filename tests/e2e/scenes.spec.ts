@@ -9,7 +9,18 @@ for (const [scene, text] of [['lineup', 'THE RACERS'], ['nextRace', 'NEXT RACE']
     await page.waitForSelector('body[data-ready]')
   })
 
-test('standings re-sort keeps rows', async ({ page }) => {
+test('lineup with no players shows centred title only', async ({ page }) => {
+  await page.setViewportSize({ width: 3840, height: 1152 })
+  await command({ type: 'setLayers', outputId: 'wide', patch: { background: 'B', scene: 'lineup', lineupShown: 0 } }); await command({ type: 'take', mode: 'cut', outputIds: ['wide'] })
+  await page.goto('/out/wide'); await page.waitForSelector('body[data-ready]')
+  await expect(page.locator('[data-layer=scene]')).toContainText('THE RACERS'); await expect(page.locator('.lineup-card')).toHaveCount(0)
+  const b = await page.locator('[data-testid=lineup-hold]').first().boundingBox()
+  expect(b!.y).toBeGreaterThan(300)
+  await command({ type: 'setLayers', outputId: 'wide', patch: { lineupShown: 2 } }); await command({ type: 'take', mode: 'auto', outputIds: ['wide'] })
+  await expect(page.locator('.lineup-card')).toHaveCount(2)
+})
+
+test('standings re-sort keeps rows',async ({ page }) => {
   await command({ type: 'saveResults', raceNo: 1, trackId: 'mario-kart-stadium', positions: [1, 2, 3, 4] })
   await command({ type: 'setLayers', outputId: 'wide', patch: { background: 'B', scene: 'standings' } }); await command({ type: 'take', mode: 'cut', outputIds: ['wide'] })
   await page.goto('/out/wide'); await page.waitForSelector('body[data-ready]'); const row = await page.locator('.standing-row[data-slot="3"]').elementHandle()

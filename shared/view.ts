@@ -164,7 +164,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
   if (isSceneSupported(output.format, layers.scene, layers.part)) {
     switch (layers.scene) {
       case 'title': scene = { kind: 'title', title, logo: layers.logo ?? 'corner' }; break
-      case 'lineup': scene = { kind: 'lineup', players: data.players.slice(0, Math.min(4, Math.max(1, layers.lineupShown ?? 4))).map((_, i) => pv(i)) }; break
+      case 'lineup': scene = { kind: 'lineup', players: data.players.slice(0, Math.min(4, Math.max(0, layers.lineupShown ?? 4))).map((_, i) => pv(i)) }; break
       case 'nextRace':
         scene = {
           kind: 'nextRace', raceLabel: info.raceLabel, cupName: info.cupName, cupEmblem: info.cupEmblem,

@@ -9,7 +9,9 @@ export interface Rect { x: number; y: number; w: number; h: number }
 export interface Placed { left: number; top: number; scale: number; dw: number; dh: number }
 export interface HeroPlaced extends Placed { horizontal: boolean }
 export interface BoardPlaced extends Placed { compact: boolean; races: number }
-export interface WinLayout { hero: HeroPlaced | null; board: BoardPlaced | null; metaInBoard: boolean }
+/** Twin only: `heroHalves` / `boardHalves` say which 960 px half (0 left, 1 right) draws the block; positions are relative to the half. Other formats: [0] over the whole canvas. */
+export interface WinLayout { hero: HeroPlaced | null; board: BoardPlaced | null; metaInBoard: boolean; heroHalves: number[]; boardHalves: number[] }
+export const TWIN_HALF = 960
 
 const CANVAS: Record<OutputFormat, { w: number; h: number }> = { wide: { w: 3840, h: 1152 }, twin: { w: 1920, h: 1152 }, hd: { w: 1920, h: 1080 } }
 
@@ -55,18 +57,27 @@ export function winLayout(format: OutputFormat, part: ScenePart, config: WinScre
     const d = boardDesign(rows, races, compact, metaInBoard)
     return { ...fit(region, d.dw, d.dh), compact, races }
   }
+  if (format === 'twin') {
+    // Two 960 px screens: the block is centred in the left half and repeated in the right one, so nothing straddles x = 960.
+    const region = { x: m, y: m, w: TWIN_HALF - 2 * m, h: h - 2 * m }
+    const hero = vis.hero ? heroAt(region) : null
+    const board = vis.board ? boardAt(region, true) : null
+    // both blocks (only reachable with part 'full', which twins don't offer): hero in the left half, board in the right
+    if (both) return { hero, board, metaInBoard: false, heroHalves: [0], boardHalves: [1] }
+    return { hero, board, metaInBoard, heroHalves: [0, 1], boardHalves: [0, 1] }
+  }
   if (!both) {
     const region = { x: m, y: m, w: w - 2 * m, h: h - 2 * m }
-    return { hero: vis.hero ? heroAt(region) : null, board: vis.board ? boardAt(region, false) : null, metaInBoard }
+    return { hero: vis.hero ? heroAt(region) : null, board: vis.board ? boardAt(region, false) : null, metaInBoard, heroHalves: [0], boardHalves: [0] }
   }
   if (config.layout === 'heroCentre') {
     const boardH = wide ? 500 : 400
     const hero = heroAt({ x: m, y: 30, w: w - 2 * m, h: h - boardH - 30 - m - 20 })
     const board = boardAt({ x: m, y: h - boardH - m, w: w - 2 * m, h: boardH }, true)
-    return { hero, board, metaInBoard: false }
+    return { hero, board, metaInBoard: false, heroHalves: [0], boardHalves: [0] }
   }
   const heroW = wide ? 1500 : 700
   const hero = heroAt({ x: m, y: m, w: heroW, h: h - 2 * m })
   const board = boardAt({ x: m + heroW + 40, y: m + 20, w: w - heroW - 3 * m - 40, h: h - 2 * m - 40 }, false)
-  return { hero, board, metaInBoard: false }
+  return { hero, board, metaInBoard: false, heroHalves: [0], boardHalves: [0] }
 }

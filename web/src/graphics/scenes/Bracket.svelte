@@ -6,7 +6,7 @@
   import Heading from '../Heading.svelte'
   import Medallion from '../Medallion.svelte'
   import Swap from '../Swap.svelte'
-  import { headingSpec, layoutBracket } from './matches/layout'
+  import { TWIN_HALF, headingSpec, isTwin, layoutBracket } from './matches/layout'
 
   let { scene, view, enter = 0 }: { scene: BracketView; view: ViewModel; enter?: number } = $props()
 
@@ -24,8 +24,14 @@
     if (!from) return []
     const x1 = from.box.x + from.box.w, y1 = from.box.y + from.box.h / 2
     const x2 = box.x, y2 = box.slotY[i]
+    const key = `${from.n.matchId}>${n.matchId}:${i}`, done = from.n.winner !== null
+    if (isTwin(view.canvas) && x1 <= TWIN_HALF && x2 >= TWIN_HALF) {
+      // The connector leaves one half and enters the other exactly at the seam, so each half draws its own end of it.
+      const xm = TWIN_HALF + (x2 - TWIN_HALF) / 2
+      return [{ key: `${key}:l`, d: `M${x1} ${y1} H${TWIN_HALF}`, done }, { key: `${key}:r`, d: `M${TWIN_HALF} ${y1} H${xm} V${y2} H${x2}`, done }]
+    }
     const xm = x1 + (x2 - x1) / 2
-    return [{ key: `${from.n.matchId}>${n.matchId}:${i}`, d: `M${x1} ${y1} H${xm} V${y2} H${x2}`, done: from.n.winner !== null }]
+    return [{ key, d: `M${x1} ${y1} H${xm} V${y2} H${x2}`, done }]
   })))
   const showScores = $derived(scene.config.showScores)
   const showStatus = $derived(scene.config.showStatus)
@@ -34,13 +40,15 @@
 </script>
 
 <div class="bracket" data-format={view.format}>
-  <div class="hold" style:left="{view.canvas.w / 2}px" style:top="{head.top}px">
-    <div in:pop|global={{ duration: enter }}>
-      <Swap key="{view.headingLook}|{view.fonts.headings}|{view.headingUpright}" dur={enter}>
-        <Heading text="BRACKET" look={view.headingLook} font={view.fonts.headings} upright={view.headingUpright} size={head.size} />
-      </Swap>
+  {#each head.xs as hx (hx)}
+    <div class="hold" style:left="{hx}px" style:top="{head.top}px">
+      <div in:pop|global={{ duration: enter }}>
+        <Swap key="{view.headingLook}|{view.fonts.headings}|{view.headingUpright}" dur={enter}>
+          <Heading text="BRACKET" look={view.headingLook} font={view.fonts.headings} upright={view.headingUpright} size={head.size} />
+        </Swap>
+      </div>
     </div>
-  </div>
+  {/each}
 
   <svg class="lines" width={view.canvas.w} height={view.canvas.h} viewBox="0 0 {view.canvas.w} {view.canvas.h}" in:fade|global={{ duration: enter, delay: enter ? 3 * st : 0 }}>
     {#each lines as l (l.key)}<path d={l.d} class:done={l.done} />{/each}
@@ -104,7 +112,7 @@
 
 <style>
   .bracket { position: absolute; inset: 0; overflow: hidden; }
-  .hold { position: absolute; width: 0; display: flex; justify-content: center; }
+  .hold { position: absolute; width: max-content; translate: -50% 0; }
   .lines { position: absolute; left: 0; top: 0; }
   .lines path { fill: none; stroke: rgba(255, 255, 255, .5); stroke-width: 6; stroke-linejoin: round; }
   .lines path.done { stroke: var(--mk-yellow); stroke-width: 8; }

@@ -16,16 +16,18 @@
 </script>
 
 <div class="matches" data-layout={scene.layout} data-detail={scene.detail} data-format={view.format}>
-  <div class="hold" style:left="{view.canvas.w / 2}px" style:top="{head.top}px">
-    <div in:pop|global={{ duration: enter }}>
-      <Swap key="{view.headingLook}|{view.fonts.headings}|{view.headingUpright}" dur={enter}>
-        <Heading text="MATCHES" look={view.headingLook} font={view.fonts.headings} upright={view.headingUpright} size={head.size} />
-      </Swap>
+  {#each head.xs as hx (hx)}
+    <div class="hold" style:left="{hx}px" style:top="{head.top}px">
+      <div in:pop|global={{ duration: enter }}>
+        <Swap key="{view.headingLook}|{view.fonts.headings}|{view.headingUpright}" dur={enter}>
+          <Heading text="MATCHES" look={view.headingLook} font={view.fonts.headings} upright={view.headingUpright} size={head.size} />
+        </Swap>
+      </div>
     </div>
-  </div>
-  {#each scene.cards as card, i (card.id)}
-    {@const s = slots[i]}
-    {#if s}
+  {/each}
+  {#each slots as s, i (`${scene.cards[s.index]?.id}:${s.mirror ? 1 : 0}`)}
+    {@const card = scene.cards[s.index]}
+    {#if card}
       <div class="slot" style:left="{s.x}px" style:top="{s.y}px" style:width="{s.w}px" style:height="{s.h}px">
         <div class="pop" in:pop|global={{ duration: enter, delay: (i + 1) * st }}>
           {#if s.orient === 'strip'}
@@ -41,7 +43,7 @@
 
 <style>
   .matches { position: absolute; inset: 0; overflow: hidden; }
-  .hold { position: absolute; width: 0; display: flex; justify-content: center; }
+  .hold { position: absolute; width: max-content; translate: -50% 0; }
   .slot { position: absolute; }
   .pop { position: absolute; inset: 0; }
 </style>
