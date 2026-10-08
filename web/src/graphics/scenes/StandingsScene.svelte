@@ -65,7 +65,7 @@
 <style>
   .standings { position: absolute; inset: 0; overflow: hidden; }
   .stage { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
-  .hold { position: absolute; width: max-content; translate: -50% 0; }
+  .hold { position: absolute; width: max-content; transform: translateX(-50%); }
   .standing-row { position: absolute; left: 760px; width: 2320px; height: 172px; }
   .inner { position: absolute; inset: 0; }
   .bg { position: absolute; inset: 0; clip-path: polygon(40px 0, 100% 0, calc(100% - 40px) 100%, 0 100%); background: var(--row-dark); }

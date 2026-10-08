@@ -112,7 +112,7 @@
 
 <style>
   .bracket { position: absolute; inset: 0; overflow: hidden; }
-  .hold { position: absolute; width: max-content; translate: -50% 0; }
+  .hold { position: absolute; width: max-content; transform: translateX(-50%); }
   .lines { position: absolute; left: 0; top: 0; }
   .lines path { fill: none; stroke: rgba(255, 255, 255, .5); stroke-width: 6; stroke-linejoin: round; }
   .lines path.done { stroke: var(--mk-yellow); stroke-width: 8; }

@@ -47,7 +47,7 @@
 <style>
   .lineup { position: absolute; inset: 0; overflow: hidden; }
   .stage { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
-  .hold { position: absolute; width: max-content; translate: -50% 0; }
+  .hold { position: absolute; width: max-content; transform: translateX(-50%); }
   .lineup-card { position: absolute; top: 250px; width: 780px; height: 860px; }
   .panel {
     position: absolute; left: 0; right: 0; top: 210px; bottom: 0; background: var(--mk-bar);

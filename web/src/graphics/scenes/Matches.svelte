@@ -43,7 +43,7 @@
 
 <style>
   .matches { position: absolute; inset: 0; overflow: hidden; }
-  .hold { position: absolute; width: max-content; translate: -50% 0; }
+  .hold { position: absolute; width: max-content; transform: translateX(-50%); }
   .slot { position: absolute; }
   .pop { position: absolute; inset: 0; }
 </style>
