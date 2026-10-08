@@ -6,30 +6,27 @@
 
 <span
   class="heading"
+  class:upright
   data-look={look}
-  data-text={accent ? `${text} ${accent}` : text}
+  data-t={accent ? `${text} ${accent}` : text}
   style:font-family={font}
-  style:font-size="{size}px"
-  style:font-style={upright ? 'normal' : 'italic'}
-><span class="f">{text}{#if accent}<span class="acc"> {accent}</span>{/if}</span></span>
+  style:--hs="{size}px"
+><span class="m">{text}</span>{#if accent} <span class="a">{accent}</span>{/if}</span>
 
 <style>
-  .heading { position: relative; display: inline-block; font-weight: 900; line-height: 1.08; letter-spacing: 0.02em; white-space: nowrap; padding: 0 0.06em; }
-  .f { position: relative; z-index: 1; display: inline-block; }
-  .heading::before { content: attr(data-text); position: absolute; left: 0.06em; top: 0; z-index: 0; white-space: nowrap; display: none; }
-
-  [data-look='chrome']::before { display: block; -webkit-text-stroke: 0.14em #0a0f1c; color: #0a0f1c; text-shadow: 0 0.06em 0 #000; }
-  [data-look='chrome'] .f {
-    color: transparent; -webkit-text-fill-color: transparent;
-    background: linear-gradient(180deg, #fff 0%, #f1f4f7 28%, #c3cad3 46%, #4f5a67 50%, #7f8a97 60%, #cdd4db 82%, #fff 100%);
-    -webkit-background-clip: text; background-clip: text;
+  .heading { position: relative; display: inline-block; font-style: italic; font-weight: 900; font-size: var(--hs, 120px); line-height: 1.1; white-space: nowrap; z-index: 1; }
+  .heading.upright { font-style: normal; }
+  .heading::before {
+    content: attr(data-t); position: absolute; left: 0; top: 0; z-index: -1;
+    /* outline = ring of 24 text-shadows (radius = half the .183em stroke), so no mitre spikes */
+    color: var(--oc); text-shadow: 0.0915em 0.0000em 0 var(--oc), 0.0884em 0.0237em 0 var(--oc), 0.0792em 0.0457em 0 var(--oc), 0.0647em 0.0647em 0 var(--oc), 0.0458em 0.0792em 0 var(--oc), 0.0237em 0.0884em 0 var(--oc), 0.0000em 0.0915em 0 var(--oc), -0.0237em 0.0884em 0 var(--oc), -0.0457em 0.0792em 0 var(--oc), -0.0647em 0.0647em 0 var(--oc), -0.0792em 0.0457em 0 var(--oc), -0.0884em 0.0237em 0 var(--oc), -0.0915em 0.0000em 0 var(--oc), -0.0884em -0.0237em 0 var(--oc), -0.0792em -0.0457em 0 var(--oc), -0.0647em -0.0647em 0 var(--oc), -0.0458em -0.0792em 0 var(--oc), -0.0237em -0.0884em 0 var(--oc), -0.0000em -0.0915em 0 var(--oc), 0.0237em -0.0884em 0 var(--oc), 0.0458em -0.0792em 0 var(--oc), 0.0647em -0.0647em 0 var(--oc), 0.0792em -0.0458em 0 var(--oc), 0.0884em -0.0237em 0 var(--oc);
   }
-  [data-look='chrome'] .acc { background: linear-gradient(160deg, #8be6ff, #2a7bff 35%, #6a3dff 60%, #e02fbf 80%, #ff5a2e); -webkit-background-clip: text; background-clip: text; }
-
-  [data-look='classic']::before { display: block; -webkit-text-stroke: 0.14em #0b2a6f; color: #0b2a6f; text-shadow: 0 0.07em 0 #061a47, 0 0.1em 0.07em rgba(0, 0, 0, 0.4); }
-  [data-look='classic'] .f { color: #fff; }
-  [data-look='classic'] .acc { color: #ffd31a; }
-
-  [data-look='plain'] .f { color: #fff; text-shadow: 0 0.04em 0.1em rgba(0, 0, 0, 0.4); }
-  [data-look='plain'] .acc { color: #ffd31a; }
+  .heading[data-look='classic'] { color: #fff; }
+  .heading[data-look='classic']::before { --oc: var(--mk-navy); filter: drop-shadow(0 .117em 0 var(--mk-navy)); }
+  .heading[data-look='classic'] .a { color: var(--mk-pill); }
+  .heading[data-look='chrome']::before { --oc: var(--mk-ink); filter: drop-shadow(0 .117em 0 var(--chrome-drop)); }
+  .heading[data-look='chrome'] .m { background: var(--chrome); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .heading[data-look='chrome'] .a { background: var(--iridescent); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .heading[data-look='plain'] { color: #fff; text-shadow: 0 8px 24px rgba(0, 0, 0, .45); }
+  .heading[data-look='plain']::before { display: none; }
 </style>

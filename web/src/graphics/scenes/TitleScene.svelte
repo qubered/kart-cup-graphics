@@ -5,10 +5,7 @@
 
   let { title, view, enter = 0 }: { title: TitleView; view: ViewModel; enter?: number } = $props()
 
-  const chars = $derived(Math.max(4, title.title.length + title.accent.length * 1.12 + 1.5))
-  const fitSize = (avail: number, max: number) => Math.round(Math.min(max, avail / (chars * 0.86)))
   const halves = $derived(view.format === 'twin')
-  const size = $derived(view.format === 'wide' ? fitSize(3300, 330) : view.format === 'twin' ? fitSize(820, 120) : fitSize(1640, 170))
   const st = $derived(enter ? STAGGER_MS : 0)
 </script>
 
@@ -16,18 +13,18 @@
   {#if halves}
     {#each [0, 1] as h (h)}
       <div class="half" style:left="{h * 960}px" in:pop|global={{ duration: enter, delay: h * st }}>
-        <TitleLockup {title} style={view.eventTitleStyle} font={view.fonts.eventTitle} {size} />
+        <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} />
       </div>
     {/each}
   {:else}
     <div class="center" in:pop|global={{ duration: enter }}>
-      <TitleLockup {title} style={view.eventTitleStyle} font={view.fonts.eventTitle} {size} />
+      <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} />
     </div>
   {/if}
 </div>
 
 <style>
-  .title-scene { position: absolute; inset: 0; }
-  .center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  .half { position: absolute; top: 0; width: 960px; bottom: 0; display: flex; align-items: center; justify-content: center; }
+  .title-scene { position: absolute; inset: 0; z-index: 0; /* own stacking context so the lockup never paints over later layers (HOLD, FTB) */ }
+  .center { position: absolute; inset: 0; }
+  .half { position: absolute; top: 0; width: 960px; height: 100%; overflow: hidden; }
 </style>

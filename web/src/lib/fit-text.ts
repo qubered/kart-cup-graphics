@@ -5,6 +5,8 @@ export interface FitTextParams {
   minRatio?: number
   /** Optional: any changing value re-runs the fit. */
   text?: string
+  /** Called after every fit with the resulting font-size in px (used to equalise grouped lines). */
+  onFit?: (fontSize: number) => void
 }
 
 /**
@@ -25,7 +27,7 @@ export function fitText(node: HTMLElement, p: FitTextParams) {
       const span = target()
       span.style.transform = ''
       node.style.fontSize = base
-      if (!node.style.display) node.style.display = 'inline-block'
+      if (getComputedStyle(node).display === 'inline') node.style.display = 'inline-block'
       if (span !== node) span.style.display = span.style.display || 'inline-block'
       const baseSize = parseFloat(getComputedStyle(node).fontSize)
       if (!baseSize || !params.max) return
@@ -45,6 +47,7 @@ export function fitText(node: HTMLElement, p: FitTextParams) {
     } finally {
       running = false
     }
+    params.onFit?.(parseFloat(node.style.fontSize || getComputedStyle(node).fontSize))
   }
   const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(run) : null
   mo?.observe(node, { characterData: true, childList: true, subtree: true })

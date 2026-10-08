@@ -12,7 +12,7 @@ function fake(chars: number, baseFs: number, withSpan: boolean) {
   }
   return { node: node as unknown as HTMLElement, span, style }
 }
-vi.stubGlobal('getComputedStyle', (n: { style: Record<string, string> }) => ({ fontSize: n.style.fontSize }))
+vi.stubGlobal('getComputedStyle', (n: { style: Record<string, string> }) => ({ fontSize: n.style.fontSize, display: 'block' }))
 vi.stubGlobal('document', { fonts: { ready: Promise.resolve() } })
 vi.stubGlobal('MutationObserver', undefined)
 afterEach(() => vi.clearAllMocks())
