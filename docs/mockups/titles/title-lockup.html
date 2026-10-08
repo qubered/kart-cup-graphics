@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Title scene · Event title lockup</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Title scene = background A + event title lockup.
+     ?style=chrome (S1, default) | classic (S3).   ?format=wide | hd | twin (twin = one lockup per 960 half).
+     Sizes (MK.TITLE_SIZES): wide --ts 210 / --ps 58 / max 3600 · hd 150 / 42 / 1800 · twin 92 / 26 / 900 per half.
+     The title line shrinks to its max width, so any operator text fits (try ?title=SUPER%20MEGA%20KART%20CHAMPIONSHIP). */
+  const fmt = MK.param('format', 'wide'), style = MK.param('style', 'chrome');
+  MK.page(fmt, (f, S) => {
+    const z = MK.TITLE_SIZES[fmt], one = () => MK.titleLockup(S.event, style, z.ts, z.ps, '', z.max);
+    const lockups = fmt === 'twin'
+      ? `<div class="hold-half" style="left:0">${one()}</div><div class="hold-half" style="left:960px">${one()}</div>`
+      : one();
+    return MK.bgSky(f, S.event.watermark) + `<div class="layer" data-layer="scene">${lockups}</div>`;
+  }, `Title lockup · ${style === 'classic' ? 'S3 Classic' : 'S1 MK8 Chrome'}`);
+</script>
+</body>
+</html>

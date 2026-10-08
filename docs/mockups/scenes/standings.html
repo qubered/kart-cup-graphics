@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scene · Standings</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Wide 3840×1152 on background B, modelled on the MK8 results screen. Heading 110px at y 40.
+     Rows 2320×172 at x 760, y 250 + i·214. Position-1 rows (ties included) use the yellow leader style.
+     +N chip = last race points in player colour; total right-aligned; footer bottom-right. Rows re-sort with FLIP. */
+  MK.page('wide', (f, S) => {
+    const look = MK.param('look', 'classic'), sfx = ['st', 'nd', 'rd', 'th'];
+    let h = MK.bgPattern(f) + `<div class="layer" data-layer="scene"><div style="position:absolute;left:0;right:0;top:40px;text-align:center">${MK.heading('STANDINGS', look, 110)}</div>`;
+    S.standings.rows.forEach((row, i) => { const p = S.players[row.slot];
+      h += `<div class="standing-row${i === 0 ? ' first' : ''}" data-guide="standing-row ${i + 1}" data-slot="${row.slot}" style="top:${250 + i * 214}px;--pc:${p.colour};--pt:${p.text}">
+        <div class="bg"></div><div class="pos">${i + 1}<sup>${sfx[i]}</sup></div>${MK.medallion(p.icon)}
+        <div class="name" data-fit="1100"><span>${MK.esc(p.name)}</span></div><div class="char">${MK.esc(p.character)}</div>
+        <div class="delta">+${row.delta}</div><div class="pts">${row.total}<small>PTS</small></div></div>`; });
+    return h + `<div class="standings-footer">${MK.esc(S.standings.footer)}</div></div>`;
+  }, 'Scene · Standings (wide)');
+</script>
+</body>
+</html>

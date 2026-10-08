@@ -1,0 +1,200 @@
+/*
+ * Kart Cup — graphics reference CSS.
+ * All sizes are real output pixels. Animate transform/opacity only (Chromium 103 / Millumin).
+ * Port each block into the matching Svelte component; keep the numbers.
+ */
+
+/* ============ canvas ============ */
+.mk-canvas { position: relative; overflow: hidden; width: var(--w); height: var(--h); font-family: var(--font-label); }
+.mk-canvas * { box-sizing: border-box; }
+.layer { position: absolute; inset: 0; }
+
+/* ============ BACKGROUND A · Menu Sky ============ */
+.bg-sky { background: var(--sky); overflow: hidden; }
+.bg-sky .checker { position: absolute; right: 0; top: 0; width: 39.06%; height: 100%;            /* 1500px of 3840 */
+  background-image: conic-gradient(var(--sky-checker) 25%, transparent 0 50%, var(--sky-checker) 0 75%, transparent 0);
+  background-size: 150px 150px; -webkit-mask-image: linear-gradient(to left, #000 0%, transparent 85%); }
+.bg-sky .wm { position: absolute; font: 400 calc(var(--h) * .26)/1 var(--font-event); color: var(--sky-watermark);   /* 300px @1152 */
+  transform: rotate(-12deg); white-space: nowrap; letter-spacing: -4px; }
+.bg-sky .wm.w1 { left: -5.2%; top: 3.5%; }          /* (-200, 40) on wide */
+.bg-sky .wm.w2 { left: 49.5%; top: 66%; }           /* (1900, 760) on wide */
+.bg-sky .crest { position: absolute; color: var(--sky-crest); animation: crest-drift 18s ease-in-out infinite alternate; }
+.bg-sky .crest.c1 { left: 3.1%; top: 45%; width: calc(var(--h) * .66); height: calc(var(--h) * .66); }               /* 760px */
+.bg-sky .crest.c2 { left: 76.8%; top: -15.6%; width: calc(var(--h) * .78); height: calc(var(--h) * .78); animation-duration: 24s; } /* 900px */
+@keyframes crest-drift { from { transform: rotate(-14deg) translateY(0); } to { transform: rotate(-8deg) translateY(-50px); } }
+.bg-sky .sweep-track { position: absolute; inset: 0; animation: sweep 9s ease-in-out infinite; }
+.bg-sky .sweep { position: absolute; top: -200px; left: 0; width: 700px; height: calc(var(--h) + 400px); transform: skewX(-22deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); }
+@keyframes sweep { 0% { transform: translateX(-30%); } 60%, 100% { transform: translateX(130%); } }
+/* sparkles: 150 on wide (scale count by area), dots 4–12px + 18% four-point stars (44px), 2.4–5s twinkle, random delay 0–4s */
+.sparkles i { position: absolute; display: block; border-radius: 50%; background: #fff; box-shadow: 0 0 14px 4px rgba(255,255,255,.65); opacity: 0; animation: twinkle 3.2s ease-in-out infinite; }
+.sparkles b { position: absolute; display: block; width: 44px; height: 44px; opacity: 0; animation: twinkle 4s ease-in-out infinite;
+  background: radial-gradient(circle, #fff 0 3px, transparent 4px), linear-gradient(#fff, #fff) center/4px 100% no-repeat, linear-gradient(#fff, #fff) center/100% 4px no-repeat;
+  filter: drop-shadow(0 0 6px #fff); }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
+
+/* ============ BACKGROUND B · Icon Pattern ============ */
+.bg-pattern { background: var(--pattern-bg); overflow: hidden; }
+.bg-pattern .pat { position: absolute; left: -1250px; top: -280px; animation: pattern-move 38s linear infinite; }   /* tile 1250×280 */
+@keyframes pattern-move { to { transform: translate(1250px, 280px); } }
+.bg-pattern .vignette { position: absolute; inset: 0; background: var(--pattern-vignette); }
+
+/* ============ BACKGROUND C · Sticker Wall ============ */
+.bg-stickers { background: var(--sticker-bg); overflow: hidden; }
+.bg-stickers .sheet { position: absolute; left: 0; top: 0; overflow: visible; animation: sticker-drift 80s linear infinite; }  /* tile 1280×1152 */
+@keyframes sticker-drift { to { transform: translateX(-1280px); } }
+/* NOTE: the tile is repeated with SVG <use>. Selectors must NOT depend on ancestors (".bg-stickers .st-o" fails inside
+   <use> shadow copies in Chrome) — keep these classes unscoped and let the font inherit from the <svg>. */
+.bg-stickers .sheet { font-family: var(--font-event); font-weight: 900; }
+.st-o { fill: none; stroke: var(--sticker-line); stroke-width: 6; }
+.st-f { fill: var(--sticker-fill); }
+.st-t { fill: var(--sticker-text); }
+.st-k { fill: var(--sticker-knock); }
+.bg-stickers .parade { position: absolute; left: 0; bottom: 46px; height: 170px; animation: parade 55s linear infinite; z-index: 3; }
+@keyframes parade { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+.bg-stickers .parade svg { position: absolute; bottom: 0; animation: kart-bob .5s ease-in-out infinite alternate; }
+@keyframes kart-bob { to { transform: translateY(-5px); } }
+.bg-stickers .road { position: absolute; left: 0; right: 0; bottom: 44px; height: 6px; background: var(--sticker-ink); z-index: 3; }
+.bg-stickers .logo { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 4; background: var(--sticker-bg);
+  padding: 22px 80px 18px; text-align: center; white-space: nowrap; font: 400 120px/1 var(--font-event); letter-spacing: 4px; color: var(--sticker-ink); }
+.bg-stickers .logo .acc { color: var(--sticker-accent); }
+.bg-stickers .logo small { display: block; font: italic 800 34px/1 var(--font-label); letter-spacing: 10px; color: #666; margin-top: 10px; }
+
+/* ============ EVENT TITLE LOCKUP (S1 chrome default / S3 classic) ============ */
+/* sizes: wide --ts:210px --ps:58px · hd --ts:150px --ps:42px · twin (per 960 half) --ts:92px --ps:26px */
+.title-lockup { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; white-space: nowrap; z-index: 5; }
+.title-lockup .pre { display: inline-block; background: var(--mk-pill); color: var(--mk-navy); font: italic 800 var(--ps)/1 var(--font-label);
+  padding: calc(var(--ps) * .28) calc(var(--ps) * .97); transform: skewX(-14deg); border-radius: calc(var(--ps) * .2);
+  box-shadow: 0 calc(var(--ps) * .17) 0 var(--mk-pill-shadow); letter-spacing: 2px; }
+.title-lockup .pre:empty { display: none; }
+/* The title shrinks to fit (fitText) its max width: wide 3600 · hd 1800 · twin half 900 — operator text can be any length.
+   Outline/drop are in em so they shrink with it. */
+.title-lockup .t { position: relative; display: inline-block; margin-top: calc(var(--ts) * .19); padding: 0 .14em; font: 900 var(--ts)/1.1 var(--font-event); z-index: 1; white-space: nowrap; }
+.title-lockup .t::before { content: attr(data-t); position: absolute; left: .14em; top: 0; z-index: -1; }
+.title-lockup[data-style="chrome"] .t::before { color: var(--mk-ink); -webkit-text-stroke: .143em var(--mk-ink); filter: drop-shadow(0 .095em 0 var(--chrome-drop)); }  /* 30px / 20px @210 */
+.title-lockup[data-style="chrome"] .m { background: var(--chrome); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.title-lockup[data-style="chrome"] .a { background: var(--iridescent); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.title-lockup[data-style="classic"] .t { color: #fff; }
+.title-lockup[data-style="classic"] .t::before { color: var(--mk-navy); -webkit-text-stroke: .143em var(--mk-navy); filter: drop-shadow(0 .105em 0 var(--mk-navy)); }
+.title-lockup[data-style="classic"] .a { color: var(--mk-pill); }
+
+/* ============ HEADINGS (look: classic default / chrome / plain) ============ */
+/* default font Exo 2 900 italic; upright fonts (MK F2, Lexend Zetta, Titan One, Luckiest Guy, Lilita One, Russo One) use font-style normal */
+.heading { position: relative; display: inline-block; font: italic 900 var(--hs, 120px)/1.1 var(--font-head); white-space: nowrap; z-index: 1; }
+.heading.upright { font-style: normal; }
+.heading::before { content: attr(data-t); position: absolute; left: 0; top: 0; z-index: -1; }
+.heading[data-look="classic"] { color: #fff; }
+.heading[data-look="classic"]::before { color: var(--mk-navy); -webkit-text-stroke: calc(var(--hs, 120px) * .183) var(--mk-navy); filter: drop-shadow(0 calc(var(--hs, 120px) * .117) 0 var(--mk-navy)); }  /* 22px / 14px @120 */
+.heading[data-look="classic"] .a { color: var(--mk-pill); }
+.heading[data-look="chrome"]::before { color: var(--mk-ink); -webkit-text-stroke: calc(var(--hs, 120px) * .183) var(--mk-ink); filter: drop-shadow(0 calc(var(--hs, 120px) * .117) 0 var(--chrome-drop)); }
+.heading[data-look="chrome"] .m { background: var(--chrome); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.heading[data-look="chrome"] .a { background: var(--iridescent); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.heading[data-look="plain"] { color: #fff; text-shadow: 0 8px 24px rgba(0,0,0,.45); }
+.heading[data-look="plain"]::before { display: none; }
+
+/* ============ MEDALLION (size via --s) ============ */
+.medallion { position: absolute; width: var(--s); height: var(--s); border-radius: 50%; border: calc(var(--s) * .026 + 0px) solid var(--medal-rim);   /* 4px @156 */
+  background: var(--medal-gold); box-shadow: 0 6px 14px rgba(0,0,0,.4); }
+.medallion .in { position: absolute; inset: calc(var(--s) * .064); border-radius: 50%; overflow: hidden; border: 3px solid var(--medal-inner-rim); background: var(--medal-inner); }  /* 10px @156 */
+.medallion .in img { position: absolute; left: 50%; top: 4%; width: 75%; transform: translateX(-50%); }       /* headshot: 92px wide inside a 156px medallion */
+.medallion.emblem .in img { top: 50%; width: 92%; transform: translate(-50%, -50%); }                         /* cup emblem fills the disc */
+.medallion .stars { position: absolute; left: 0; right: 0; bottom: 5%; text-align: center; color: var(--medal-star); font-size: calc(var(--s) * .096); letter-spacing: .15em; line-height: 1; }  /* 15px @156 */
+
+/* fitted text: the inner span is what gets scaleX-compressed when shrinking hits the 60% floor */
+[data-fit] > span { display: inline-block; transform-origin: left center; white-space: nowrap; }
+.lineup-card .name > span { transform-origin: center; }
+
+/* ============ LOWER THIRD · Medallion (430 × 160) ============ */
+.lower-third { position: absolute; width: 430px; height: 160px; transform-origin: 0 0; }   /* scaled (wide ×1.5) from the top-left so the slot x,y is the visual top-left */
+.lower-third .bar { position: absolute; left: 70px; right: 0; top: 52px; height: 96px; background: var(--mk-bar); clip-path: polygon(0 0, 100% 0, calc(100% - 34px) 100%, 0 100%); }
+.lower-third .bar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: var(--pc); }
+.chk { position: absolute; background-image: conic-gradient(rgba(255,255,255,.16) 25%, transparent 0 50%, rgba(255,255,255,.16) 0 75%, transparent 0); -webkit-mask-image: linear-gradient(to right, transparent, #000 80%); }
+.lower-third .chk { right: 0; top: 8px; bottom: 0; width: 130px; background-size: 22px 22px; }
+.lower-third .chip { position: absolute; left: 168px; top: 18px; background: var(--pc); color: var(--pt); font: italic 900 24px/1 var(--font-name);
+  padding: 7px 16px 6px; border-radius: 6px; transform: skewX(-12deg); box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.lower-third .txt { position: absolute; left: 172px; top: 72px; width: 214px; }
+.lower-third .name { font: italic 900 44px/1 var(--font-name); color: #fff; white-space: nowrap; overflow: hidden; }   /* fitText max 214 */
+.lower-third .char { font: 800 20px/1 var(--font-label); color: var(--mk-label-cyan); letter-spacing: 3px; text-transform: uppercase; margin-top: 9px; white-space: nowrap; }
+.lower-third .medallion { --s: 156px; left: 0; top: 2px; }
+
+/* ============ TRACK CARD · T1 (540 × 120) ============ */
+.track-card { position: absolute; width: 540px; height: 120px; }
+.track-card .bar { position: absolute; left: 56px; right: 0; top: 14px; height: 92px; background: var(--mk-bar); clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%); }
+.track-card .bar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--mk-yellow); }
+.track-card .chk { right: 0; top: 6px; bottom: 0; width: 120px; background-size: 22px 22px; }
+.track-card .medallion { --s: 120px; left: 0; top: 0; }
+.track-card .row { position: absolute; left: 138px; top: 28px; display: flex; align-items: center; gap: 16px; }
+.track-card .race { background: var(--mk-yellow); color: var(--mk-navy); font: italic 900 15px/1 var(--font-name); padding: 4px 10px; border-radius: 4px; transform: skewX(-12deg); letter-spacing: 1px; white-space: nowrap; }
+.track-card .cup { font: 800 15px/1 var(--font-label); color: var(--mk-label-cyan); letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
+.track-card .track-name { position: absolute; left: 138px; top: 56px; width: 352px; font: italic 900 34px/1.05 var(--font-head); color: #fff; white-space: nowrap; overflow: hidden; }   /* fitText max 352 */
+
+/* ============ SCENE · Line-up (wide) ============ */
+.lineup-card { position: absolute; top: 250px; width: 780px; height: 860px; }                      /* lefts: 240, 1100, 1960, 2820 */
+.lineup-card .panel { position: absolute; left: 0; right: 0; top: 210px; bottom: 0; background: var(--mk-bar); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 70px), calc(100% - 70px) 100%, 0 100%); }
+.lineup-card .panel::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 16px; background: var(--pc); }
+.lineup-card .panel .chk { right: 0; bottom: 0; width: 300px; height: 200px; background-size: 36px 36px; }
+.lineup-card .medallion { --s: 420px; left: 180px; top: 0; z-index: 2; }
+.lineup-card .info { position: absolute; left: 0; right: 0; top: 450px; text-align: center; z-index: 2; }
+.pchip { display: inline-block; background: var(--pc); color: var(--pt); font: italic 900 46px/1 var(--font-name); padding: 10px 30px 8px; border-radius: 10px; transform: skewX(-12deg); box-shadow: 0 5px 0 rgba(0,0,0,.35); }
+.lineup-card .name { width: 740px; margin: 26px auto 0; font: italic 900 112px/1.05 var(--font-name); color: #fff; white-space: nowrap; overflow: hidden; }   /* fitText max 740 */
+.lineup-card .char { font: 800 40px/1 var(--font-label); color: var(--mk-label-cyan); letter-spacing: 10px; text-transform: uppercase; margin-top: 14px; }
+
+/* ============ SCENE · Next race (wide) ============ */
+.nr-image { position: absolute; left: 330px; top: 220px; width: 1300px; height: 732px; border: 12px solid var(--mk-yellow); border-radius: 34px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.5); background: #000; }
+.nr-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nr-cup.medallion { --s: 360px; left: 160px; top: 110px; z-index: 3; }
+.nr-text { position: absolute; left: 1780px; top: 200px; width: 1900px; }
+.nr-next { display: inline-block; background: var(--mk-yellow); color: var(--mk-navy); font: italic 900 64px/1 var(--font-name); padding: 16px 44px; border-radius: 12px; transform: skewX(-12deg); box-shadow: 0 8px 0 var(--mk-pill-shadow); }
+.nr-race { display: inline-block; margin-left: 30px; font: italic 900 64px/1 var(--font-name); color: #fff; vertical-align: middle; }
+.nr-text .heading { --hs: 150px; display: block; margin-top: 50px; white-space: normal; line-height: 1.15; }
+.nr-cupname { font: 800 54px/1 var(--font-label); color: #bfeaff; letter-spacing: 14px; text-transform: uppercase; margin-top: 36px; }
+.nr-strip { display: flex; gap: 20px; margin-top: 34px; }
+.nr-strip .tile { width: 300px; border: 6px solid rgba(255,255,255,.25); border-radius: 14px; overflow: hidden; background: #0b1530; }
+.nr-strip .tile img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+.nr-strip .tile span { display: block; padding: 8px 12px; font: 800 22px/1.1 var(--font-label); color: #fff; white-space: nowrap; overflow: hidden; }
+.nr-strip .tile.current { border-color: var(--mk-yellow); }
+.nr-strip .tile.done { opacity: .45; }
+
+/* ============ SCENE · Standings (wide) ============ */
+.standing-row { position: absolute; left: 760px; width: 2320px; height: 172px; }                 /* top: 250 + i*214 */
+.standing-row .bg { position: absolute; inset: 0; clip-path: polygon(40px 0, 100% 0, calc(100% - 40px) 100%, 0 100%); background: var(--row-dark); }
+.standing-row .bg::before { content: ''; position: absolute; left: 20px; top: 0; bottom: 0; width: 24px; background: var(--pc); transform: skewX(-13deg); }
+.standing-row.first .bg { background: var(--row-leader); }
+.standing-row .pos { position: absolute; left: 80px; top: 0; height: 172px; width: 220px; display: flex; align-items: center; font: italic 900 110px/1 var(--font-name); color: #fff; }
+.standing-row .pos sup { font-size: 48px; margin-left: 4px; align-self: flex-start; margin-top: 36px; }
+.standing-row .medallion { --s: 180px; left: 300px; top: -4px; }
+.standing-row .name { position: absolute; left: 520px; top: 28px; width: 1100px; font: italic 900 84px/1 var(--font-name); color: #fff; white-space: nowrap; overflow: hidden; }
+.standing-row .char { position: absolute; left: 524px; top: 122px; font: 800 30px/1 var(--font-label); letter-spacing: 8px; text-transform: uppercase; color: var(--mk-label-cyan); }
+.standing-row .delta { position: absolute; right: 420px; top: 50%; transform: translateY(-50%) skewX(-12deg); background: var(--pc); color: var(--pt); font: italic 900 52px/1 var(--font-name); padding: 12px 26px; border-radius: 10px; }
+.standing-row .pts { position: absolute; right: 90px; top: 0; height: 172px; display: flex; align-items: center; font: italic 900 120px/1 var(--font-name); color: #fff; }
+.standing-row .pts small { font-size: 40px; margin-left: 16px; letter-spacing: 4px; }
+.standing-row.first .pos, .standing-row.first .name, .standing-row.first .pts { color: var(--row-leader-ink); }
+.standing-row.first .char { color: var(--row-leader-sub); }
+.standings-footer { position: absolute; right: 120px; bottom: 60px; font: 800 40px/1 var(--font-label); color: rgba(255,255,255,.7); letter-spacing: 8px; }
+
+/* ============ SCENE · Winner (wide, on background A) ============ */
+.rays { position: absolute; left: 1240px; top: 576px; width: 3000px; height: 3000px; margin: -1500px 0 0 -1500px;
+  background: repeating-conic-gradient(rgba(255,255,255,.16) 0 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 15%, transparent 60%); animation: spin 40s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.winner-medal.medallion { --s: 600px; left: 940px; top: 276px; z-index: 3; animation: bob 2.4s ease-in-out infinite alternate; border-width: 6px; }
+@keyframes bob { to { transform: translateY(-18px); } }
+.winner-text { position: absolute; left: 1800px; top: 200px; z-index: 3; }
+.winner-text .heading { --hs: 250px; }
+.winner-text .name { font: italic 900 170px/1 var(--font-name); color: #fff; margin-top: 30px; text-shadow: 0 10px 0 var(--mk-navy); }
+.winner-text .sub { margin-top: 34px; display: flex; gap: 30px; align-items: center; }
+.winner-text .char { font: 800 54px/1 var(--font-label); color: #fff; letter-spacing: 12px; text-transform: uppercase; }
+.winner-text .pts { display: inline-block; background: var(--mk-yellow); color: var(--mk-navy); font: italic 900 60px/1 var(--font-name); padding: 16px 40px; border-radius: 12px; transform: skewX(-12deg); box-shadow: 0 8px 0 var(--mk-pill-shadow); }
+.confetti i { position: absolute; top: -60px; width: 26px; height: 44px; border-radius: 4px; animation: fall linear infinite; }   /* 90 pieces (20 with lowfx), 4–8s */
+@keyframes fall { to { transform: translateY(1300px) rotate(720deg); } }
+
+/* ============ HOLD overlay ============ */
+.hold-msg { position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); font: italic 900 var(--ms, 90px)/1 var(--font-head); color: #fff; letter-spacing: .07em; text-shadow: 0 .09em 0 var(--mk-navy); white-space: nowrap; z-index: 6; }
+.hold-half { position: absolute; top: 0; width: 960px; height: 100%; overflow: hidden; }
+
+/* ============ camera stand-in (mockups only — Millumin supplies the real camera) ============ */
+.cam { position: absolute; top: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse 700px 500px at 50% 28%, #5d6e80, #232a33 70%, #161a20); }
+.cam.alt { background: radial-gradient(ellipse 700px 500px at 50% 28%, #6a6176, #26232f 70%, #17151c); }
+.cam .ppl { position: absolute; width: 300px; height: 820px; filter: blur(2px); }
+.cam .ppl::before { content: ''; position: absolute; left: 50%; top: 0; width: 150px; height: 180px; margin-left: -75px; border-radius: 50%; background: #0f1317; }
+.cam .ppl::after { content: ''; position: absolute; left: 0; right: 0; top: 170px; bottom: 0; border-radius: 150px 150px 0 0; background: #0f1317; }
+.seam { position: absolute; left: 959px; top: 0; width: 2px; height: 100%; background: repeating-linear-gradient(#fff 0 14px, transparent 14px 28px); opacity: .35; z-index: 20; }

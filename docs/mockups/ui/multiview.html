@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Multiview</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    /* 1920×1080, scales to the window. Tiles are the real output pages in iframes (here: the reference mockups).
+       Borders: Program red, Preview green, ALL amber while HOLD is on (try ?hold=1). Margin/gap 10px. */
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+    .mv { position: absolute; width: 1920px; height: 1080px; transform-origin: 0 0; background: #000; color: #fff; font: 600 14px/1 var(--ui-font); }
+    .mv * { box-sizing: border-box; }
+    .tile { position: absolute; border: 3px solid #333; background: #000; overflow: hidden; }
+    .tile.pg { border-color: var(--ui-program); } .tile.pv { border-color: var(--ui-preview); } .mv.hold .tile { border-color: var(--ui-hold); }
+    .tile iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .lbl { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 9; background: rgba(0,0,0,.75); padding: 6px 12px; border-radius: 4px; font-size: 15px; letter-spacing: .06em; white-space: nowrap; display: flex; gap: 8px; align-items: center; }
+    .lbl i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+    .stat { position: absolute; right: 8px; top: 8px; z-index: 9; background: rgba(0,0,0,.7); padding: 4px 8px; border-radius: 4px; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+    .led { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; } .led.off { background: #4b5563; }
+    .info { position: absolute; display: flex; gap: 40px; align-items: center; padding: 24px; border: 3px solid #222; background: #0b0d11; }
+    .k { font-size: 13px; letter-spacing: .12em; color: var(--ui-muted); text-transform: uppercase; }
+    .big { font: 700 76px/1 var(--ui-mono); } .v { font-size: 24px; font-weight: 700; }
+    .stand { position: absolute; display: flex; flex-direction: column; gap: 14px; padding: 24px; border: 3px solid #222; background: #0b0d11; }
+    .srow { display: flex; align-items: center; gap: 14px; font-size: 30px; font-weight: 700; } .srow .n { width: 30px; color: var(--ui-muted); } .srow .c { width: 10px; height: 36px; border-radius: 2px; } .srow .nm { flex: 1; } .srow .pt { font-family: var(--ui-mono); }
+  </style>
+</head>
+<body>
+<div class="mv" id="mv"></div>
+<script>
+  const hold = new URLSearchParams(location.search).get('hold') === '1';
+  const tiles = [  // x, y, w, h, kind, src, label, connected
+    [10, 10, 1900, 570, 'pg', '../titles/title-lockup.html?embed=1&lowfx=1', 'WIDE · PROGRAM', true],
+    [10, 594, 620, 186, 'pv', '../scenes/standings.html?embed=1&lowfx=1', 'WIDE · PREVIEW', true],
+    [10, 792, 460, 276, 'pg', '../overlays/twin-lower-thirds.html?embed=1&lowfx=1', 'TWINS · PROGRAM', true],
+    [480, 792, 500, 281, 'pg', '../overlays/hd-lower-thirds.html?embed=1&lowfx=1', 'STREAM · PROGRAM', true],
+    [990, 792, 500, 281, 'pg', '../backgrounds/b-icon-pattern.html?format=hd&embed=1&lowfx=1', 'PILLARS · PROGRAM', false],
+  ];
+  const holdSrc = (fmt) => `../overlays/hold.html?format=${fmt}&embed=1&lowfx=1`;
+  let h = tiles.map(([x, y, w, ht, k, src, label, on]) => {
+    const fmt = label.startsWith('WIDE') ? 'wide' : label.startsWith('TWINS') ? 'twin' : 'hd';
+    return `<div class="tile ${k}" data-tile style="left:${x}px;top:${y}px;width:${w}px;height:${ht}px"><iframe src="${hold ? holdSrc(fmt) : src}" loading="lazy" title="${label}"></iframe>
+      <div class="lbl"><i style="background:${k === 'pg' ? 'var(--ui-program)' : 'var(--ui-preview)'}"></i>${label}</div><div class="stat"><span class="led${on ? '' : ' off'}"></span>${on ? 'connected' : 'offline'}</div></div>`;
+  }).join('');
+  h += `<div class="info" style="left:640px;top:594px;width:850px;height:188px"><div><div class="k">Time of day</div><div class="big" id="clk">00:00:00</div></div>
+        <div><div class="k">On air</div><div class="v" style="font:700 40px/1 var(--ui-mono);margin-top:8px">00:42:10</div></div>
+        <div><div class="k">Now</div><div class="v" style="margin-top:8px">Race 2 / 4</div><div style="color:var(--ui-muted);margin-top:6px">Mushroom Cup · Water Park</div></div></div>`;
+  h += `<div class="stand" style="left:1500px;top:594px;width:410px;height:476px"><div class="k">Standings</div>` +
+       [['SAM', 27, '#e60012'], ['ALEX', 22, '#ffc400'], ['PRIYA', 19, '#1e6cff'], ['TOM', 18, '#22b14c']].map((r, i) => `<div class="srow"><span class="n">${i + 1}</span><span class="c" style="background:${r[2]}"></span><span class="nm">${r[0]}</span><span class="pt">${r[1]}</span></div>`).join('') +
+       `<div class="k" style="margin-top:auto">Up next</div><div class="v">Sweet Sweet Canyon</div></div>`;
+  const mv = document.getElementById('mv'); mv.innerHTML = h; if (hold) mv.classList.add('hold');
+  const fit = () => { const s = Math.min(innerWidth / 1920, innerHeight / 1080); mv.style.transform = `scale(${s})`; mv.style.left = (innerWidth - 1920 * s) / 2 + 'px'; mv.style.top = (innerHeight - 1080 * s) / 2 + 'px'; };
+  addEventListener('resize', fit); fit();
+  setInterval(() => { document.getElementById('clk').textContent = new Date().toTimeString().slice(0, 8); }, 1000);
+</script>
+</body>
+</html>

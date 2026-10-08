@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scene · Next race</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Wide 3840×1152 on background B. Track image 1300×732 at (330,220) in a 12px gold frame (radius 34);
+     cup medallion 360 at (160,110). Text block x 1780: NEXT RACE chip + race label (64px), track name heading 150px
+     (Headings role, wraps), cup name 54px, then the cup's 4 tracks strip (current = gold border, done = 45% opacity). */
+  MK.page('wide', (f, S) => {
+    const r = S.race, look = MK.param('look', 'classic');
+    const strip = r.tracks.map((t, i) => `<div class="tile${i === r.index ? ' current' : i < r.index ? ' done' : ''}"><img src="${t.thumb}" alt=""><span>${MK.esc(t.name)}</span></div>`).join('');
+    return MK.bgPattern(f) + `<div class="layer" data-layer="scene">
+      <div class="nr-image" data-guide="track image"><img src="${r.image}" alt=""></div>
+      ${MK.medallion(r.emblem, 'emblem nr-cup', false)}
+      <div class="nr-text" data-guide="text block"><span class="nr-next">NEXT RACE</span><span class="nr-race">${MK.esc(r.label)}</span>
+        ${MK.heading(r.track.toUpperCase(), look, 150)}
+        <div class="nr-cupname">${MK.esc(r.cup)}</div><div class="nr-strip" data-guide="cup tracks">${strip}</div></div></div>`;
+  }, 'Scene · Next race (wide)');
+</script>
+</body>
+</html>

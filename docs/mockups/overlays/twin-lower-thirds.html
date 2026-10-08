@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Twin · Medallion lower thirds + T1 track cards</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Twin canvas 1920×1152 = two physical 960×1152 screens. Fixed slots: P1+P2 left half, P3+P4 right half.
+     Lower thirds 430×160 at x 40/490/1000/1450, y 922 (1152−70−160). Track card 540×120 at (40,40) and (1000,40).
+     The page itself is TRANSPARENT; the camera here is a stand-in (?camera=0 to hide it).
+     Long-name check: ?names=ALEXANDRIA-ROSE%20FEATHERSTONE,PRIYA,TOM,ALEX&track=Tour%20Singapore%20Speedway */
+  MK.page('twin', (f, S) => {
+    let h = MK.param('camera', '1') === '0' ? '' : MK.camera('twin');
+    h += `<div class="layer" data-layer="trackcard">${MK.trackCardSlots('twin').map((p) => MK.trackCard(S.race, p)).join('')}</div>`;
+    h += `<div class="layer" data-layer="lowerthirds">${MK.lowerThirdSlots('twin', [0, 1, 2, 3]).map((p) => MK.lowerThird(S.players[p.slot], p)).join('')}</div>`;
+    return h;
+  }, 'Twin · lower thirds + track cards');
+</script>
+</body>
+</html>

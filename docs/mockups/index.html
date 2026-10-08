@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Kart Cup — reference mockups</title>
+  <style>
+    :root { --bg: #0f1115; --panel: #15181e; --line: #262a33; --text: #e5e7eb; --muted: #8b93a1; --acc: #3b82f6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+    header { padding: 28px 32px 8px; max-width: 1500px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; } h2 { margin: 34px 0 12px; font-size: 18px; color: #fff; }
+    p { margin: 0; color: var(--muted); max-width: 900px; } code { background: #1f2430; padding: 1px 6px; border-radius: 4px; color: #cbd5e1; }
+    main { padding: 0 32px 60px; max-width: 1500px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 18px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .card.wide { grid-column: 1 / -1; }
+    .frame { position: relative; background: #000; } .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .meta { padding: 12px 14px; } .meta h3 { margin: 0 0 4px; font-size: 15px; } .meta p { font-size: 13px; }
+    .links { margin-top: 8px; display: flex; gap: 12px; font-size: 13px; } .links a { color: #93c5fd; text-decoration: none; } .links a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Kart Cup — reference mockups</h1>
+  <p>Every approved design from brainstorming, as code at real output size. These are the visual source of truth for the build:
+     reuse <code>shared/tokens.css</code> verbatim and port <code>shared/graphics.css</code> into the Svelte components keeping every number.
+     Open any page with <code>?guides=1</code> to see exact element boxes in canvas pixels, or <code>?fit=0</code> to view 1:1.</p>
+</header>
+<main id="main"></main>
+<script>
+  const S = [
+    ['Backgrounds', [
+      ['A · Menu Sky — wide', 'backgrounds/a-menu-sky.html', 10 / 3, 'Title / holding background. Watermark = operator text in the Event-title font.', true],
+      ['A · Menu Sky — HD', 'backgrounds/a-menu-sky.html?format=hd', 16 / 9, 'Same background adapted to 1920×1080.'],
+      ['A · Menu Sky — Twin', 'backgrounds/a-menu-sky.html?format=twin', 5 / 3, 'Same background adapted to 1920×1152.'],
+      ['B · Icon Pattern — wide', 'backgrounds/b-icon-pattern.html', 10 / 3, 'Base behind scenes and behind the gameplay pip.', true],
+      ['B · Icon Pattern — HD', 'backgrounds/b-icon-pattern.html?format=hd', 16 / 9, 'Pillars default background.'],
+      ['C · Sticker Wall — wide', 'backgrounds/c-sticker-wall.html', 10 / 3, 'Alternate holding background with kart parade and logo plate.', true],
+    ]],
+    ['Event title & headings', [
+      ['Title lockup · S1 Chrome (default) — wide', 'titles/title-lockup.html', 10 / 3, 'Mario Kart F2 letters + Lexend Zetta digits; chrome + iridescent accent.', true],
+      ['Title lockup · S3 Classic — wide', 'titles/title-lockup.html?style=classic', 10 / 3, 'Switchable alternative.', true],
+      ['Title lockup — HD', 'titles/title-lockup.html?format=hd', 16 / 9, 'Sizes 150 / 42.'],
+      ['Title lockup — Twin (per half)', 'titles/title-lockup.html?format=twin', 5 / 3, 'One lockup per 960 half, sizes 92 / 26.'],
+      ['Headings — looks and fonts', 'titles/headings.html', 10 / 3, 'Classic (default), Chrome, Plain; every bundled font in Classic.', true],
+    ]],
+    ['Overlays (transparent pages — camera is a stand-in)', [
+      ['Twin — Medallion lower thirds + T1 track cards', 'overlays/twin-lower-thirds.html', 5 / 3, 'Fixed slots P1+P2 left, P3+P4 right; track card top-left of each half.'],
+      ['Twin — long-name check', 'overlays/twin-lower-thirds.html?names=ALEXANDRIA-ROSE%20FEATHERSTONE,PRIYA,TOM,ALEX&track=Tour%20Singapore%20Speedway', 5 / 3, 'Text shrinks to fit (fitText) — never overflows.'],
+      ['HD — operator-selected players', 'overlays/hd-lower-thirds.html', 16 / 9, 'P1+P2 shown; row re-centres. Try ?players=0,1,2,3.'],
+      ['Wide — lower thirds ×1.5 (derived)', 'overlays/wide-lower-thirds.html', 10 / 3, 'Derived from layout rules.', true],
+      ['HOLD — wide', 'overlays/hold.html', 10 / 3, 'Instant cover on every output.', true],
+      ['HOLD — Twin (per half)', 'overlays/hold.html?format=twin', 5 / 3, 'One slide per 960 half.'],
+      ['HOLD — HD', 'overlays/hold.html?format=hd', 16 / 9, ''],
+    ]],
+    ['Wide scenes', [
+      ['Line-up', 'scenes/lineup.html', 10 / 3, '', true],
+      ['Next race', 'scenes/next-race.html', 10 / 3, 'Includes the cup\'s 4-track strip.', true],
+      ['Standings', 'scenes/standings.html', 10 / 3, 'MK8 results style; leader row yellow.', true],
+      ['Winner', 'scenes/winner.html', 10 / 3, 'On background A with rays and confetti.', true],
+    ]],
+    ['Operator UI (standard, not game-styled)', [
+      ['Control page — approved layout', 'ui/control.html', 1.6, 'Show tab left, selected output monitors right, master bar bottom. Monitors are live iframes of the mockups.', true],
+      ['Multiview', 'ui/multiview.html', 16 / 9, 'Second-monitor overview. ?hold=1 shows the HOLD state.', true],
+    ]],
+  ];
+  const sep = (u) => (u.includes('?') ? '&' : '?');
+  document.getElementById('main').innerHTML = S.map(([title, items]) => `<h2>${title}</h2><div class="grid">` + items.map(([name, url, ar, note, wide]) =>
+    `<div class="card${wide ? ' wide' : ''}"><div class="frame" style="aspect-ratio:${ar}"><iframe src="${url}${sep(url)}embed=1&lowfx=1" loading="lazy" title="${name}"></iframe></div>
+     <div class="meta"><h3>${name}</h3><p>${note}</p><div class="links"><a href="${url}" target="_blank">Open</a><a href="${url}${sep(url)}guides=1" target="_blank">Guides</a><a href="${url}${sep(url)}fit=0" target="_blank">1:1</a></div></div></div>`).join('') + '</div>').join('');
+</script>
+</body>
+</html>

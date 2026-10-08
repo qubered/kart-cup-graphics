@@ -62,16 +62,19 @@ A 4-player **Mario Kart 8 Deluxe** tournament at a work event, happening within 
 | Stack | Node.js + TypeScript server, **Svelte 5 + TypeScript + Vite** front end, WebSocket sync, JSON persistence |
 | Assets | Sourced from Mario Wiki by a re-runnable script; stored locally |
 
-The visual references are the approved mockups in `.superpowers/brainstorm/76763-1791418741/content/`:
+The visual source of truth is the reference mockups in **`docs/mockups/`**: the approved designs as standalone code at real output size (see `docs/mockups/README.md`; open `docs/mockups/index.html` through a local server).
 
-| File | Shows |
+| Path | Shows |
 |---|---|
-| `backgrounds-v3.html` | Backgrounds A, B and C, with operator-editable text and fonts |
-| `lower-thirds-v2.html` | Lower-third directions; #1 Medallion is the chosen one |
-| `track-and-title-v2.html` | Track card T1 and title styles S1 and S3 |
-| `wide-scenes-v2.html` | Wide scenes and the font roles |
-| `command-centre.html` | Multiview layout (section 2 of that page) |
-| `control-v3.html` | The final control page layout |
+| `shared/tokens.css` | Every colour, gradient, font stack, easing and duration. Copy verbatim. |
+| `shared/graphics.css` | Reference CSS for every component, with exact pixel values |
+| `backgrounds/a-menu-sky.html`, `b-icon-pattern.html`, `c-sticker-wall.html` | Backgrounds A, B, C (`?format=wide\|twin\|hd`) |
+| `titles/title-lockup.html`, `titles/headings.html` | Event title S1/S3 per format; heading looks and fonts |
+| `overlays/twin-lower-thirds.html`, `hd-lower-thirds.html`, `wide-lower-thirds.html`, `hold.html` | Medallion lower thirds, T1 track card, HOLD |
+| `scenes/lineup.html`, `next-race.html`, `standings.html`, `winner.html` | Wide scenes |
+| `ui/control.html`, `ui/multiview.html` | Control page layout and multiview |
+
+Any page with `?guides=1` outlines every component with its exact x, y, width and height.
 
 ## 3. Architecture
 
@@ -274,6 +277,11 @@ All three animate continuously using `transform`/`opacity` only.
   - Rows re-sort with a FLIP animation.
   - Footer: "AFTER RACE n · CUP".
 - **Winner:** spinning ray burst, a bobbing big medallion, confetti, "WINNER" heading, name, character and points. Shown on background A by default.
+
+### Text fitting (applies to every operator-typed text)
+
+- **Names, track names, sticker text:** shrink the font 1 px at a time down to a floor of **60%** of its base size. If it still doesn't fit, compress the text horizontally (`scaleX`) until it does. Text never overflows and never becomes tiny.
+- **Event title line:** shrinks with no floor to its maximum width: wide **3600** px, HD **1800** px, each twin half **900** px. Base sizes are wide 210 / pre-title 58, HD 150 / 42, twin 92 / 26. Outline and drop shadow are in `em`, so they shrink with the text.
 
 ### Typography
 

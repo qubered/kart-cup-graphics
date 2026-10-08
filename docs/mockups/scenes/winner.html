@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scene · Winner</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Wide 3840×1152 on background A (checker + rays; watermark/crests omitted to keep focus).
+     Rays 3000px centred on the medallion (1240,576), 40s/rev. Medallion 600 at (940,276), bobs 18px / 2.4s.
+     Text at x 1800: WINNER heading 250px, name 170px, character 54px + "<total> PTS" pill 60px. Confetti 90 (20 lowfx). */
+  MK.page('wide', (f, S) => {
+    const w = S.players[S.standings.rows[0].slot], look = MK.param('look', 'classic');
+    return `<div class="layer bg-sky" data-bg="A"><div class="checker"></div></div>
+      <div class="layer" data-layer="scene"><div class="rays"></div>${MK.medallion(w.icon, 'winner-medal')}
+        <div class="winner-text" data-guide="winner text">${MK.heading('WINNER', look, 250)}<div class="name">${MK.esc(w.name)}</div>
+          <div class="sub"><span class="char">${MK.esc(w.character)}</span><span class="pts">${S.standings.rows[0].total} PTS</span></div></div>
+        <div class="confetti" data-confetti></div></div>`;
+  }, 'Scene · Winner (wide)');
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HD · lower thirds (operator-selected players) + track card</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* HD canvas 1920×1080 (stream / pillars). The operator picks which players show; the row re-centres:
+     width 430, gap 20, y = 1080−70−160 = 850. e.g. P1+P2 → x 520, 970. Try ?players=0,1,2,3 or ?players=2.
+     Track card at (40,40). Transparent page; camera is a stand-in (?camera=0). */
+  const slots = MK.param('players', '0,1').split(',').map(Number).sort((a, b) => a - b);
+  MK.page('hd', (f, S) => {
+    let h = MK.param('camera', '1') === '0' ? '' : MK.camera('hd');
+    h += `<div class="layer" data-layer="trackcard">${MK.trackCardSlots('hd').map((p) => MK.trackCard(S.race, p)).join('')}</div>`;
+    h += `<div class="layer" data-layer="lowerthirds">${MK.lowerThirdSlots('hd', slots).map((p) => MK.lowerThird(S.players[p.slot], p)).join('')}</div>`;
+    return h;
+  }, 'HD · lower thirds + track card');
+</script>
+</body>
+</html>

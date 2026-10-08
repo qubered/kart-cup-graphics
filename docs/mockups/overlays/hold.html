@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HOLD overlay</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* HOLD = opaque cover above everything on every output, instant in/out.
+     Background A + event title lockup (current title style) at 42% + hold message (Headings font) 12% from bottom.
+     Twin renders one copy per 960 half. Sizes: wide 210/58/msg 90 · hd 150/42/64 · twin 92/26/44.  ?format=wide|hd|twin */
+  const fmt = MK.param('format', 'wide'), style = MK.param('style', 'chrome');
+  const z = MK.TITLE_SIZES[fmt];
+  MK.page(fmt, (f, S) => {
+    const slide = () => MK.titleLockup(S.event, style, z.ts, z.ps, 'top:42%', z.max) + `<div class="hold-msg" style="--ms:${z.ms}px" data-guide="hold message">${MK.esc(S.event.hold)}</div>`;
+    const body = fmt === 'twin'
+      ? `<div class="hold-half" style="left:0">${MK.bgSky({ w: 960, h: f.h }, S.event.watermark)}${slide()}</div><div class="hold-half" style="left:960px">${MK.bgSky({ w: 960, h: f.h }, S.event.watermark)}${slide()}</div>`
+      : MK.bgSky(f, S.event.watermark) + slide();
+    return `<div class="layer" data-overlay="hold">${body}</div>`;
+  }, 'HOLD overlay');
+</script>
+</body>
+</html>

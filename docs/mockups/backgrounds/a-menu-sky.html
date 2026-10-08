@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Background A · Menu Sky</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Role: title / holding background. Watermark text = operator "watermark" (default MARIO KART), Event-title font.
+     Try ?format=twin or ?format=hd — the layout is expressed in % of the canvas so it adapts. */
+  MK.page(MK.param('format', 'wide'), (f, S) => MK.bgSky(f, S.event.watermark), 'Background A · Menu Sky');
+</script>
+</body>
+</html>

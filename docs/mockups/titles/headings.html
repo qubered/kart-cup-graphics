@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Headings · looks and fonts</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Headings role: default Exo 2 900 italic, look CLASSIC. Top row = the three looks in the default font (120px).
+     Below = every bundled font in the default Classic look (80px). Upright fonts render without italic. */
+  MK.page('wide', (f) => {
+    const cell = (x, y, html, label) => `<div style="position:absolute;left:${x}px;top:${y}px">${html}<div style="font:700 26px/1 var(--font-label);color:rgba(255,255,255,.75);margin-top:14px;letter-spacing:2px">${label}</div></div>`;
+    let h = MK.bgPattern(f);
+    h += cell(140, 60, MK.heading('STANDINGS', 'classic', 120), 'CLASSIC (default) · Exo 2');
+    h += cell(1380, 60, MK.heading('STANDINGS', 'chrome', 120), 'CHROME · Exo 2');
+    h += cell(2620, 60, MK.heading('STANDINGS', 'plain', 120), 'PLAIN · Exo 2');
+    const fonts = ['Exo 2', 'Saira', 'Roboto', 'Rubik', 'Mario Kart F2', 'Lexend Zetta', 'Titan One', 'Lilita One', 'Russo One', 'Baloo 2', 'Luckiest Guy'];
+    fonts.forEach((fo, i) => { const col = i % 3, row = Math.floor(i / 3);
+      h += cell(140 + col * 1240, 330 + row * 205, MK.heading('NEXT RACE 2', 'classic', 80, { font: fo }), fo.toUpperCase()); });
+    return h;
+  }, 'Headings · looks + bundled fonts');
+</script>
+</body>
+</html>
