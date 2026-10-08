@@ -1,13 +1,9 @@
 <script lang="ts">
-  // Placeholder: replaced by the scene agents. Props are the final contract.
+  // Winner of a whole match: hero (icon, name, WINNER, total) and/or final scoreboard, per scene.config and scene.part.
   import type { CupWinView, ViewModel } from '../../../../shared/types'
+  import WinScreen from './win/WinScreen.svelte'
 
   let { scene, view, enter = 0 }: { scene: CupWinView; view: ViewModel; enter?: number } = $props()
-  void enter
 </script>
 
-<div class="stub" style:font-family={view.fonts.headings}>{scene.kind}</div>
-
-<style>
-  .stub { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 80px; }
-</style>
+<WinScreen {scene} {view} {enter} />
