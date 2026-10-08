@@ -30,5 +30,16 @@ test('hd scenes stay inside 1920×1080', async ({ page }) => {
 test('long name fits standings row', async ({ page }) => {
   await command({ type: 'setPlayer', index: 0, patch: { name: 'ALEXANDRIA-ROSE FEATHERSTONE' } })
   await command({ type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } }); await command({ type: 'take', mode: 'cut', outputIds: ['wide'] }); await page.goto('/out/wide'); await page.waitForSelector('body[data-ready]')
-  expect(await page.locator('.standing-row .name').first().evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true)
+  expect(await page.locator('.standing-row .name').first().evaluate(e => e.firstElementChild!.getBoundingClientRect().width <= e.getBoundingClientRect().width + 1)).toBe(true)
 })
+
+for (const [id, vp] of [['wide', [3840, 1152]], ['stream', [1920, 1080]]] as const)
+  for (const scene of ['lineup', 'nextRace', 'standings', 'winner'] as const)
+    test(`visual: ${id} ${scene}`, async ({ page }) => {
+      await page.setViewportSize({ width: vp[0], height: vp[1] })
+      await command({ type: 'saveResults', raceNo: 1, trackId: 'mario-kart-stadium', positions: [1, 2, 3, 4] })
+      await command({ type: 'setLayers', outputId: id, patch: { background: 'B', scene, trackCard: false, lowerThirds: { on: false, players: [] } } })
+      await command({ type: 'take', mode: 'cut', outputIds: [id] })
+      await page.goto(`/out/${id}`); await page.waitForSelector('body[data-ready]'); await page.waitForTimeout(500)
+      await expect(page.locator('#canvas')).toHaveScreenshot(`${id}-${scene}.png`, { maxDiffPixelRatio: 0.02, animations: 'disabled', mask: [page.locator('.confetti')] })
+    })
