@@ -47,6 +47,11 @@ describe('reducer', () => {
     expect(c.program.wide.view.scene).toBeNull(); expect(c.program.wide.view.background?.id).toBe('A')
     expect(c.program.wide.mode).toBe('cut')
   })
+  it('cup mode derives race X / Y from the cup; manual patch wins', () => {
+    const s1 = reduce(base, { type: 'stepRace', delta: 1 }, ctx)
+    expect(s1.draft.race).toMatchObject({ raceNo: 2, raceTotal: 4 })
+    expect(reduce(s1, { type: 'setRace', patch: { raceNo: 7, raceTotal: 9 } }, ctx).draft.race).toMatchObject({ raceNo: 7, raceTotal: 9 })
+  })
   it('hold / ftb', () => {
     expect(reduce(base, { type: 'hold', on: true }, ctx).overlay.hold).toEqual({ on: true, message: 'BACK SHORTLY' })
     expect(reduce(base, { type: 'hold', on: true, message: 'X' }, ctx).overlay.hold.message).toBe('X')

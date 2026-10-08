@@ -39,7 +39,7 @@
     <input type="number" min="1" max="99" aria-label="Race number" value={race.raceNo} disabled={!connected}
       onchange={(e) => send({ type: 'setRace', patch: { raceNo: Math.max(1, Math.min(99, Math.round(+e.currentTarget.value) || 1)) } })} />
     <span>of</span>
-    <input type="number" min="1" max="99" aria-label="Total races" value={race.raceTotal} disabled={!connected}
+    <input type="number" min="1" max="99" aria-label="Races in total" value={race.raceTotal} disabled={!connected}
       onchange={(e) => send({ type: 'setRace', patch: { raceTotal: Math.max(1, Math.min(99, Math.round(+e.currentTarget.value) || 1)) } })} />
   </div>
 

@@ -51,6 +51,9 @@ function applyRace(state: ShowState, patch: Partial<RaceState>, ctx: ReduceConte
   if (race.mode === 'cup' && !('trackId' in patch)) {
     const t = ctx.catalog.cup(race.cupId)?.tracks[race.raceIndex]
     if (t) race = { ...race, trackId: t }
+    if (!('raceNo' in patch) && !('raceTotal' in patch)) {
+      race = { ...race, raceNo: race.raceIndex + 1, raceTotal: ctx.catalog.cup(race.cupId)?.tracks.length ?? race.raceTotal }
+    }
   }
   return withDraft(state, { race })
 }
