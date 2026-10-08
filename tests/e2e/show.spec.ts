@@ -22,12 +22,11 @@ test('results with a duplicate and a blank', async ({ page }) => {
   await expect.poll(async () => (await state()).draft.scores.races[0]?.positions).toEqual([1, 1, 3, 0])
 })
 
-test('step race and edit adjustments', async ({ page }) => {
+test('step race and edit totals', async ({ page }) => {
   await page.goto('/control')
   await page.getByRole('button', { name: 'Race forward' }).click()
   await expect.poll(async () => (await state()).draft.race.raceIndex).toBe(1)
-  await page.getByRole('button', { name: 'Edit totals…' }).click()
-  await page.getByLabel('Adjustment P2').fill('5')
-  await page.getByLabel('Adjustment P2').blur()
+  await page.getByLabel(/^Total /).nth(1).fill('5')
+  await page.getByLabel(/^Total /).nth(1).blur()
   await expect.poll(async () => (await state()).draft.scores.adjustments[1]).toBe(5)
 })
