@@ -42,16 +42,33 @@ export interface ViewModel {
   scene: SceneView | null; trackCard: TrackCardView | null; lowerThirds: PlayerView[]
 }
 export interface ProgramFrame { view: ViewModel; mode: TakeMode; speed: TransitionSpeed; takenAt: number }
+/** What a recall applies. A preset always captures everything; scope picks which parts it restores.
+ *  show = event text, typography, players and race. scores = results and adjustments (off by default: recalling would overwrite live scores). */
+export interface PresetScope { layers: boolean; armed: boolean; show: boolean; scores: boolean; transition: boolean; mattify: boolean }
+/** A saved snapshot of the show: every output's layers, arming, show data, scores, transition speed and Mattify. */
+export interface Preset {
+  id: string; name: string; scope: PresetScope
+  layers: Record<string, Layers>; armed: string[]
+  draft: ShowData; transition: TransitionSpeed; mattify: boolean
+}
+/** One step in a stack: recall a preset, then cut/auto it to air (take: null = recall only, take by hand). The same preset may appear in many cues. */
+export interface Cue { id: string; presetId: string; take: TakeMode | null; scope?: Partial<PresetScope> }
+/** Patch for a cue's scope override: true/false forces that part on/off for this cue, null goes back to inheriting the preset's scope. */
+export type CueScopePatch = { [K in keyof PresetScope]?: boolean | null }
+/** An ordered, user-built list of cues. current = on air (last fired). selected = standby: its design is loaded into Preview and GO fires it.
+ *  With nothing selected, GO fires the cue after current (or the first). */
+export interface CueStack { id: string; name: string; cues: Cue[]; current: string | null; selected: string | null }
 export interface ShowState {
   draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; program: Record<string, ProgramFrame>
   overlay: { hold: { on: boolean; message: string }; ftb: boolean }
   transition: TransitionSpeed; armed: string[]
   clocks: { onAirSince: number | null }
   uploadedFonts: { family: string; file: string }[]
+  presets: Preset[]; lastPreset: string | null; stacks: CueStack[]
   /** App-wide switches (not part of an exported show). Applied instantly, with no Take. */
   settings: { mattify: boolean }
 }
-export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed }
+export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed; presets: Preset[]; stacks: CueStack[] }
 
 export type Command =
   | { type: 'setPlayer'; index: 0 | 1 | 2 | 3; patch: Partial<Player> }
@@ -63,6 +80,22 @@ export type Command =
   | { type: 'setEventText'; patch: Partial<EventText> }
   | { type: 'setTypography'; role: 'eventTitle' | 'headings' | 'names' | 'labels'; patch: { font?: string; style?: 'chrome' | 'classic'; look?: 'chrome' | 'classic' | 'plain' } }
   | { type: 'setLayers'; outputId: string; patch: Partial<Layers> }
+  | { type: 'savePreset'; name: string; scope?: Partial<PresetScope> }
+  | { type: 'updatePreset'; id: string; name?: string; capture?: boolean; scope?: Partial<PresetScope> }
+  | { type: 'deletePreset'; id: string }
+  | { type: 'recallPreset'; id: string; take?: TakeMode }
+  | { type: 'createStack'; name: string }
+  | { type: 'renameStack'; id: string; name: string }
+  | { type: 'deleteStack'; id: string }
+  | { type: 'resetStack'; id: string }
+  | { type: 'addCue'; stackId: string; presetId: string; take: TakeMode | null; index?: number; scope?: CueScopePatch }
+  | { type: 'updateCue'; stackId: string; cueId: string; presetId?: string; take?: TakeMode | null; scope?: CueScopePatch }
+  | { type: 'removeCue'; stackId: string; cueId: string }
+  | { type: 'moveCue'; stackId: string; cueId: string; delta: 1 | -1 }
+  | { type: 'selectCue'; stackId: string; cueId: string }
+  | { type: 'stepSelection'; stackId: string; delta: 1 | -1 }
+  | { type: 'goStack'; stackId: string }
+  | { type: 'fireCue'; stackId: string; cueId: string }
   | { type: 'arm'; outputIds: string[] }
   | { type: 'take'; mode: TakeMode; outputIds?: string[] }
   | { type: 'setTransition'; speed: TransitionSpeed }

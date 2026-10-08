@@ -30,7 +30,7 @@ describe('mattify setting', () => {
   it('survives resetShow and importShow', () => {
     const on = reduce(base, { type: 'setMattify', on: true }, ctx)
     expect(reduce(on, { type: 'resetShow' }, ctx).settings.mattify).toBe(true)
-    const file = { draft: on.draft, outputs: on.outputs, layers: on.layers, transition: on.transition }
+    const file = { draft: on.draft, outputs: on.outputs, layers: on.layers, transition: on.transition, presets: [], stacks: [] }
     expect(reduce(on, { type: 'importShow', file }, ctx).settings.mattify).toBe(true)
   })
   it('command schema accepts a boolean only', () => {

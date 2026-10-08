@@ -1,7 +1,7 @@
 import type { CatalogIndex } from './catalog'
-import { createDefaultState, emptyLayers, emptyProgram } from './defaults'
+import { createDefaultState, DEFAULT_PRESET_SCOPE, emptyLayers, emptyProgram } from './defaults'
 import { FORMAT_CANVAS, SUPPORTED_SCENES, deriveView } from './view'
-import type { Command, Layers, OutputConfig, ProgramFrame, RaceState, ShowState, Typography } from './types'
+import type { Command, CueScopePatch, CueStack, Layers, OutputConfig, Preset, PresetScope, ProgramFrame, RaceState, ShowState, Typography } from './types'
 
 export class CommandError extends Error {
   constructor(message: string) {
@@ -53,6 +53,98 @@ function applyRace(state: ShowState, patch: Partial<RaceState>, ctx: ReduceConte
     if (t) race = { ...race, trackId: t }
   }
   return withDraft(state, { race })
+}
+
+function requirePreset(state: ShowState, id: string): Preset {
+  const p = state.presets.find((x) => x.id === id)
+  if (!p) throw new CommandError(`Unknown preset: ${id}`)
+  return p
+}
+
+function requireStack(state: ShowState, id: string): CueStack {
+  const k = state.stacks.find((x) => x.id === id)
+  if (!k) throw new CommandError(`Unknown cue stack: ${id}`)
+  return k
+}
+
+/** Next numeric id with the given prefix, unique across the whole show (so deleted ids are not reused while others remain). */
+function nextId(prefix: string, ids: string[]): string {
+  const re = new RegExp(`^${prefix}-(\\d+)$`)
+  return `${prefix}-${ids.reduce((m, id) => Math.max(m, Number(re.exec(id)?.[1] ?? 0)), 0) + 1}`
+}
+
+function withStack(state: ShowState, id: string, fn: (k: CueStack) => CueStack): ShowState {
+  requireStack(state, id)
+  return { ...state, stacks: state.stacks.map((k) => (k.id === id ? fn(k) : k)) }
+}
+
+/** Standby index: the selected cue, else the one after the current, else the first. May equal cues.length (nothing left). */
+function standbyIndex(k: CueStack): number {
+  const sel = k.cues.findIndex((c) => c.id === k.selected)
+  if (sel !== -1) return sel
+  return k.cues.findIndex((c) => c.id === k.current) + 1
+}
+
+/** Make a cue the standby: its design is loaded into the draft (Preview) without going to air. */
+function selectAt(state: ShowState, stackId: string, index: number, ctx: ReduceContext): ShowState {
+  const cue = requireStack(state, stackId).cues[index]
+  if (!cue) return state
+  const next = recall(state, requirePreset(state, cue.presetId), undefined, ctx, cue.scope)
+  return withStack(next, stackId, (k) => ({ ...k, selected: cue.id }))
+}
+
+/** Fire a cue, mark it current, then stand by on the cue after it.
+ *  If the cue is already loaded in Preview (selected), it goes to air exactly as Preview is now, so edits made there are kept.
+ *  Otherwise its preset is recalled first. */
+function fireAt(state: ShowState, stackId: string, index: number, ctx: ReduceContext): ShowState {
+  const stack = requireStack(state, stackId)
+  const cue = stack.cues[index]
+  if (!cue) return state
+  const fired = stack.selected === cue.id
+    ? (cue.take ? reduce(state, { type: 'take', mode: cue.take }, ctx) : state)
+    : recall(state, requirePreset(state, cue.presetId), cue.take ?? undefined, ctx, cue.scope)
+  const after = withStack(fired, stackId, (k) => ({ ...k, current: cue.id, selected: null }))
+  return selectAt(after, stackId, index + 1, ctx)
+}
+
+type Snapshot = Pick<Preset, 'layers' | 'armed' | 'draft' | 'transition' | 'mattify'>
+function snapshot(state: ShowState): Snapshot {
+  return {
+    layers: structuredClone(state.layers), armed: [...state.armed], draft: structuredClone(state.draft),
+    transition: state.transition, mattify: state.settings.mattify,
+  }
+}
+/** Apply a cue scope patch: booleans set, null removes the override (inherit). Returns undefined when nothing is overridden. */
+function patchCueScope(cur: Partial<PresetScope> | undefined, patch: CueScopePatch | undefined): Partial<PresetScope> | undefined {
+  const out: Partial<PresetScope> = { ...cur }
+  for (const [k, v] of Object.entries(patch ?? {})) {
+    if (v === null) delete out[k as keyof PresetScope]
+    else if (v !== undefined) out[k as keyof PresetScope] = v
+  }
+  return Object.keys(out).length ? out : undefined
+}
+const mergeScope = (base: PresetScope, patch: Partial<PresetScope> | undefined): PresetScope => ({ ...base, ...patch })
+
+/** Apply the in-scope parts of a preset to the draft (Preview). Outputs that no longer exist are skipped; outputs added since keep their layers.
+ *  Optionally take to air afterwards, using the preset's transition speed. */
+function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | undefined, ctx: ReduceContext, override?: Partial<PresetScope>): ShowState {
+  const sc = { ...preset.scope, ...override }
+  // A fresh recall replaces Preview, so no stack's standby cue is "loaded" any more (selectAt re-marks the one it loads).
+  let next: ShowState = { ...state, lastPreset: preset.id, stacks: state.stacks.map((k) => (k.selected ? { ...k, selected: null } : k)) }
+  if (sc.layers) {
+    const layers = { ...state.layers }
+    for (const o of state.outputs) if (preset.layers[o.id]) layers[o.id] = structuredClone(preset.layers[o.id])
+    next = { ...next, layers }
+  }
+  if (sc.armed) next = { ...next, armed: preset.armed.filter((id) => state.outputs.some((o) => o.id === id)) }
+  if (sc.show) {
+    const { event, typography, players, race } = structuredClone(preset.draft)
+    next = withDraft(next, { event, typography, players, race })
+  }
+  if (sc.scores) next = liveScores(withDraft(next, { scores: structuredClone(preset.draft.scores) }), ctx)
+  if (sc.transition) next = { ...next, transition: preset.transition }
+  if (sc.mattify) next = { ...next, settings: { ...next.settings, mattify: preset.mattify } }
+  return take ? reduce(next, { type: 'take', mode: take }, ctx) : next
 }
 
 export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): ShowState {
@@ -113,6 +205,106 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       const patch: Partial<Layers> = {}
       for (const [k, v] of Object.entries(cmd.patch)) if (v !== undefined) (patch as Record<string, unknown>)[k] = v
       return { ...state, layers: { ...state.layers, [cmd.outputId]: { ...cur, ...patch } } }
+    }
+    case 'savePreset': {
+      const preset: Preset = { id: nextId('preset', state.presets.map((p) => p.id)), name: cmd.name, scope: mergeScope(DEFAULT_PRESET_SCOPE, cmd.scope), ...snapshot(state) }
+      return { ...state, presets: [...state.presets, preset], lastPreset: preset.id }
+    }
+    case 'updatePreset': {
+      requirePreset(state, cmd.id)
+      const presets = state.presets.map((p) => (p.id === cmd.id ? { ...p, ...(cmd.name ? { name: cmd.name } : {}), ...(cmd.scope ? { scope: mergeScope(p.scope, cmd.scope) } : {}), ...(cmd.capture ? snapshot(state) : {}) } : p))
+      return { ...state, presets }
+    }
+    case 'deletePreset': {
+      requirePreset(state, cmd.id)
+      // Cues that pointed at it go with it; a stack whose current cue is removed falls back to the cue before it.
+      const stacks = state.stacks.map((k) => {
+        if (!k.cues.some((c) => c.presetId === cmd.id)) return k
+        const cues = k.cues.filter((c) => c.presetId !== cmd.id)
+        let current = k.current
+        if (current && !cues.some((c) => c.id === current)) {
+          const at = k.cues.findIndex((c) => c.id === current)
+          current = k.cues.slice(0, at).reverse().find((c) => cues.includes(c))?.id ?? null
+        }
+        return { ...k, cues, current, selected: cues.some((c) => c.id === k.selected) ? k.selected : null }
+      })
+      return { ...state, presets: state.presets.filter((p) => p.id !== cmd.id), lastPreset: state.lastPreset === cmd.id ? null : state.lastPreset, stacks }
+    }
+    case 'recallPreset':
+      return recall(state, requirePreset(state, cmd.id), cmd.take, ctx)
+    case 'createStack': {
+      const stack: CueStack = { id: nextId('stack', state.stacks.map((k) => k.id)), name: cmd.name, cues: [], current: null, selected: null }
+      return { ...state, stacks: [...state.stacks, stack] }
+    }
+    case 'renameStack':
+      return withStack(state, cmd.id, (k) => ({ ...k, name: cmd.name }))
+    case 'deleteStack':
+      requireStack(state, cmd.id)
+      return { ...state, stacks: state.stacks.filter((k) => k.id !== cmd.id) }
+    case 'resetStack':
+      return withStack(state, cmd.id, (k) => ({ ...k, current: null, selected: null }))
+    case 'addCue': {
+      requirePreset(state, cmd.presetId)
+      const scope = patchCueScope(undefined, cmd.scope)
+      const cue = { id: nextId('cue', state.stacks.flatMap((k) => k.cues.map((c) => c.id))), presetId: cmd.presetId, take: cmd.take, ...(scope ? { scope } : {}) }
+      return withStack(state, cmd.stackId, (k) => {
+        const at = Math.min(cmd.index ?? k.cues.length, k.cues.length)
+        return { ...k, cues: [...k.cues.slice(0, at), cue, ...k.cues.slice(at)] }
+      })
+    }
+    case 'updateCue': {
+      if (cmd.presetId !== undefined) requirePreset(state, cmd.presetId)
+      const stack = requireStack(state, cmd.stackId)
+      const at = stack.cues.findIndex((c) => c.id === cmd.cueId)
+      if (at === -1) throw new CommandError(`Unknown cue: ${cmd.cueId}`)
+      const next = withStack(state, cmd.stackId, (k) => ({
+        ...k,
+        cues: k.cues.map((c) => {
+          if (c.id !== cmd.cueId) return c
+          const scope = cmd.scope ? patchCueScope(c.scope, cmd.scope) : c.scope
+          return { id: c.id, presetId: cmd.presetId ?? c.presetId, take: cmd.take !== undefined ? cmd.take : c.take, ...(scope ? { scope } : {}) }
+        }),
+      }))
+      // Editing the standby cue's preset reloads Preview.
+      return stack.selected === cmd.cueId && (cmd.presetId !== undefined || cmd.scope !== undefined) ? selectAt(next, cmd.stackId, at, ctx) : next
+    }
+    case 'removeCue': {
+      const at = requireStack(state, cmd.stackId).cues.findIndex((c) => c.id === cmd.cueId)
+      if (at === -1) throw new CommandError(`Unknown cue: ${cmd.cueId}`)
+      return withStack(state, cmd.stackId, (k) => ({
+        ...k, cues: k.cues.filter((c) => c.id !== cmd.cueId),
+        current: k.current === cmd.cueId ? (k.cues[at - 1]?.id ?? null) : k.current,
+        selected: k.selected === cmd.cueId ? null : k.selected,
+      }))
+    }
+    case 'moveCue': {
+      const stack = requireStack(state, cmd.stackId)
+      const i = stack.cues.findIndex((c) => c.id === cmd.cueId)
+      if (i === -1) throw new CommandError(`Unknown cue: ${cmd.cueId}`)
+      const j = i + cmd.delta
+      if (j < 0 || j >= stack.cues.length) return state
+      return withStack(state, cmd.stackId, (k) => {
+        const cues = [...k.cues]
+        ;[cues[i], cues[j]] = [cues[j], cues[i]]
+        return { ...k, cues }
+      })
+    }
+    case 'selectCue': {
+      const i = requireStack(state, cmd.stackId).cues.findIndex((c) => c.id === cmd.cueId)
+      if (i === -1) throw new CommandError(`Unknown cue: ${cmd.cueId}`)
+      return selectAt(state, cmd.stackId, i, ctx)
+    }
+    case 'stepSelection': {
+      const stack = requireStack(state, cmd.stackId)
+      const i = standbyIndex(stack) + cmd.delta
+      return i < 0 || i >= stack.cues.length ? state : selectAt(state, cmd.stackId, i, ctx)
+    }
+    case 'goStack':
+      return fireAt(state, cmd.stackId, standbyIndex(requireStack(state, cmd.stackId)), ctx)
+    case 'fireCue': {
+      const i = requireStack(state, cmd.stackId).cues.findIndex((c) => c.id === cmd.cueId)
+      if (i === -1) throw new CommandError(`Unknown cue: ${cmd.cueId}`)
+      return fireAt(state, cmd.stackId, i, ctx)
     }
     case 'arm': {
       for (const id of cmd.outputIds) requireOutput(state, id)
@@ -183,7 +375,7 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       const f = structuredClone(cmd.file)
       return {
         ...state,
-        draft: f.draft, outputs: f.outputs, layers: f.layers, transition: f.transition,
+        draft: f.draft, outputs: f.outputs, layers: f.layers, transition: f.transition, presets: f.presets, stacks: structuredClone(f.stacks), lastPreset: null,
         program: emptyProgram(f.draft, f.outputs, ctx.catalog, ctx.now, f.transition),
         overlay: { hold: { on: false, message: f.draft.event.holdMessage }, ftb: false },
         armed: [], clocks: { onAirSince: null },
@@ -193,7 +385,7 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       return liveScores(withDraft(state, { scores: { races: [], adjustments: [0, 0, 0, 0] } }), ctx)
     case 'resetShow': {
       const fresh = createDefaultState(ctx.catalog, ctx.now)
-      return { ...fresh, uploadedFonts: state.uploadedFonts, settings: state.settings }
+      return { ...fresh, uploadedFonts: state.uploadedFonts, settings: state.settings, presets: state.presets, stacks: state.stacks }
     }
     case 'resetOnAirClock':
       return { ...state, clocks: { onAirSince: state.clocks.onAirSince === null ? null : ctx.now } }

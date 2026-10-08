@@ -85,9 +85,26 @@ export function createHttpHandler(opts: HttpOpts): (req: IncomingMessage, res: S
     if (path === '/api/info' && method === 'GET') {
       return json(res, 200, { lanUrls: lanUrls(opts.port ? opts.port() : Number((req.socket.localPort) ?? 8080)) })
     }
+    // Remote-control API (Companion etc.): list presets, and run any command through the same validation as the websocket.
+    if (path === '/api/presets' && method === 'GET') {
+      const s = store.state
+      return json(res, 200, {
+        presets: s.presets.map((p) => ({ id: p.id, name: p.name })), lastPreset: s.lastPreset, armed: s.armed,
+        stacks: s.stacks.map((k) => ({ id: k.id, name: k.name, current: k.current, selected: k.selected, cues: k.cues.map((c) => ({ id: c.id, presetId: c.presetId, take: c.take, scope: c.scope })) })),
+        outputs: s.outputs.map((o) => ({ id: o.id, name: o.name })), hold: s.overlay.hold.on, ftb: s.overlay.ftb,
+      })
+    }
+    if (path === '/api/command' && method === 'POST') {
+      let raw: Buffer
+      try { raw = await readBody(req, 1024 * 1024) } catch { return json(res, 400, { error: 'Body too large or unreadable' }) }
+      let cmd: unknown
+      try { cmd = JSON.parse(raw.toString('utf8')) } catch { return json(res, 400, { error: 'Invalid JSON' }) }
+      const out = store.dispatch(cmd)
+      return out.ok ? json(res, 200, { ok: true }) : json(res, 400, { error: out.error })
+    }
     if (path === '/api/export' && method === 'GET') {
       const s = store.state
-      const file: ShowFile = { draft: s.draft, outputs: s.outputs, layers: s.layers, transition: s.transition }
+      const file: ShowFile = { draft: s.draft, outputs: s.outputs, layers: s.layers, transition: s.transition, presets: s.presets, stacks: s.stacks }
       return json(res, 200, file, { 'Content-Disposition': 'attachment; filename="show.json"' })
     }
     if (path === '/api/import' && method === 'POST') {

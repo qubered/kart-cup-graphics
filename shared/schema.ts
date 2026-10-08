@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Command, Layers, OutputConfig, ShowData, ShowFile, ShowState, ViewModel } from './types'
+import type { Command, Cue, CueStack, Layers, OutputConfig, Preset, PresetScope, ShowData, ShowFile, ShowState, ViewModel } from './types'
 
 export const colourIdSchema = z.enum(['red', 'blue', 'green', 'yellow', 'pink', 'orange', 'purple', 'cyan'])
 export const outputFormatSchema = z.enum(['wide', 'twin', 'hd'])
@@ -57,6 +57,33 @@ export const layersSchema: z.ZodType<Layers> = z.object({
   lineupShown: z.number().int().min(1).max(4).optional(),
 })
 
+export const presetScopeSchema: z.ZodType<PresetScope> = z.object({
+  layers: z.boolean(), armed: z.boolean(), show: z.boolean(), scores: z.boolean(), transition: z.boolean(), mattify: z.boolean(),
+})
+const partialScopeSchema = z.object({
+  layers: z.boolean(), armed: z.boolean(), show: z.boolean(), scores: z.boolean(), transition: z.boolean(), mattify: z.boolean(),
+}).partial()
+export const presetSchema: z.ZodType<Preset, z.ZodTypeDef, unknown> = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().max(100),
+  scope: presetScopeSchema,
+  layers: z.record(layersSchema),
+  armed: z.array(z.string()),
+  draft: showDataSchema,
+  transition: transitionSpeedSchema,
+  mattify: z.boolean(),
+})
+
+const SCOPE_KEYS = ['layers', 'armed', 'show', 'scores', 'transition', 'mattify'] as const
+const cueScopeSchema = z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean()]))).partial()
+const cueScopePatchSchema = z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean().nullable()]))).partial()
+export const cueSchema: z.ZodType<Cue> = z.object({
+  id: z.string().min(1).max(64), presetId: z.string().min(1).max(64), take: takeModeSchema.nullable(), scope: cueScopeSchema.optional(),
+}) as unknown as z.ZodType<Cue>
+export const cueStackSchema: z.ZodType<CueStack, z.ZodTypeDef, unknown> = z.object({
+  id: z.string().min(1).max(64), name: z.string().max(100), cues: z.array(cueSchema), current: z.string().nullable(), selected: z.string().nullable().default(null),
+})
+
 export const programFrameSchema = z.object({
   view: z.custom<ViewModel>((v) => typeof v === 'object' && v !== null),
   mode: takeModeSchema,
@@ -64,7 +91,7 @@ export const programFrameSchema = z.object({
   takenAt: z.number(),
 })
 
-// `settings` is optional on input so state files saved before it existed still load (Mattify off).
+// presets/stacks/settings are optional on input so state files saved before they existed still load.
 export const showStateSchema: z.ZodType<ShowState, z.ZodTypeDef, unknown> = z.object({
   draft: showDataSchema,
   outputs: z.array(outputConfigSchema),
@@ -75,7 +102,10 @@ export const showStateSchema: z.ZodType<ShowState, z.ZodTypeDef, unknown> = z.ob
   armed: z.array(z.string()),
   clocks: z.object({ onAirSince: z.number().nullable() }),
   uploadedFonts: z.array(z.object({ family: z.string(), file: z.string() })),
+  presets: z.array(presetSchema).default([]),
+  lastPreset: z.string().nullable().default(null),
   settings: z.object({ mattify: z.boolean() }).default({ mattify: false }),
+  stacks: z.array(cueStackSchema).default([]),
 })
 
 export const showFileSchema: z.ZodType<ShowFile, z.ZodTypeDef, unknown> = z.object({
@@ -83,8 +113,9 @@ export const showFileSchema: z.ZodType<ShowFile, z.ZodTypeDef, unknown> = z.obje
   outputs: z.array(outputConfigSchema),
   layers: z.record(layersSchema),
   transition: transitionSpeedSchema,
+  presets: z.array(presetSchema).default([]),
+  stacks: z.array(cueStackSchema).default([]),
 })
-
 
 export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setPlayer'), index: slotSchema, patch: playerSchema.partial() }),
@@ -114,6 +145,22 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }).optional(),
     lineupShown: z.number().int().min(1).max(4).optional(),
   }) }),
+  z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), scope: partialScopeSchema.optional() }),
+  z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), capture: z.boolean().optional(), scope: partialScopeSchema.optional() }),
+  z.object({ type: z.literal('deletePreset'), id: z.string() }),
+  z.object({ type: z.literal('recallPreset'), id: z.string(), take: takeModeSchema.optional() }),
+  z.object({ type: z.literal('createStack'), name: z.string().trim().min(1).max(100) }),
+  z.object({ type: z.literal('renameStack'), id: z.string(), name: z.string().trim().min(1).max(100) }),
+  z.object({ type: z.literal('deleteStack'), id: z.string() }),
+  z.object({ type: z.literal('resetStack'), id: z.string() }),
+  z.object({ type: z.literal('addCue'), stackId: z.string(), presetId: z.string(), take: takeModeSchema.nullable(), index: z.number().int().min(0).optional(), scope: cueScopePatchSchema.optional() }),
+  z.object({ type: z.literal('updateCue'), stackId: z.string(), cueId: z.string(), presetId: z.string().optional(), take: takeModeSchema.nullable().optional(), scope: cueScopePatchSchema.optional() }),
+  z.object({ type: z.literal('removeCue'), stackId: z.string(), cueId: z.string() }),
+  z.object({ type: z.literal('moveCue'), stackId: z.string(), cueId: z.string(), delta: z.union([z.literal(1), z.literal(-1)]) }),
+  z.object({ type: z.literal('fireCue'), stackId: z.string(), cueId: z.string() }),
+  z.object({ type: z.literal('selectCue'), stackId: z.string(), cueId: z.string() }),
+  z.object({ type: z.literal('stepSelection'), stackId: z.string(), delta: z.union([z.literal(1), z.literal(-1)]) }),
+  z.object({ type: z.literal('goStack'), stackId: z.string() }),
   z.object({ type: z.literal('arm'), outputIds: z.array(z.string()) }),
   z.object({ type: z.literal('take'), mode: takeModeSchema, outputIds: z.array(z.string()).optional() }),
   z.object({ type: z.literal('setTransition'), speed: transitionSpeedSchema }),
