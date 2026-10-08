@@ -22,7 +22,8 @@ export interface ShowData {
   event: EventText; typography: Typography; players: Player[]; race: RaceState
   scores: { races: RaceResult[]; adjustments: number[] }
 }
-export interface Layers { background: BackgroundId; scene: SceneId; trackCard: boolean; lowerThirds: { on: boolean; players: number[] } }
+/** `lineupShown`: how many line-up cards are revealed (1-4); absent = all four. */
+export interface Layers { background: BackgroundId; scene: SceneId; trackCard: boolean; lowerThirds: { on: boolean; players: number[] }; lineupShown?: number }
 
 export interface FontStacks { eventTitle: string; headings: string; names: string; labels: string }
 export interface TitleView { preTitle: string; title: string; accent: string }

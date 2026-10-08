@@ -53,6 +53,7 @@ export const layersSchema: z.ZodType<Layers> = z.object({
   scene: sceneIdSchema,
   trackCard: z.boolean(),
   lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }),
+  lineupShown: z.number().int().min(1).max(4).optional(),
 })
 
 export const programFrameSchema = z.object({
@@ -109,6 +110,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     scene: sceneIdSchema.optional(),
     trackCard: z.boolean().optional(),
     lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }).optional(),
+    lineupShown: z.number().int().min(1).max(4).optional(),
   }) }),
   z.object({ type: z.literal('arm'), outputIds: z.array(z.string()) }),
   z.object({ type: z.literal('take'), mode: takeModeSchema, outputIds: z.array(z.string()).optional() }),
