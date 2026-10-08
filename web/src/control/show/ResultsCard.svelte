@@ -38,7 +38,9 @@
     adjustments: scores.adjustments,
   })
   const tot = $derived(totals(withEdit))
-  let showAdj = $state(false)
+  const saved = $derived(totals(scores))
+  const baseTotals = $derived(totals({ races: scores.races, adjustments: [0, 0, 0, 0] }))
+  const pending = $derived(JSON.stringify(tot) !== JSON.stringify(saved))
 
   function save() {
     send({ type: 'saveResults', raceNo, trackId, positions: [...pos] })
@@ -57,7 +59,6 @@
           {#each Array.from({ length: nextNo }, (_, i) => i + 1) as n (n)}<option value={n}>Race {n}</option>{/each}
         </select>
       </label>
-      <button type="button" onclick={() => (showAdj = !showAdj)} aria-expanded={showAdj}>Edit totals…</button>
       <button type="button" class="primary" disabled={!connected} onclick={save}>Save results</button>
     </div>
   </div>
@@ -77,7 +78,11 @@
             </select>
           </td>
           <td class="num plus">+{pointsFor(pos[i])}</td>
-          <td class="num">{tot[i]}</td>
+          <td class="num">
+            <input class="total" type="number" step="1" value={saved[i]} disabled={!connected} aria-label="Total {p.name}"
+              onchange={(e) => send({ type: 'setAdjustment', index: i as 0 | 1 | 2 | 3, value: (Number(e.currentTarget.value) || 0) - baseTotals[i] })} />
+            {#if pending && tot[i] !== saved[i]}<span class="dim">→ {tot[i]}</span>{/if}
+          </td>
         </tr>
       {/each}
     </tbody>
@@ -85,25 +90,12 @@
 
   {#each dups as d (d)}<div class="warn">Duplicate position: {d}</div>{/each}
 
-  {#if showAdj}
-    <div class="adj">
-      {#each [0, 1, 2, 3] as i (i)}
-        <label>
-          P{i + 1} adjustment
-          <input type="number" step="1" value={scores.adjustments[i] ?? 0} disabled={!connected} aria-label="Adjustment P{i + 1}"
-            onchange={(e) => send({ type: 'setAdjustment', index: i as 0 | 1 | 2 | 3, value: Number(e.currentTarget.value) || 0 })} />
-        </label>
-      {/each}
-    </div>
-  {/if}
 
-  <p class="foot">Positions 1st–12th score 15, 12, 10, 9 … 1. Saving updates Standings in Preview.</p>
+  <p class="foot">Positions 1st–12th score 15, 12, 10, 9 … 1. Type in a total to edit it live; the scoreboard updates instantly.</p>
 </section>
 
 <style>
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .warn { color: var(--ui-pending); font-size: 13px; padding: 6px 12px 0; }
-  .adj { display: flex; gap: 12px; padding: 10px 12px 0; }
-  .adj label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--ui-muted); }
-  .adj input { width: 80px; }
+  .total { width: 64px; }
 </style>
