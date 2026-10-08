@@ -70,6 +70,7 @@ export const layersSchema: z.ZodType<Layers> = z.object({
   lineupShown: z.number().int().min(1).max(4).optional(),
   logo: z.enum(['off', 'corner', 'title']).optional(),
   qrStyle: qrStyleSchema.optional(),
+  noticeQr: z.boolean().optional(),
 })
 
 // Presets saved before `players` was its own part get players = show, which is what they restored before.
@@ -169,6 +170,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     lineupShown: z.number().int().min(1).max(4).optional(),
     logo: z.enum(['off', 'corner', 'title']).optional(),
     qrStyle: qrStyleSchema.optional(),
+    noticeQr: z.boolean().optional(),
   }) }),
   z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),

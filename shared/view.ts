@@ -75,7 +75,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
         scene = { kind: 'winner', player: pv(top.playerIndex), total: top.total }
         break
       }
-      case 'notice': scene = { kind: 'notice', doc: structuredClone(data.notice) }; break
+      case 'notice': scene = { kind: 'notice', doc: structuredClone(data.notice), qr: layers.noticeQr ? data.qr.items.map((i) => ({ ...i })) : null }; break
       case 'qr': scene = { kind: 'qr', style: layers.qrStyle ?? 'center', title, text: data.qr.text, items: data.qr.items.map((i) => ({ ...i })) }; break
       default: scene = null
     }

@@ -51,3 +51,28 @@ test('long text shrinks to stay inside its box', async ({ page }) => {
     await page.locator('#canvas').screenshot({ path: `test-results/qr-long-${out}.png` })
   }
 })
+
+for (const [out, w] of [['wide', 3840], ['pillars', 1920]] as const) {
+  test(`notice with QR codes on ${out}`, async ({ page }) => {
+    await command({ type: 'setLayers', outputId: out, patch: { background: 'A', scene: 'notice', noticeQr: true } })
+    await command({ type: 'take', mode: 'cut', outputIds: [out] })
+    await page.setViewportSize({ width: w, height: out === 'wide' ? 1152 : 1080 })
+    await page.goto(`/out/${out}`)
+    const scene = page.locator('[data-layer=scene]')
+    await expect(scene.locator('svg[aria-label="QR code"]')).toHaveCount(2)
+    await expect(scene).toContainText('NOTICE BOARD')
+    await page.waitForTimeout(300)
+    await page.locator('#canvas').screenshot({ path: `test-results/notice-qr-${out}.png` })
+  })
+}
+
+test('notice without QR codes still shows just the text, in the kart box', async ({ page }) => {
+  await command({ type: 'setLayers', outputId: 'wide', patch: { background: 'A', scene: 'notice', noticeQr: false } })
+  await command({ type: 'take', mode: 'cut', outputIds: ['wide'] })
+  await page.setViewportSize({ width: 3840, height: 1152 })
+  await page.goto('/out/wide')
+  await expect(page.locator('[data-layer=scene] .kart-box')).toHaveCount(1)
+  await expect(page.locator('[data-layer=scene] svg[aria-label="QR code"]')).toHaveCount(0)
+  await page.waitForTimeout(300)
+  await page.locator('#canvas').screenshot({ path: 'test-results/notice-wide.png' })
+})

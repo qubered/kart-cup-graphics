@@ -32,6 +32,7 @@
   const QR_STYLES = $derived<[QrStyle, string][]>(
     out?.format === 'wide' ? [['center', 'Centre'], ['title', 'Title + sides'], ['sides', 'Sides']]
       : out?.format === 'hd' ? [['center', 'QR only'], ['title', 'Title + QR']] : [])
+  const progNoticeQr = $derived(prog?.scene?.kind === 'notice' && !!prog.scene.qr)
   const progTrack = $derived(!!prog?.trackCard)
   const progLogo = $derived(prog?.scene?.kind === 'title' ? prog.scene.logo : null)
   const progLT = $derived(prog?.lowerThirds ?? [])
@@ -79,6 +80,10 @@
           {/each}
           <button onclick={() => patch({ lineupShown: Math.min(4, (layers.lineupShown ?? 4) + 1) })}>Next player</button>
         </div>
+      {/if}
+      {#if layers.scene === 'notice'}
+        <button class="sw" class:draft={!!layers.noticeQr} class:live={progNoticeQr} aria-pressed={!!layers.noticeQr}
+          onclick={() => patch({ noticeQr: !layers.noticeQr })}><i></i>Show QR codes</button>
       {/if}
       {#if layers.scene === 'qr' && QR_STYLES.length}
         <span class="k">Layout</span>
