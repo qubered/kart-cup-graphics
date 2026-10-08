@@ -1,0 +1,29 @@
+@import '@fontsource/rubik/400.css';
+@import '@fontsource/rubik/500.css';
+@import '@fontsource/rubik/700.css';
+@import '@fontsource/rubik/800.css';
+@import '@fontsource/rubik/900.css';
+@import '@fontsource/rubik/800-italic.css';
+@import '@fontsource/rubik/900-italic.css';
+@import '@fontsource/exo-2/900.css';
+@import '@fontsource/exo-2/900-italic.css';
+@import '@fontsource/saira/800.css';
+@import '@fontsource/saira/800-italic.css';
+@import '@fontsource/saira/900.css';
+@import '@fontsource/saira/900-italic.css';
+@import '@fontsource/roboto/900.css';
+@import '@fontsource/roboto/900-italic.css';
+@import '@fontsource/lexend-zetta/800.css';
+@import '@fontsource/lexend-zetta/900.css';
+@import '@fontsource/titan-one/400.css';
+@import '@fontsource/lilita-one/400.css';
+@import '@fontsource/russo-one/400.css';
+@import '@fontsource/baloo-2/800.css';
+@import '@fontsource/luckiest-guy/400.css';
+
+@font-face {
+  font-family: "MK F2";
+  src: url(/assets/fonts/mario_kart_f2.ttf) format("truetype");
+  unicode-range: U+0041-005A, U+0061-007A;
+  font-display: block;
+}
