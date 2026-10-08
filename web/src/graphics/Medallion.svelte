@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { flipIn, flipOut } from './flip'
+  import { fade } from 'svelte/transition'
+  import { cubicIn } from 'svelte/easing'
+  import { bounceIn } from './motion'
 
   let { image, size, stars = false, emblem = false, dur = 0 }: { image: string; size: number; stars?: boolean; emblem?: boolean; dur?: number } = $props()
   let failedFor = $state('')
@@ -10,9 +12,16 @@
   <div class="in">
     {#key image}
       {#if showImg}
-        <div class="flip" in:flipIn={{ duration: dur }} out:flipOut={{ duration: dur }}>
-          <img src={image} alt="" draggable="false" onerror={() => (failedFor = image)} />
-        </div>
+        <!-- Headshots bounce in when the character changes; emblems (cups) simply crossfade. -->
+        {#if emblem}
+          <div class="flip" in:fade={{ duration: dur }} out:fade={{ duration: Math.round(dur * 0.6), easing: cubicIn }}>
+            <img src={image} alt="" draggable="false" onerror={() => (failedFor = image)} />
+          </div>
+        {:else}
+          <div class="flip" in:bounceIn={{ duration: Math.round(dur * 1.5) }} out:fade={{ duration: Math.round(dur * 0.6), easing: cubicIn }}>
+            <img src={image} alt="" draggable="false" onerror={() => (failedFor = image)} />
+          </div>
+        {/if}
       {/if}
     {/key}
     {#if stars}<div class="stars">★★★</div>{/if}
