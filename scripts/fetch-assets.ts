@@ -28,9 +28,6 @@ const characters: CharacterEntry[] = CHARACTER_SPECS.map((s) => {
   jobs.push({ key: `characters/${s.id}.png`, candidates: s.iconCandidates, required: true })
   const e: CharacterEntry = { id: s.id, name: s.name, base: s.base, icon: `/assets/characters/${s.id}.png` }
   if (s.variant) e.variant = s.variant
-  if (s.artCandidates.length) {
-    jobs.push({ key: `characters/${s.id}-art.png`, candidates: s.artCandidates, width: 800, required: false })
-  }
   return e
 })
 const tracks: TrackEntry[] = []
@@ -97,7 +94,6 @@ await resolveAll()
 await downloadAll()
 
 for (const c of characters) {
-  if (existsSync(join(ASSETS, 'characters', `${c.id}-art.png`))) c.art = `/assets/characters/${c.id}-art.png`
 }
 for (const t of tracks) {
   if (existsSync(join(ASSETS, 'tracks', `${t.id}-large.jpg`))) t.image = `/assets/tracks/${t.id}-large.jpg`

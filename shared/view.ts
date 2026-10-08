@@ -22,7 +22,7 @@ function playerView(p: Player | undefined, slot: number, catalog: CatalogIndex):
   if (!p) return { slot, name: '', character: '?', icon: '', art: '', colour: colourHex('red'), textColour: textOn('red') }
   const c = catalog.character(p.characterId)
   return {
-    slot, name: p.name, character: c?.name ?? '?', icon: c?.icon ?? '', art: c?.art ?? '',
+    slot, name: p.name, character: c?.name ?? '?', icon: c?.icon ?? '', art: '', // headshots only: every character shows its icon, never full-body art
     colour: colourHex(p.colour), textColour: textOn(p.colour),
   }
 }

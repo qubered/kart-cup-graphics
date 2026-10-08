@@ -16,8 +16,7 @@
       "id": "peach",
       "name": "Peach",
       "base": "peach",
-      "icon": "/assets/characters/peach.png",
-      "art": "/assets/characters/peach-art.png"
+      "icon": "/assets/characters/peach.png"
     },
     {
       "id": "daisy",
@@ -341,8 +340,7 @@
       "id": "bowser",
       "name": "Bowser",
       "base": "bowser",
-      "icon": "/assets/characters/bowser.png",
-      "art": "/assets/characters/bowser-art.png"
+      "icon": "/assets/characters/bowser.png"
     },
     {
       "id": "dry-bones",

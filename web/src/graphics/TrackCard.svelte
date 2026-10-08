@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition'
   import type { FontStacks, TrackCardView } from '../../../shared/types'
   import { fitText } from '../lib/fit-text'
   import Medallion from './Medallion.svelte'
+  import Swap from './Swap.svelte'
 
   let { card, fonts, upright = false, dur = 0 }: { card: TrackCardView; fonts: FontStacks; upright?: boolean; dur?: number } = $props()
 </script>
@@ -10,15 +10,15 @@
 <div class="track-card">
   <div class="bar"><div class="chk"></div></div>
   <Medallion image={card.cupEmblem} size={120} emblem {dur} />
-  {#key card.raceLabel + '\u0000' + card.cupName + '\u0000' + card.trackName}
-    <div class="txt" in:fade={{ duration: dur }} out:fade={{ duration: dur }}>
-      <div class="row">
-        <span class="race" style:font-family={fonts.names}>{card.raceLabel}</span>
-        <span class="cup" style:font-family={fonts.labels}>{card.cupName}</span>
-      </div>
-      <div class="track-name" style:display="block" style:font-family={fonts.headings} style:font-style={upright ? 'normal' : 'italic'} use:fitText={{ max: 352, text: card.trackName }}><span>{card.trackName}</span></div>
+  <div class="txt">
+    <div class="row">
+      <Swap key={card.raceLabel} {dur}><span class="race" style:font-family={fonts.names}>{card.raceLabel}</span></Swap>
+      <Swap key={card.cupName} {dur}><span class="cup" style:font-family={fonts.labels}>{card.cupName}</span></Swap>
     </div>
-  {/key}
+    <Swap key={card.trackName} {dur} block class="tn-wrap">
+      <div class="track-name" style:display="block" style:font-family={fonts.headings} style:font-style={upright ? 'normal' : 'italic'} use:fitText={{ max: 352, text: card.trackName }}><span>{card.trackName}</span></div>
+    </Swap>
+  </div>
 </div>
 
 <style>
@@ -38,6 +38,7 @@
     transform: skewX(-12deg); letter-spacing: 1px; white-space: nowrap;
   }
   .cup { font: 800 15px/1 var(--font-label); color: var(--mk-label-cyan); letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
-  .track-name { position: absolute; left: 138px; top: 56px; width: 352px; font: italic 900 34px/1.05 var(--font-head); color: #fff; white-space: nowrap; overflow: hidden; }
+  .txt > :global(.tn-wrap) { position: absolute; left: 138px; top: 56px; width: 352px; }
+  .track-name { width: 352px; font: italic 900 34px/1.05 var(--font-head); color: #fff; white-space: nowrap; overflow: hidden; }
   .track-name > span { display: inline-block; transform-origin: left center; white-space: nowrap; }
 </style>

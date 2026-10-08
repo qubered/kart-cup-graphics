@@ -6,6 +6,10 @@
   let { image, size, stars = false, emblem = false, dur = 0 }: { image: string; size: number; stars?: boolean; emblem?: boolean; dur?: number } = $props()
   let failedFor = $state('')
   const showImg = $derived(!!image && failedFor !== image)
+  // The first image of a medallion arrives with its parent (which has its own entrance): no bounce/fade then.
+  // Only later image changes animate.
+  let settled = false
+  $effect(() => { settled = true })
 </script>
 
 <div class="medallion" class:emblem style:--s="{size}px">
@@ -14,11 +18,11 @@
       {#if showImg}
         <!-- Headshots bounce in when the character changes; emblems (cups) simply crossfade. -->
         {#if emblem}
-          <div class="flip" in:fade={{ duration: dur }} out:fade={{ duration: Math.round(dur * 0.6), easing: cubicIn }}>
+          <div class="flip" in:fade|global={{ duration: settled ? dur : 0 }} out:fade|global={{ duration: Math.round(dur * 0.6), easing: cubicIn }}>
             <img src={image} alt="" draggable="false" onerror={() => (failedFor = image)} />
           </div>
         {:else}
-          <div class="flip" in:bounceIn={{ duration: Math.round(dur * 1.5) }} out:fade={{ duration: Math.round(dur * 0.6), easing: cubicIn }}>
+          <div class="flip" in:bounceIn|global={{ duration: settled ? Math.round(dur * 1.5) : 0 }} out:fade|global={{ duration: Math.round(dur * 0.6), easing: cubicIn }}>
             <img src={image} alt="" draggable="false" onerror={() => (failedFor = image)} />
           </div>
         {/if}
