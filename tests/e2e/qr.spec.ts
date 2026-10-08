@@ -36,3 +36,18 @@ test('edit QR text and links on the Text & Fonts tab', async ({ page }) => {
     items: [{ label: 'Public', url: 'https://example.com/external' }, { label: 'Internal', url: 'https://internal.test/donate' }],
   })
 })
+
+test('long text shrinks to stay inside its box', async ({ page }) => {
+  await command({ type: 'setQr', patch: { text: 'Lorem ipsum dolor sit amet. '.repeat(30).trim() } })
+  for (const [out, w] of [['wide', 3840], ['twins', 1920], ['pillars', 1920]] as const) {
+    await command({ type: 'setLayers', outputId: out, patch: { scene: 'qr', qrStyle: 'sides' } })
+    await command({ type: 'take', mode: 'cut', outputIds: [out] })
+    await page.setViewportSize({ width: w, height: 1152 })
+    await page.goto(`/out/${out}`)
+    await expect(page.locator('.panel').first()).toBeVisible()
+    const hs = await page.locator('.panel').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))
+    const max = out === 'pillars' ? 780 : out === 'twins' ? 780 : 700
+    for (const h of hs) expect(h).toBeLessThanOrEqual(max + 1)
+    await page.locator('#canvas').screenshot({ path: `test-results/qr-long-${out}.png` })
+  }
+})

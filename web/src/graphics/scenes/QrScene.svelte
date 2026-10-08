@@ -3,6 +3,7 @@
   import { pop } from '../motion'
   import { qrLayout } from '../qr-layout'
   import QrCode from '../QrCode.svelte'
+  import { fitPanel } from '../../lib/fit-panel'
   import TitleLockup from '../TitleLockup.svelte'
 
   type S = Extract<SceneView, { kind: 'qr' }>
@@ -20,7 +21,7 @@
   {/if}
   {#each lay.panels as p, pi (pi)}
     <div class="anchor" style:left="{p.box.x + p.box.w / 2}px" style:top="{p.box.y + p.box.h / 2}px" style:max-width="{p.box.w}px">
-    <div class="panel {p.kind}" data-panel={pi} style:font-family={view.fonts.labels} style:--qr="{p.qr}px" style:--fs="{p.text}px" in:pop|global={{ duration: enter, delay: pi * 80 }}>
+    <div class="panel {p.kind}" data-panel={pi} style:font-family={view.fonts.labels} style:--qr="{p.qr}px" use:fitPanel={{ size: p.text, maxH: p.box.h, text: scene.text }} in:pop|global={{ duration: enter, delay: pi * 80 }}>
       {#snippet code(i: number)}
         <figure>
           <QrCode value={scene.items[i]?.url ?? ''} size={p.qr} />
