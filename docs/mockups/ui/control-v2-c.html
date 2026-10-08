@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Control page v2 — Option C · Run / Build split</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="control-v2/common.css">
+  <style>
+    /* Option C — "Run / Build". Two different screens for two different jobs (QLab / lighting-console show-mode vs edit-mode).
+       RUN is stripped to monitors + Now/Next/After + GO. BUILD holds all the density: library, rundown editor, look editor. */
+    .top.build { box-shadow: inset 0 -3px 0 #b45309; }
+    .nav button.on.b { background: #78350f; color: #fde68a; box-shadow: inset 0 0 0 1px #b45309; }
+    .mainc { position: absolute; left: 14px; right: 14px; top: 58px; bottom: 108px; display: grid; gap: 14px; }
+    .mainc.run { grid-template-columns: 880px minmax(0, 1fr); }
+    .mainc.build { grid-template-columns: 330px 560px minmax(0, 1fr); }
+    .lcol { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
+    .rcol { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
+    /* run: cue cards */
+    .cc { border: 1px solid var(--ui-line); border-radius: 12px; background: var(--ui-panel); display: flex; gap: 16px; padding: 12px; align-items: center; position: relative; }
+    .cc .th { aspect-ratio: 16/9; border-radius: 6px; overflow: hidden; position: relative; background: #000; flex: none; }
+    .cc .nm { color: #fff; font-weight: 700; line-height: 1.15; } .cc .sm { color: var(--ui-muted); font-size: 12.5px; margin-top: 4px; }
+    .cc .tag { font-size: 11px; padding: 4px 8px; }
+    .cc.pgm { border-color: var(--ui-program); background: #1f1010; } .cc.pgm .th { width: 190px; } .cc.pgm .nm { font-size: 22px; }
+    .cc.next { border-color: var(--ui-preview); background: #0f2418; padding: 16px; box-shadow: 0 0 0 1px var(--ui-preview); } .cc.next .th { width: 300px; } .cc.next .nm { font-size: 30px; margin-top: 8px; }
+    .cc.after .th { width: 150px; } .cc.after .nm { font-size: 18px; color: #cbd5e1; } .cc.after { opacity: .85; }
+    .cc .pill { font-size: 13px; padding: 6px 10px; margin-top: 10px; display: inline-block; }
+    .cc .noop { margin-left: auto; font: 700 28px var(--ui-mono); color: #4b5563; align-self: flex-start; }
+    .gobig { height: 160px; border-radius: 14px; background: var(--ui-preview); border: 2px solid #22c55e; color: #03140a; display: flex; align-items: center; justify-content: center; gap: 26px; }
+    .gobig .gl { font: 800 76px/1 var(--ui-font); letter-spacing: .06em; } .gobig .gt { display: flex; flex-direction: column; text-align: left; } .gobig .gt small { font-size: 14px; font-weight: 700; opacity: .8; } .gobig .gt b { font-size: 24px; }
+    .navr { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; } .navr button { height: 54px; font-size: 14px; }
+    /* run: below monitors */
+    .belowm { flex: 1; min-height: 0; }
+    .mini { display: flex; gap: 8px; padding: 10px 12px; }
+    .mc { flex: 1; min-width: 0; border: 1px solid var(--ui-line); border-radius: 8px; background: var(--ui-panel-2); padding: 4px; text-align: left; display: flex; flex-direction: column; position: relative; }
+    .mc .th { aspect-ratio: 16/9; border-radius: 4px; overflow: hidden; position: relative; background: #000; }
+    .mc .nm { font-size: 11px; font-weight: 600; color: #e5e7eb; padding: 4px 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mc .no { position: absolute; left: 7px; top: 7px; z-index: 4; font: 700 10px var(--ui-mono); color: #fff; background: rgba(0,0,0,.65); border-radius: 3px; padding: 2px 4px; }
+    .mc.pgm { border-color: var(--ui-program); box-shadow: 0 0 0 2px var(--ui-program); } .mc.pvw { border-color: var(--ui-preview); box-shadow: 0 0 0 2px var(--ui-preview); } .mc.done { opacity: .45; }
+    .tw { padding: 10px 12px; display: grid; gap: 8px; }
+    .tw .tr { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; } .tw .two { display: grid; gap: 8px; }
+    .tw .seg button { height: 44px; font-size: 13px; } .tw .tgl { min-height: 44px; }
+    /* build */
+    .lk { display: grid; grid-template-columns: 92px 1fr 44px; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #1c1f26; min-height: 72px; }
+    .lk .th { aspect-ratio: 16/9; border-radius: 4px; overflow: hidden; position: relative; background: #000; }
+    .lk .nm { color: #fff; font-weight: 600; font-size: 13px; } .lk small { color: var(--ui-muted); font-size: 11.5px; display: block; margin-top: 2px; }
+    .lk.sel { background: #14202f; box-shadow: inset 3px 0 0 var(--ui-accent); }
+    .lk .add { width: 44px; height: 44px; border: 1px solid var(--ui-field); border-radius: 8px; display: grid; place-content: center; font-size: 18px; color: #cbd5e1; }
+    .rr { display: grid; grid-template-columns: 26px 24px minmax(0, 1fr); gap: 8px; padding: 8px 10px 10px 4px; border-bottom: 1px solid #1c1f26; align-items: start; }
+    .rr.sel { background: #14202f; box-shadow: inset 3px 0 0 var(--ui-accent); }
+    .rr .l1 { display: flex; align-items: center; gap: 10px; min-height: 44px; } .rr .l1 .th { width: 62px; aspect-ratio: 16/9; border-radius: 3px; overflow: hidden; position: relative; background: #000; flex: none; }
+    .rr .l1 b { color: #fff; font-size: 13.5px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rr .l2 { display: grid; grid-template-columns: 178px 1fr; gap: 8px; margin-top: 2px; } .rr .l2 .seg button { height: 40px; font-size: 12px; padding: 0 4px; } .rr .l2 .field { height: 42px; font-size: 12.5px; }
+    .rr .n { font: 600 12px var(--ui-mono); color: var(--ui-muted); text-align: center; padding-top: 14px; } .rr .grip { height: 44px; }
+    .rr.run1 .l1 b::after { content: ''; }
+    .dz { margin: 10px 12px; border: 1px dashed #3a4455; border-radius: 10px; padding: 16px; text-align: center; color: var(--ui-muted); font-size: 12.5px; }
+    .ed { padding: 12px; display: grid; gap: 12px; }
+    .scg { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; } .scg .scn { padding: 3px; } .scg .scn .lb { font-size: 11px; padding: 4px 0 1px; }
+    .edfoot { margin-top: auto; padding: 12px; border-top: 1px solid var(--ui-line); background: #101319; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 8px; }
+    .edfoot .btn { height: 52px; white-space: normal; line-height: 1.15; text-align: center; }
+    .nm-in { display: flex; align-items: center; gap: 10px; }
+    .ph2 { display: flex; align-items: center; gap: 10px; padding: 0 12px; height: 52px; border-bottom: 1px solid var(--ui-line); flex: none; }
+  </style>
+</head>
+<body>
+<div class="ui" id="ui"></div>
+<script src="control-v2/common.js"></script>
+<script>
+  const S = { view: 'run', pvw: 4, pgm: 3, scene: 'raceWin', bg: 'B', track: true, lt: false, part: 'hero', mod: true, out: 'wide', sel: 4, confirm: false, toast: '' }
+  const takeLbl = (t) => (t === 'cut' ? 'CUT' : t === 'auto' ? 'AUTO' : 'RECALL')
+  const cs = (i) => (i === S.pgm ? 'pgm' : i === S.pvw ? 'pvw' : i < S.pgm ? 'done' : '')
+  const L = (i) => LOOKS[CUES[i].look]
+  const th = (id, o) => `<div class="th">${gfx(LOOKS[id].scene, LOOKS[id].bg, { part: LOOKS[id].part, ...o })}</div>`
+
+  function monitors() {
+    const cur = OUTS.find((o) => o.id === S.out), pg = L(S.pgm)
+    const tabs = OUTS.map((o) => `<button class="otab ${o.id === S.out ? 'on' : ''}" data-act="out" data-o="${o.id}"><i class="led ${o.on ? 'on' : ''}"></i>${o.name}${o.pend ? `<span class="p">${o.pend}</span>` : ''}</button>`).join('')
+    return `<div class="otabs">${tabs}<span class="sp"></span><button class="otab">Multiview ↗</button></div>
+      <div class="mon pv"><div class="t">PREVIEW · ${cur.name.toUpperCase()}</div><div class="src">${S.mod ? '<span class="tag mod">MODIFIED</span>' : ''}Cue ${S.pvw + 1} · ${L(S.pvw).name}</div>${gfx(S.scene, S.scene === 'none' ? 'none' : S.bg, { track: S.track, lt: S.lt, part: S.part })}</div>
+      <div class="mon pg"><div class="t">PROGRAM · ${cur.name.toUpperCase()}</div><div class="src">Cue ${S.pgm + 1} · ${pg.name}</div>${gfx(pg.scene, pg.bg, { track: true })}</div>`
+  }
+  function tweakBody() {
+    const sc = ['title', 'lineup', 'nextRace', 'standings', 'raceWin', 'cupWin'], nm = { title: 'Title', lineup: 'Line-up', nextRace: 'Next race', standings: 'Standings', raceWin: 'Race win', cupWin: 'Cup win' }
+    return `<div class="tw"><div class="tr"><span class="lab">Scene</span><div class="seg">${sc.map((s) => `<button class="${S.scene === s ? 'sel' : ''}" data-act="scene" data-s="${s}">${nm[s]}</button>`).join('')}</div></div>
+      <div class="tr"><span class="lab">Background</span><div class="two" style="grid-template-columns:1.6fr 1fr 1fr"><div class="seg">${['A', 'B', 'C', '—'].map((b) => `<button class="${(S.bg === b || (b === '—' && S.bg === 'none')) ? 'sel' : ''} ${b === 'B' ? 'livedot' : ''}" data-act="bg" data-b="${b === '—' ? 'none' : b}">${b}</button>`).join('')}</div>
+        <button class="tgl ${S.track ? 'on' : ''} livedot" data-act="track"><span class="tt"><b>Track card</b></span><span class="sw"></span></button><button class="tgl ${S.lt ? 'on' : ''}" data-act="lt"><span class="tt"><b>Lower thirds</b></span><span class="sw"></span></button></div></div>
+      <div class="tr"><span class="lab">Win part</span><div class="two" style="grid-template-columns:1.2fr 1fr 1fr"><div class="seg">${['full', 'hero', 'board'].map((p) => `<button class="${S.part === p ? 'sel' : ''}" data-act="part" data-p="${p}">${p[0].toUpperCase() + p.slice(1)}</button>`).join('')}</div><div class="field" style="height:44px">Active match<span class="car">▾</span></div><button class="btn">Split outputs</button></div></div></div>`
+  }
+  function runView() {
+    const below = S.view === 'tweak'
+      ? `<section class="panel belowm"><div class="ph"><span class="lab">Tweak Preview</span><span class="dim" style="font-size:12px">Changes stay in Preview. Nothing goes to air.</span><button class="btn sm acc" style="margin-left:auto" data-act="tweak">Done ▾</button></div>${tweakBody()}</section>`
+      : `<section class="panel belowm"><div class="ph"><span class="lab">Rundown</span><span class="dim" style="font-size:12px">Main show · ${S.pvw + 1} / ${CUES.length} · tap a cue to set Next</span><button class="btn sm" style="margin-left:auto" data-act="tweak">Tweak Preview ▴</button></div>
+          <div class="mini">${CUES.map((c, i) => `<button class="mc ${cs(i)}" data-act="chip" data-i="${i}"><span class="no">${i + 1}</span>${th(c.look)}<span class="nm">${LOOKS[c.look].name}</span></button>`).join('')}</div></section>`
+    const nx = L(S.pvw), af = CUES[S.pvw + 1] ? L(S.pvw + 1) : null
+    return `<div class="mainc run"><div class="lcol">${monitors()}${below}</div>
+      <div class="rcol"><div class="lab" style="padding:2px 4px">On air · Next · After</div>
+        <div class="cc pgm">${th(CUES[S.pgm].look)}<div><span class="tag pgm">ON AIR</span><div class="nm" style="margin-top:8px">${L(S.pgm).name}</div><div class="sm">Cue ${S.pgm + 1} · ${takeLbl(CUES[S.pgm].take)} · 00:00:42</div></div></div>
+        <div class="cc next">${th(CUES[S.pvw].look)}<div><span class="tag pvw">NEXT · IN PREVIEW</span><div class="nm">${nx.name}</div><span class="pill ${CUES[S.pvw].take}">${takeLbl(CUES[S.pvw].take)}</span>${CUES[S.pvw].after ? '<div class="then" style="margin-top:8px;font-size:13px">↳ then next race</div>' : ''}</div><span class="noop">${S.pvw + 1}</span></div>
+        <div class="cc after">${af ? th(CUES[S.pvw + 1].look) : ''}<div><span class="lab">After</span><div class="nm">${af ? af.name : '—'}</div><div class="sm">Cue ${S.pvw + 2} · ${af ? takeLbl(CUES[S.pvw + 1].take) : ''}</div></div></div>
+        <div style="margin-top:auto" class="rcol"><button class="gobig" data-act="go"><span class="gl">GO</span><span class="gt"><small>Fires cue ${S.pvw + 1} · ${takeLbl(CUES[S.pvw].take)}</small><b>${nx.name}</b></span></button>
+        <div class="navr"><button class="btn" data-act="prev">◀ Back</button><button class="btn" data-act="skip">Skip ▶</button><button class="btn">Rewind</button></div></div></div></div>`
+  }
+  function buildView() {
+    const ids = Object.keys(LOOKS)
+    const lib = ids.map((id) => `<div class="lk ${id === 'win' ? 'sel' : ''}">${th(id)}<div><div class="nm">${LOOKS[id].name}</div><small>${LOOKS[id].used ? 'In ' + LOOKS[id].used + ' cue' + (LOOKS[id].used > 1 ? 's' : '') : 'Not in a rundown'}</small></div><button class="add" aria-label="Add to rundown">＋</button></div>`).join('')
+    const rows = CUES.map((c, i) => `<div class="rr ${i === S.sel ? 'sel' : ''}" data-act="rsel" data-i="${i}"><span class="grip"><i></i></span><span class="n">${i + 1}</span><div><div class="l1">${th(c.look)}<b>${LOOKS[c.look].name}</b><span class="xbtn">✕</span></div>
+        <div class="l2"><div class="seg blue"><button class="${c.take === 'cut' ? 'sel' : ''}">Cut</button><button class="${c.take === 'auto' ? 'sel' : ''}">Auto</button><button class="${!c.take ? 'sel' : ''}">Recall</button></div><div class="field">${c.after ? 'Then ' + c.after.toLowerCase() : 'No action after'}<span class="car">▾</span></div></div></div></div>`).join('')
+    const sc = SCENES.slice(0, 12).map(([id, l]) => `<button class="scn ${S.scene === id ? 'sel' : ''}" data-act="scene" data-s="${id}"><div class="th">${gfx(id, id === 'none' ? 'none' : S.bg, { part: S.part })}</div><span class="lb">${l}</span></button>`).join('')
+    return `<div class="mainc build">
+      <section class="panel"><div class="ph2"><span class="lab">Looks</span><span class="dim" style="font-size:12px">${ids.length}</span><div class="field" style="margin-left:auto;height:38px;width:150px;color:var(--ui-muted)">Filter…</div></div>
+        <div style="padding:10px 12px;border-bottom:1px solid var(--ui-line)"><button class="btn acc" style="width:100%;height:52px">＋ New look from Preview</button></div><div class="grow" style="overflow:auto">${lib}</div></section>
+      <section class="panel"><div class="ph2"><span class="lab">Rundown</span><button class="btn sm" style="height:36px">Main show <span class="dim">▾</span></button><span class="dim" style="font-size:12px">${CUES.length} cues</span><button class="btn sm" style="margin-left:auto">＋ New</button></div>
+        <div class="grow" style="overflow:auto">${rows}<div class="dz">Drag a look here, or tap ＋ in the library</div></div></section>
+      <section class="panel"><div class="ph2"><span class="lab">Look</span><div class="field" style="height:38px;flex:1;font-weight:700">Race win — hero</div><span class="tag mod" style="padding:5px 8px">● MODIFIED</span></div>
+        <div class="grow" style="overflow:hidden"><div class="ed"><div class="mon pv" style="aspect-ratio:10/3"><div class="t">EDITING · ${OUTS.find((o) => o.id === S.out).name.toUpperCase()}</div>${gfx(S.scene, S.scene === 'none' ? 'none' : S.bg, { track: S.track, lt: S.lt, part: S.part })}</div>
+          <div class="scg">${sc}</div>
+          <div class="tw" style="padding:0"><div class="tr" style="grid-template-columns:80px 1fr"><span class="lab">Background</span><div class="two" style="grid-template-columns:1.4fr 1fr 1fr"><div class="seg">${['A', 'B', 'C', '—'].map((b) => `<button class="${S.bg === b ? 'sel' : ''}" data-act="bg" data-b="${b}">${b}</button>`).join('')}</div><button class="tgl ${S.track ? 'on' : ''}" data-act="track"><span class="tt"><b>Track</b></span><span class="sw"></span></button><button class="tgl ${S.lt ? 'on' : ''}" data-act="lt"><span class="tt"><b>Lower 3rds</b></span><span class="sw"></span></button></div></div>
+          <div class="tr" style="grid-template-columns:80px 1fr"><span class="lab">Win part</span><div class="seg">${['Full', 'Hero', 'Board'].map((p) => `<button class="${S.part === p.toLowerCase() ? 'sel' : ''}" data-act="part" data-p="${p.toLowerCase()}">${p}</button>`).join('')}</div></div></div></div></div>
+        <div class="edfoot"><button class="btn" data-act="revert">↺ Revert</button><button class="btn">Save as new look…</button>${S.confirm ? '<button class="btn" style="background:#78350f;border-color:#b45309;color:#fde68a" data-act="upd"><span>Tap again to overwrite<br><span style="font-weight:400;font-size:11px">affects cues 5 and 8</span></span></button>' : '<button class="btn acc" data-act="upd"><span>Update “Race win — hero”<br><span style="font-weight:400;font-size:11px">used by cues 5 and 8</span></span></button>'}</div></section></div>`
+  }
+  function render() {
+    const build = S.view === 'build'
+    document.getElementById('ui').innerHTML = `${topBar([['Run', 'run'], ['Show data', 'data'], ['Build', 'build'], ['Setup', 'setup']], S.view === 'tweak' ? 'run' : S.view)}${build ? buildView() : S.view === 'data' || S.view === 'setup' ? `<div class="mainc run"><section class="panel" style="grid-column:1/-1;display:grid;place-content:center;color:var(--ui-muted)">Same as Option A: ${S.view === 'data' ? 'Show data' : 'Setup'} workspace (transport stays visible)</section></div>` : runView()}${transport()}${S.toast ? `<div class="toast">${S.toast}</div>` : ''}`
+    document.querySelector('.top').classList.toggle('build', build)
+    document.querySelector('.nav button.on')?.classList.toggle('b', build)
+    fit()
+  }
+  const load = (i) => { const l = LOOKS[CUES[i].look]; S.scene = l.scene; S.bg = l.bg; S.part = l.part || 'hero'; S.mod = false }
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-act]'); if (!t) return
+    const a = t.dataset.act, d = t.dataset
+    if (a === 'view') S.view = d.v
+    else if (a === 'tweak') S.view = S.view === 'tweak' ? 'run' : 'tweak'
+    else if (a === 'chip') { S.pvw = +d.i; load(S.pvw) }
+    else if (a === 'go') { S.pgm = S.pvw; S.pvw = Math.min(S.pvw + 1, CUES.length - 1); load(S.pvw) }
+    else if (a === 'prev') S.pvw = Math.max(0, S.pvw - 1) ; else if (a === 'skip') S.pvw = Math.min(CUES.length - 1, S.pvw + 1)
+    else if (a === 'scene') { S.scene = d.s; S.mod = true } else if (a === 'bg') { S.bg = d.b; S.mod = true } else if (a === 'part') { S.part = d.p; S.mod = true }
+    else if (a === 'track') { S.track = !S.track; S.mod = true } else if (a === 'lt') { S.lt = !S.lt; S.mod = true } else if (a === 'out') S.out = d.o
+    else if (a === 'rsel') S.sel = +d.i
+    else if (a === 'upd') { if (S.confirm) { S.confirm = false; S.mod = false } else S.confirm = true }
+    else if (a === 'revert') S.mod = false
+    render()
+  })
+  const st = new URLSearchParams(location.search).get('state')
+  if (st === 'tweak') S.view = 'tweak'
+  if (st === 'build') S.view = 'build'
+  if (st === 'buildconfirm') { S.view = 'build'; S.confirm = true }
+  render()
+</script>
+</body>
+</html>
