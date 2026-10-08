@@ -22,6 +22,9 @@ const pages: [string, boolean][] = [
   ['/out/twins/left', true],
   ['/out/twins/right', true],
   ['/out/superwide', true],
+  ['/out/wide?fill=1', true],
+  ['/out/wide?key=1', true],
+  ['/out/superwide?key=1', true],
 ]
 
 async function open(path: string, w = 1920, h = 1080) {

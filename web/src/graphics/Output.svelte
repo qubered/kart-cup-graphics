@@ -20,6 +20,9 @@
   }
   let { payload, firstPaint, lowfx, debug, connected, part, embedded = false }: Props = $props()
 
+  // ?key=1: the matte of an opaque layer is flat white, so don't render (and filter) animated art for it.
+  const keyMode = typeof document !== 'undefined' && document.documentElement.getAttribute('data-matte') === 'key'
+
   const view = $derived(payload?.view ?? null)
   // First render after (re)load is always a CUT: every duration is 0.
   const enter = $derived(!payload || firstPaint ? 0 : enterDuration(payload.frame.mode, payload.frame.speed))
@@ -29,6 +32,9 @@
 <svelte:head>
   <style>
     html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+    /* Cut & fill (?fill=1 / ?key=1): opaque black behind the graphics; the key turns every pixel white and keeps its alpha. */
+    html[data-matte] body { background: #000; }
+    html[data-matte=key] #app { filter: brightness(0) invert(1); }
   </style>
 </svelte:head>
 
@@ -41,7 +47,9 @@
     {#if view.background}
       {#key view.background.id}
         <div class="layer" data-layer="background" data-bg={view.background.id} in:fade={{ duration: enter }} out:fade={{ duration: exit }}>
-          {#if view.background.id === 'A'}
+          {#if keyMode}
+            <div class="key-solid"></div>
+          {:else if view.background.id === 'A'}
             <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} />
           {:else if view.background.id === 'B'}
             <IconPattern w={view.canvas.w} h={view.canvas.h} />
@@ -62,7 +70,9 @@
     <div class="layer" data-layer="lowerthirds">{#if view.lowerThirds.length}<LowerThirdsLayer players={view.lowerThirds} {view} {enter} {exit} />{/if}</div>
 
     <!-- HOLD: instant, no transition -->
-    {#if payload?.hold}
+    {#if payload?.hold && keyMode}
+      <div class="key-solid" data-overlay="hold"></div>
+    {:else if payload?.hold}
       <HoldOverlay hold={payload.hold} format={view.format} w={view.canvas.w} h={view.canvas.h} />
     {/if}
 
@@ -85,6 +95,7 @@
   .crop { position: relative; overflow: hidden; background: transparent; }
   .canvas { position: relative; overflow: hidden; background: transparent; }
   /* Each layer is its own stacking context so z-indexes inside a layer never escape above later layers (scene, HOLD, ...). */
+  .key-solid { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #fff; }
   .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; isolation: isolate; }
   [data-debug] {
     position: fixed; left: 8px; bottom: 8px; z-index: 99999; padding: 4px 8px;
