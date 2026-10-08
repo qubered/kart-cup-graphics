@@ -1,8 +1,8 @@
 <script lang="ts">
   import { control, send } from './store'
-  import { isSceneSupported } from '../../../shared/view'
+  import { SUPPORTED_SCENES, isSceneSupported } from '../../../shared/view'
   import { activeTournament } from '../../../shared/tournament'
-  import type { BackgroundId, SceneId, ScenePart } from '../../../shared/types'
+  import type { BackgroundId, QrStyle, SceneId, ScenePart } from '../../../shared/types'
   import { choiceToRef, rangeSet, refToChoice, splitAcrossOutputs, toggleRound } from './tournament'
 
   const st = $derived($control.payload?.state)
@@ -29,10 +29,16 @@
     { id: 'bracket', label: 'Bracket' },
     { id: 'matches', label: 'Matches' },
     { id: 'notice', label: 'Notice' },
+    { id: 'qr', label: 'QR codes' },
   ]
   const PARTS: { id: ScenePart; label: string }[] = [{ id: 'full', label: 'Full' }, { id: 'hero', label: 'Hero' }, { id: 'board', label: 'Board' }]
   const progBg = $derived<BackgroundId>(prog?.background?.id ?? 'none')
   const progScene = $derived<SceneId>((prog?.scene?.kind as SceneId | undefined) ?? 'none')
+  const progQr = $derived(prog?.scene?.kind === 'qr' ? prog.scene.style : null)
+  /** QR layouts offered per format (twins always show one code per half). */
+  const QR_STYLES = $derived<[QrStyle, string][]>(
+    out?.format === 'wide' ? [['center', 'Centre'], ['title', 'Title + sides'], ['sides', 'Sides']]
+      : out?.format === 'hd' ? [['center', 'QR only'], ['title', 'Title + QR']] : [])
   const progTrack = $derived(!!prog?.trackCard)
   const progLogo = $derived(prog?.scene?.kind === 'title' ? prog.scene.logo : null)
   const progLT = $derived(prog?.lowerThirds ?? [])
@@ -90,6 +96,15 @@
             <button class:draft={(layers.lineupShown ?? 4) === n} onclick={() => patch({ lineupShown: n })}>{n === 4 ? 'All' : n === 1 ? 'P1' : `P1–${n}`}</button>
           {/each}
           <button onclick={() => patch({ lineupShown: Math.min(4, (layers.lineupShown ?? 4) + 1) })}>Next player</button>
+        </div>
+      {/if}
+      {#if layers.scene === 'qr' && QR_STYLES.length}
+        <span class="k">Layout</span>
+        <div class="seg lay">
+          {#each QR_STYLES as [m, l] (m)}
+            <button class:draft={(layers.qrStyle ?? 'center') === m || (m === 'center' && out.format === 'hd' && layers.qrStyle === 'sides')} class:live={progQr === m}
+              onclick={() => patch({ qrStyle: m })}>{l}</button>
+          {/each}
         </div>
       {/if}
     </div>

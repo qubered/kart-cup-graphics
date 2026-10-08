@@ -12,6 +12,7 @@
   import Bracket from './scenes/Bracket.svelte'
   import Matches from './scenes/Matches.svelte'
   import NoticeScene from './scenes/NoticeScene.svelte'
+  import QrScene from './scenes/QrScene.svelte'
 
   let { scene, view, enter, exit, lowfx = false, logoSrc = null }: { scene: SceneView; view: ViewModel; enter: number; exit: number; lowfx?: boolean; logoSrc?: string | null } = $props()
 </script>
@@ -38,6 +39,8 @@
       <Matches {scene} {view} {enter} />
     {:else if scene.kind === 'notice'}
       <NoticeScene {scene} {view} {enter} />
+    {:else if scene.kind === 'qr'}
+      <QrScene {scene} {view} {enter} />
     {/if}
   </div>
 {/key}

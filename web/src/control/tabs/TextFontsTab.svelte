@@ -2,7 +2,7 @@
   import { control, send } from '../store'
   import { sync } from '../sync'
   import { BUNDLED_FONTS, fontStack } from '../../../../shared/fonts'
-  import type { EventText } from '../../../../shared/types'
+  import type { EventText, QrItem } from '../../../../shared/types'
   import NoticeEditor from '../notice/NoticeEditor.svelte'
 
   const st = $derived($control.payload?.state)
@@ -24,6 +24,11 @@
     { id: 'names', label: 'Names & numbers' },
     { id: 'labels', label: 'Labels' },
   ]
+
+  function setItem(i: number, patch: Partial<QrItem>): [QrItem, QrItem] {
+    const [a, b] = st!.draft.qr.items
+    return i === 0 ? [{ ...a, ...patch }, b] : [a, { ...b, ...patch }]
+  }
 
   let upMsg = $state<{ ok: boolean; text: string } | null>(null)
   let busy = $state(false)
@@ -77,6 +82,28 @@
     <h2>Notice board</h2>
     <NoticeEditor doc={st.draft.notice} {fonts} />
     <div class="dim" style="margin-top:8px; font-size:12px">Shown by the Notice scene. Sizes are px on a 1080p canvas.</div>
+  </div>
+
+  <div class="card" data-card="qr">
+    <h2>QR codes</h2>
+    <div class="field">
+      <label for="qr-text">Text</label>
+      <textarea id="qr-text" name="qrText" rows="4" use:sync={st.draft.qr.text}
+        oninput={(e) => send({ type: 'setQr', patch: { text: e.currentTarget.value } })}></textarea>
+    </div>
+    {#each st.draft.qr.items as item, i (i)}
+      <div class="field">
+        <label for="qr-label-{i}">Code {i + 1} label</label>
+        <input id="qr-label-{i}" type="text" name="qrLabel{i}" use:sync={item.label}
+          oninput={(e) => send({ type: 'setQr', patch: { items: setItem(i, { label: e.currentTarget.value }) } })} />
+      </div>
+      <div class="field">
+        <label for="qr-url-{i}">Code {i + 1} link</label>
+        <input id="qr-url-{i}" type="text" name="qrUrl{i}" use:sync={item.url}
+          oninput={(e) => send({ type: 'setQr', patch: { items: setItem(i, { url: e.currentTarget.value }) } })} />
+      </div>
+    {/each}
+    <div class="dim" style="margin-top:8px; font-size:12px">Shown by the QR codes scene. Both codes share one design; each opens its own link.</div>
   </div>
 
   <div class="card">

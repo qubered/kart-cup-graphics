@@ -1,11 +1,12 @@
 import { z } from 'zod'
+import { DEFAULT_QR } from './qr-default'
 import { DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN } from './tournament'
 import type { BracketConfig, Command, Cue, CueStack, Layers, Match, MatchesSceneConfig, OutputConfig, Preset, PresetScope, ShowData, ShowFile, ShowState, Tournament, ViewModel, WinScreenConfig } from './types'
 
 export const colourIdSchema = z.enum(['red', 'blue', 'green', 'yellow', 'pink', 'orange', 'purple', 'cyan'])
 export const outputFormatSchema = z.enum(['wide', 'twin', 'hd'])
 export const backgroundIdSchema = z.enum(['A', 'B', 'C', 'none'])
-export const sceneIdSchema = z.enum(['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'raceWin', 'cupWin', 'bracket', 'matches'])
+export const sceneIdSchema = z.enum(['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'])
 export const transitionSpeedSchema = z.enum(['fast', 'normal', 'slow'])
 export const takeModeSchema = z.enum(['cut', 'auto'])
 export const slotSchema = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)])
@@ -47,12 +48,16 @@ export const noticeRunSchema = z.object({
 export const noticeDocSchema = z.object({
   blocks: z.array(z.object({ align: z.enum(['left', 'center', 'right']), runs: z.array(noticeRunSchema).max(200) })).max(60),
 })
+export const qrStyleSchema = z.enum(['center', 'title', 'sides'])
+const qrItemSchema = z.object({ label: z.string().max(100), url: z.string().max(1000) })
+export const qrDataSchema = z.object({ text: z.string().max(1000), items: z.tuple([qrItemSchema, qrItemSchema]) })
 export const showDataSchema: z.ZodType<ShowData, z.ZodTypeDef, unknown> = z.object({
   event: eventTextSchema,
   typography: typographySchema,
   players: z.array(playerSchema).length(4),
   race: raceStateSchema,
   notice: noticeDocSchema.default({ blocks: [] }),
+  qr: qrDataSchema.default(DEFAULT_QR),
   scores: z.object({
     races: z.array(raceResultSchema),
     adjustments: z.array(z.number().finite()).length(4),
@@ -76,6 +81,7 @@ const layersShape = {
   matchRef: matchRefSchema.optional(),
   matchSet: matchSetSchema.optional(),
   logo: z.enum(['off', 'corner', 'title']).optional(),
+  qrStyle: qrStyleSchema.optional(),
 }
 export const layersSchema: z.ZodType<Layers> = z.object(layersShape)
 
@@ -199,6 +205,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setAdjustment'), index: slotSchema, value: z.number().finite() }),
   z.object({ type: z.literal('setEventText'), patch: eventTextSchema.partial() }),
   z.object({ type: z.literal('setNotice'), doc: noticeDocSchema }),
+  z.object({ type: z.literal('setQr'), patch: z.object({ text: z.string().max(1000).optional(), items: z.tuple([qrItemSchema, qrItemSchema]).optional() }) }),
   z.object({
     type: z.literal('setTypography'),
     role: z.enum(['eventTitle', 'headings', 'names', 'labels']),
@@ -218,6 +225,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     matchRef: matchRefSchema.optional(),
     matchSet: matchSetSchema.optional(),
     logo: z.enum(['off', 'corner', 'title']).optional(),
+    qrStyle: qrStyleSchema.optional(),
   }) }),
   z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),

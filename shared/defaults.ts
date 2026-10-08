@@ -1,5 +1,6 @@
 import type { CatalogIndex } from './catalog'
 import { deriveView } from './view'
+import { DEFAULT_QR } from './qr-default'
 import type { Layers, PresetScope, OutputConfig, ProgramFrame, ShowData, ShowState } from './types'
 
 /** New presets restore everything except scores, which would overwrite live results. */
@@ -40,6 +41,7 @@ export function createDefaultShowData(catalog: CatalogIndex): ShowData {
     ],
     race: { mode: 'cup', cupId: 'mushroom', raceIndex: 0, trackId: catalog.cup('mushroom')?.tracks[0] ?? '', raceNo: 1, raceTotal: 4 },
     notice: { blocks: [{ align: 'center', runs: [{ text: 'NOTICE BOARD', bold: true, size: 96 }] }, { align: 'center', runs: [{ text: 'Type your announcement here' }] }] },
+    qr: structuredClone(DEFAULT_QR),
     scores: { races: [], adjustments: [0, 0, 0, 0] },
   }
 }

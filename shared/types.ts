@@ -3,8 +3,10 @@ import type { Catalog } from './catalog'
 export type ColourId = 'red' | 'blue' | 'green' | 'yellow' | 'pink' | 'orange' | 'purple' | 'cyan'
 export type OutputFormat = 'wide' | 'twin' | 'hd'
 export type BackgroundId = 'A' | 'B' | 'C' | 'none'
-export type SceneId = 'none' | 'title' | 'lineup' | 'nextRace' | 'standings' | 'winner' | 'notice' | 'raceWin' | 'cupWin' | 'bracket' | 'matches'
+export type SceneId = 'none' | 'title' | 'lineup' | 'nextRace' | 'standings' | 'winner' | 'notice' | 'qr' | 'raceWin' | 'cupWin' | 'bracket' | 'matches'
 export type LogoMode = 'off' | 'corner' | 'title'
+/** QR scene layout. wide: centre = both codes + text in the middle; title = title in the middle, a code + text either side; sides = same without the title (background shows through). hd: centre = codes + text; title = title above, codes + text below (sides = centre). Twins always show one code + text per half. */
+export type QrStyle = 'center' | 'title' | 'sides'
 export type TransitionSpeed = 'fast' | 'normal' | 'slow'
 export type TakeMode = 'cut' | 'auto'
 export interface SafeArea { top: number; right: number; bottom: number; left: number }
@@ -24,8 +26,12 @@ export interface NoticeRun { text: string; bold?: boolean; italic?: boolean; und
 export interface NoticeBlock { align: 'left' | 'center' | 'right'; runs: NoticeRun[] }
 /** The notice board's rich text: paragraphs of styled runs (a newline inside a run is a line break). */
 export interface NoticeDoc { blocks: NoticeBlock[] }
+/** One QR code: the label under it and the link it opens. */
+export interface QrItem { label: string; url: string }
+/** The QR scene's content: two codes (each its own link) and the text shown with them. A newline in `text` is a line break. */
+export interface QrData { text: string; items: [QrItem, QrItem] }
 export interface ShowData {
-  event: EventText; typography: Typography; players: Player[]; race: RaceState; notice: NoticeDoc
+  event: EventText; typography: Typography; players: Player[]; race: RaceState; notice: NoticeDoc; qr: QrData
   scores: { races: RaceResult[]; adjustments: number[] }
 }
 /** Which match a raceWin/cupWin scene reads: the active match, the one before it, or an explicit match id. Default 'active'. */
@@ -41,6 +47,8 @@ export interface Layers {
   part?: ScenePart; matchRef?: MatchRef; matchSet?: MatchSet
   /** Where the logo sits on the title scene. Absent = 'corner'. */
   logo?: LogoMode
+  /** Layout of the QR scene. Absent = 'center'. */
+  qrStyle?: QrStyle
 }
 
 // ---- tournaments ----
@@ -125,6 +133,7 @@ export type SceneView =
   | { kind: 'winner'; player: PlayerView; total: number }
   | RaceWinView | CupWinView | BracketView | MatchesView
   | { kind: 'notice'; doc: NoticeDoc }
+  | { kind: 'qr'; style: QrStyle; title: TitleView; text: string; items: QrItem[] }
 export interface ViewModel {
   format: OutputFormat; canvas: { w: number; h: number }; safeArea: SafeArea; graphicsScale: number
   fonts: FontStacks; headingLook: 'chrome' | 'classic' | 'plain'; headingUpright: boolean; eventTitleStyle: 'chrome' | 'classic'
@@ -180,6 +189,7 @@ export type Command =
   | { type: 'setAdjustment'; index: 0 | 1 | 2 | 3; value: number }
   | { type: 'setEventText'; patch: Partial<EventText> }
   | { type: 'setNotice'; doc: NoticeDoc }
+  | { type: 'setQr'; patch: { text?: string; items?: [QrItem, QrItem] } }
   | { type: 'setTypography'; role: 'eventTitle' | 'headings' | 'names' | 'labels'; patch: { font?: string; style?: 'chrome' | 'classic'; look?: 'chrome' | 'classic' | 'plain' } }
   | { type: 'setLayers'; outputId: string; patch: Partial<Layers> }
   | { type: 'savePreset'; name: string; from?: PresetSource; scope?: Partial<PresetScope> }

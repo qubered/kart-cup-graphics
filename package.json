@@ -24,6 +24,7 @@
     "@fontsource/russo-one": "*",
     "@fontsource/saira": "*",
     "@fontsource/titan-one": "*",
+    "qrcode-generator": "^2.0.4",
     "svelte": "^5.0.0",
     "ws": "^8.18.0",
     "zod": "^3.23.8"

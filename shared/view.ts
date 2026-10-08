@@ -14,10 +14,10 @@ export const FORMAT_CANVAS: Record<OutputFormat, { w: number; h: number }> = {
 }
 
 export const SUPPORTED_SCENES: Record<OutputFormat, SceneId[]> = {
-  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'raceWin', 'cupWin', 'bracket', 'matches'],
-  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
   // twin: win screens only as a hero or board half (not both in one 1920 wide canvas)
-  twin: ['none', 'title', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  twin: ['none', 'title', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
 }
 
 /** Can this format show the scene (with this part, for the win screens)? */
@@ -189,6 +189,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
       case 'matches': scene = tournament ? matchesView(tournament, data, layers, output.format, catalog) : null; break
       case 'bracket': scene = tournament ? bracketView(tournament, data, catalog) : null; break
       case 'notice': scene = { kind: 'notice', doc: structuredClone(data.notice) }; break
+      case 'qr': scene = { kind: 'qr', style: layers.qrStyle ?? 'center', title, text: data.qr.text, items: data.qr.items.map((i) => ({ ...i })) }; break
       default: scene = null
     }
   }
