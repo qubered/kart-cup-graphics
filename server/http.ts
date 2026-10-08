@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createReadStream, existsSync, statSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { extname, join, normalize, resolve, sep } from 'node:path'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { basename, extname, join, normalize, resolve, sep } from 'node:path'
 import type { ViteDevServer } from 'vite'
 import { showFileSchema } from '../shared/schema'
 import { activeTournament, matchWinnerSlot } from '../shared/tournament'
@@ -27,6 +27,8 @@ const MIME: Record<string, string> = {
 const FONT_EXT = new Set(['.ttf', '.otf', '.woff', '.woff2'])
 const MAX_FONT = 10 * 1024 * 1024
 const MAX_IMPORT = 20 * 1024 * 1024
+const MAX_LOGO = 5 * 1024 * 1024
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
 function send(res: ServerResponse, status: number, body: string, type = 'text/plain; charset=utf-8', extra: Record<string, string> = {}) {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store', ...extra })
@@ -147,6 +149,28 @@ export function createHttpHandler(opts: HttpOpts): (req: IncomingMessage, res: S
       const family = name.slice(0, name.length - ext.length)
       const out = store.dispatch({ type: 'registerFont', family, file: name })
       return out.ok ? json(res, 200, { family }) : json(res, 400, { error: out.error })
+    }
+    if (path === '/api/logo' && method === 'PUT') {
+      if (req.headers['content-type'] !== 'image/png') return json(res, 400, { error: 'Logo must be image/png' })
+      let body: Buffer
+      try { body = await readBody(req, MAX_LOGO) } catch (e) {
+        return json(res, 400, { error: e instanceof TooLarge ? 'Logo larger than 5 MB' : 'Upload failed' })
+      }
+      if (body.length < 8 || !body.subarray(0, 8).equals(PNG_MAGIC)) return json(res, 400, { error: 'Not a PNG file' })
+      const dir = join(dataDir, 'uploads')
+      await mkdir(dir, { recursive: true })
+      const name = `logo-${Date.now()}.png`   // unique name so outputs and browsers never show a stale image
+      await writeFile(join(dir, name), body)
+      const old = store.state.settings.logo
+      const out = store.dispatch({ type: 'setLogo', url: `/uploads/${name}` })
+      if (out.ok && old) await rm(join(dir, basename(old)), { force: true })
+      return out.ok ? json(res, 200, { url: `/uploads/${name}` }) : json(res, 400, { error: out.error })
+    }
+    if (path === '/api/logo' && method === 'DELETE') {
+      const old = store.state.settings.logo
+      const out = store.dispatch({ type: 'setLogo', url: null })
+      if (out.ok && old) await rm(join(dataDir, 'uploads', basename(old)), { force: true })
+      return out.ok ? json(res, 200, { ok: true }) : json(res, 400, { error: out.error })
     }
     return json(res, 404, { error: 'Not found' })
   }

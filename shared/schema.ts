@@ -5,7 +5,7 @@ import type { BracketConfig, Command, Cue, CueStack, Layers, Match, MatchesScene
 export const colourIdSchema = z.enum(['red', 'blue', 'green', 'yellow', 'pink', 'orange', 'purple', 'cyan'])
 export const outputFormatSchema = z.enum(['wide', 'twin', 'hd'])
 export const backgroundIdSchema = z.enum(['A', 'B', 'C', 'none'])
-export const sceneIdSchema = z.enum(['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'bracket', 'matches'])
+export const sceneIdSchema = z.enum(['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'raceWin', 'cupWin', 'bracket', 'matches'])
 export const transitionSpeedSchema = z.enum(['fast', 'normal', 'slow'])
 export const takeModeSchema = z.enum(['cut', 'auto'])
 export const slotSchema = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)])
@@ -40,11 +40,19 @@ export const typographySchema = z.object({
   names: z.object({ font: z.string() }),
   labels: z.object({ font: z.string() }),
 })
+export const noticeRunSchema = z.object({
+  text: z.string().max(2000), bold: z.boolean().optional(), italic: z.boolean().optional(), underline: z.boolean().optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), font: z.string().max(100).optional(), size: z.number().finite().min(8).max(400).optional(),
+})
+export const noticeDocSchema = z.object({
+  blocks: z.array(z.object({ align: z.enum(['left', 'center', 'right']), runs: z.array(noticeRunSchema).max(200) })).max(60),
+})
 export const showDataSchema: z.ZodType<ShowData, z.ZodTypeDef, unknown> = z.object({
   event: eventTextSchema,
   typography: typographySchema,
   players: z.array(playerSchema).length(4),
   race: raceStateSchema,
+  notice: noticeDocSchema.default({ blocks: [] }),
   scores: z.object({
     races: z.array(raceResultSchema),
     adjustments: z.array(z.number().finite()).length(4),
@@ -67,6 +75,7 @@ const layersShape = {
   part: scenePartSchema.optional(),
   matchRef: matchRefSchema.optional(),
   matchSet: matchSetSchema.optional(),
+  logo: z.enum(['off', 'corner', 'title']).optional(),
 }
 export const layersSchema: z.ZodType<Layers> = z.object(layersShape)
 
@@ -161,7 +170,7 @@ export const showStateSchema: z.ZodType<ShowState, z.ZodTypeDef, unknown> = z.ob
   uploadedFonts: z.array(z.object({ family: z.string(), file: z.string() })),
   presets: z.array(presetSchema).default([]),
   lastPreset: z.string().nullable().default(null),
-  settings: z.object({ mattify: z.boolean() }).default({ mattify: false }),
+  settings: z.object({ mattify: z.boolean(), logo: z.string().max(300).optional() }).default({ mattify: false }),
   stacks: z.array(cueStackSchema).default([]),
   tournaments: z.array(tournamentSchema).default([]),
   activeTournamentId: z.string().nullable().default(null),
@@ -189,6 +198,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('setAdjustment'), index: slotSchema, value: z.number().finite() }),
   z.object({ type: z.literal('setEventText'), patch: eventTextSchema.partial() }),
+  z.object({ type: z.literal('setNotice'), doc: noticeDocSchema }),
   z.object({
     type: z.literal('setTypography'),
     role: z.enum(['eventTitle', 'headings', 'names', 'labels']),
@@ -207,6 +217,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     part: scenePartSchema.optional(),
     matchRef: matchRefSchema.optional(),
     matchSet: matchSetSchema.optional(),
+    logo: z.enum(['off', 'corner', 'title']).optional(),
   }) }),
   z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
@@ -285,5 +296,6 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     }),
   }),
   z.object({ type: z.literal('setBracketConfig'), patch: z.object({ showScores: z.boolean(), showStatus: z.boolean() }).partial() }),
+  z.object({ type: z.literal('setLogo'), url: z.string().regex(/^\/uploads\/logo-\d+\.png$/).nullable() }),
   z.object({ type: z.literal('registerFont'), family: z.string().min(1).max(100), file: z.string().min(1).max(300) }),
 ]) as unknown as z.ZodType<Command>

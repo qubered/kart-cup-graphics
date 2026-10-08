@@ -3,7 +3,8 @@ import type { Catalog } from './catalog'
 export type ColourId = 'red' | 'blue' | 'green' | 'yellow' | 'pink' | 'orange' | 'purple' | 'cyan'
 export type OutputFormat = 'wide' | 'twin' | 'hd'
 export type BackgroundId = 'A' | 'B' | 'C' | 'none'
-export type SceneId = 'none' | 'title' | 'lineup' | 'nextRace' | 'standings' | 'winner' | 'raceWin' | 'cupWin' | 'bracket' | 'matches'
+export type SceneId = 'none' | 'title' | 'lineup' | 'nextRace' | 'standings' | 'winner' | 'notice' | 'raceWin' | 'cupWin' | 'bracket' | 'matches'
+export type LogoMode = 'off' | 'corner' | 'title'
 export type TransitionSpeed = 'fast' | 'normal' | 'slow'
 export type TakeMode = 'cut' | 'auto'
 export interface SafeArea { top: number; right: number; bottom: number; left: number }
@@ -18,8 +19,13 @@ export interface Typography {
   names: { font: string }
   labels: { font: string }
 }
+/** One styled stretch of notice-board text. font = a family name (as in the font lists); size is px on a 1080-tall canvas. Absent = the board default. */
+export interface NoticeRun { text: string; bold?: boolean; italic?: boolean; underline?: boolean; color?: string; font?: string; size?: number }
+export interface NoticeBlock { align: 'left' | 'center' | 'right'; runs: NoticeRun[] }
+/** The notice board's rich text: paragraphs of styled runs (a newline inside a run is a line break). */
+export interface NoticeDoc { blocks: NoticeBlock[] }
 export interface ShowData {
-  event: EventText; typography: Typography; players: Player[]; race: RaceState
+  event: EventText; typography: Typography; players: Player[]; race: RaceState; notice: NoticeDoc
   scores: { races: RaceResult[]; adjustments: number[] }
 }
 /** Which match a raceWin/cupWin scene reads: the active match, the one before it, or an explicit match id. Default 'active'. */
@@ -33,6 +39,8 @@ export type ScenePart = 'full' | 'hero' | 'board'
 export interface Layers {
   background: BackgroundId; scene: SceneId; trackCard: boolean; lowerThirds: { on: boolean; players: number[] }; lineupShown?: number
   part?: ScenePart; matchRef?: MatchRef; matchSet?: MatchSet
+  /** Where the logo sits on the title scene. Absent = 'corner'. */
+  logo?: LogoMode
 }
 
 // ---- tournaments ----
@@ -110,12 +118,13 @@ export interface BracketView { kind: 'bracket'; config: BracketConfig; rounds: B
 export interface PlayerView { slot: number; name: string; character: string; icon: string; art: string; colour: string; textColour: string }
 export interface TrackCardView { raceLabel: string; cupName: string; cupEmblem: string; trackName: string }
 export type SceneView =
-  | { kind: 'title'; title: TitleView }
+  | { kind: 'title'; title: TitleView; logo: LogoMode }
   | { kind: 'lineup'; players: PlayerView[] }
   | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; single: boolean; cupTracks: { name: string; thumb: string; current: boolean }[] }
   | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[] }
   | { kind: 'winner'; player: PlayerView; total: number }
   | RaceWinView | CupWinView | BracketView | MatchesView
+  | { kind: 'notice'; doc: NoticeDoc }
 export interface ViewModel {
   format: OutputFormat; canvas: { w: number; h: number }; safeArea: SafeArea; graphicsScale: number
   fonts: FontStacks; headingLook: 'chrome' | 'classic' | 'plain'; headingUpright: boolean; eventTitleStyle: 'chrome' | 'classic'
@@ -153,7 +162,7 @@ export interface ShowState {
   presets: Preset[]; lastPreset: string | null; stacks: CueStack[]
   tournaments: Tournament[]; activeTournamentId: string | null
   /** App-wide switches (not part of an exported show). Applied instantly, with no Take. */
-  settings: { mattify: boolean }
+  settings: { mattify: boolean; /** URL of the uploaded logo (normalised PNG); absent = the built-in roundel. */ logo?: string }
 }
 export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed; presets: Preset[]; stacks: CueStack[]; tournaments: Tournament[] }
 
@@ -170,6 +179,7 @@ export type Command =
   | { type: 'saveResults'; raceNo: number; trackId: string; positions: number[]; adjustments?: number[] }
   | { type: 'setAdjustment'; index: 0 | 1 | 2 | 3; value: number }
   | { type: 'setEventText'; patch: Partial<EventText> }
+  | { type: 'setNotice'; doc: NoticeDoc }
   | { type: 'setTypography'; role: 'eventTitle' | 'headings' | 'names' | 'labels'; patch: { font?: string; style?: 'chrome' | 'classic'; look?: 'chrome' | 'classic' | 'plain' } }
   | { type: 'setLayers'; outputId: string; patch: Partial<Layers> }
   | { type: 'savePreset'; name: string; from?: PresetSource; scope?: Partial<PresetScope> }
@@ -219,5 +229,6 @@ export type Command =
   | { type: 'setWinScreenConfig'; patch: WinScreenConfigPatch }
   | { type: 'setMatchesSceneConfig'; patch: MatchesSceneConfigPatch }
   | { type: 'setBracketConfig'; patch: Partial<BracketConfig> }
+  | { type: 'setLogo'; url: string | null }
 
 export type { Catalog }

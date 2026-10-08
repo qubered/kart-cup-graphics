@@ -39,6 +39,7 @@ export function createDefaultShowData(catalog: CatalogIndex): ShowData {
       { name: 'Player 4', characterId: 'yoshi', colour: 'yellow' },
     ],
     race: { mode: 'cup', cupId: 'mushroom', raceIndex: 0, trackId: catalog.cup('mushroom')?.tracks[0] ?? '', raceNo: 1, raceTotal: 4 },
+    notice: { blocks: [{ align: 'center', runs: [{ text: 'NOTICE BOARD', bold: true, size: 96 }] }, { align: 'center', runs: [{ text: 'Type your announcement here' }] }] },
     scores: { races: [], adjustments: [0, 0, 0, 0] },
   }
 }

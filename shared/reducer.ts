@@ -199,8 +199,8 @@ function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | u
   }
   if (sc.armed) next = { ...next, armed: preset.armed.filter((id) => state.outputs.some((o) => o.id === id)) }
   if (sc.style) {
-    const { event, typography } = structuredClone(preset.draft)
-    next = withDraft(next, { event, typography })
+    const { event, typography, notice } = structuredClone(preset.draft)
+    next = withDraft(next, { event, typography, notice })
   }
   if (sc.match) next = withDraft(next, { race: structuredClone(preset.draft.race) })
   if (sc.players) next = withDraft(next, { players: structuredClone(preset.draft.players) })
@@ -328,6 +328,8 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
     }
     case 'setEventText':
       return withDraft(state, { event: { ...state.draft.event, ...cmd.patch } })
+    case 'setNotice':
+      return withDraft(state, { notice: cmd.doc })
     case 'setTypography': {
       const ty = state.draft.typography
       const { font, style, look } = cmd.patch
@@ -691,6 +693,10 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
     case 'setBracketConfig': {
       const t = requireTournament(state)
       return withTournament(state, { ...t, bracket: { ...t.bracket, ...cmd.patch } })
+    }
+    case 'setLogo': {
+      const settings = { mattify: state.settings.mattify, ...(cmd.url ? { logo: cmd.url } : {}) }
+      return { ...state, settings }
     }
     case 'registerFont': {
       if (state.uploadedFonts.some((f) => f.family === cmd.family)) return state

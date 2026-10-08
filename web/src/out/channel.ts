@@ -15,6 +15,7 @@ function imageUrls(p: OutputPayload): string[] {
   }
   walk(p.view); walk(p.hold)
   if (p.mattify) urls.add(MATTIFY_IMAGE)   // decode before the first frame so it never pops in
+  if (p.logo) urls.add(p.logo)
   return [...urls]
 }
 

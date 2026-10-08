@@ -14,8 +14,8 @@ export const FORMAT_CANVAS: Record<OutputFormat, { w: number; h: number }> = {
 }
 
 export const SUPPORTED_SCENES: Record<OutputFormat, SceneId[]> = {
-  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'bracket', 'matches'],
-  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'raceWin', 'cupWin', 'bracket', 'matches'],
   // twin: win screens only as a hero or board half (not both in one 1920 wide canvas)
   twin: ['none', 'title', 'raceWin', 'cupWin', 'bracket', 'matches'],
 }
@@ -163,7 +163,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
   let scene: SceneView | null = null
   if (isSceneSupported(output.format, layers.scene, layers.part)) {
     switch (layers.scene) {
-      case 'title': scene = { kind: 'title', title }; break
+      case 'title': scene = { kind: 'title', title, logo: layers.logo ?? 'corner' }; break
       case 'lineup': scene = { kind: 'lineup', players: data.players.slice(0, Math.min(4, Math.max(1, layers.lineupShown ?? 4))).map((_, i) => pv(i)) }; break
       case 'nextRace':
         scene = {
@@ -188,6 +188,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
       case 'cupWin': scene = cupWinView(winMatch(tournament, data, layers), layers, tournament, catalog); break
       case 'matches': scene = tournament ? matchesView(tournament, data, layers, output.format, catalog) : null; break
       case 'bracket': scene = tournament ? bracketView(tournament, data, catalog) : null; break
+      case 'notice': scene = { kind: 'notice', doc: structuredClone(data.notice) }; break
       default: scene = null
     }
   }

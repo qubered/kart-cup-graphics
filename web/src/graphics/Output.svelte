@@ -63,7 +63,7 @@
     {/if}
 
     <!-- SCENE: SceneLayer goes inside this container -->
-    <div class="layer" data-layer="scene">{#if view.scene}<SceneLayer scene={view.scene} {view} {enter} {exit} {lowfx} />{/if}</div>
+    <div class="layer" data-layer="scene">{#if view.scene}<SceneLayer scene={view.scene} {view} {enter} {exit} {lowfx} logoSrc={payload?.logo ?? null} />{/if}</div>
 
     <!-- TRACK CARD: TrackCardLayer goes inside this container -->
     <div class="layer" data-layer="trackcard">{#if view.trackCard}<TrackCardLayer card={view.trackCard} {view} {enter} {exit} />{/if}</div>
@@ -75,7 +75,7 @@
     {#if payload?.hold && keyMode}
       <div class="key-solid" data-overlay="hold"></div>
     {:else if payload?.hold}
-      <HoldOverlay hold={payload.hold} format={view.format} w={view.canvas.w} h={view.canvas.h} />
+      <HoldOverlay hold={payload.hold} logoSrc={payload.logo} format={view.format} w={view.canvas.w} h={view.canvas.h} />
     {/if}
 
     <!-- FTB: 500 ms opacity fade -->

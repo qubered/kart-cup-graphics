@@ -28,11 +28,13 @@
     { id: 'cupWin', label: 'Cup win' },
     { id: 'bracket', label: 'Bracket' },
     { id: 'matches', label: 'Matches' },
+    { id: 'notice', label: 'Notice' },
   ]
   const PARTS: { id: ScenePart; label: string }[] = [{ id: 'full', label: 'Full' }, { id: 'hero', label: 'Hero' }, { id: 'board', label: 'Board' }]
   const progBg = $derived<BackgroundId>(prog?.background?.id ?? 'none')
   const progScene = $derived<SceneId>((prog?.scene?.kind as SceneId | undefined) ?? 'none')
   const progTrack = $derived(!!prog?.trackCard)
+  const progLogo = $derived(prog?.scene?.kind === 'title' ? prog.scene.logo : null)
   const progLT = $derived(prog?.lowerThirds ?? [])
   const tour = $derived(st ? activeTournament(st) : null)
   // Bracket and matches need a tournament; hide them otherwise so nothing changes for shows without one.
@@ -131,6 +133,15 @@
       <span class="k">Overlays</span>
       <button class="sw" class:draft={layers.trackCard} class:live={progTrack} aria-pressed={layers.trackCard}
         onclick={() => patch({ trackCard: !layers.trackCard })}><i></i>Track card</button>
+      {#if layers.scene === 'title'}
+        <span class="k">Logo</span>
+        <div class="seg lay">
+          {#each [['off', 'Off'], ['corner', 'Corner'], ['title', 'In title']] as [m, l] (m)}
+            <button class:draft={(layers.logo ?? 'corner') === m} class:live={progLogo === m}
+              onclick={() => patch({ logo: m })}>{l}</button>
+          {/each}
+        </div>
+      {/if}
       <button class="sw" class:draft={layers.lowerThirds.on} class:live={progLT.length > 0} aria-pressed={layers.lowerThirds.on}
         onclick={() => patch({ lowerThirds: { ...layers.lowerThirds, on: !layers.lowerThirds.on } })}><i></i>Lower thirds</button>
       {#if out.format !== 'twin'}

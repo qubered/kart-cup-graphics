@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { TitleView, ViewModel } from '../../../../shared/types'
+  import type { LogoMode, TitleView, ViewModel } from '../../../../shared/types'
   import { STAGGER_MS, pop } from '../motion'
   import TitleLockup from '../TitleLockup.svelte'
   import Logo from '../Logo.svelte'
 
-  let { title, view, enter = 0 }: { title: TitleView; view: ViewModel; enter?: number } = $props()
+  let { title, view, enter = 0, logo = 'corner', logoSrc = null }: { title: TitleView; view: ViewModel; enter?: number; logo?: LogoMode; logoSrc?: string | null } = $props()
 
   const halves = $derived(view.format === 'twin')
   const st = $derived(enter ? STAGGER_MS : 0)
@@ -16,14 +16,14 @@
   {#if halves}
     {#each [0, 1] as h (h)}
       <div class="half" style:left="{h * 960}px" in:pop|global={{ duration: enter, delay: h * st }}>
-        <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} dur={enter} />
-        <div class="logo-mark"><Logo size={logoSize} /></div>
+        <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} dur={enter} logo={logo === 'title'} {logoSrc} />
+        {#if logo === 'corner'}<div class="logo-mark"><Logo size={logoSize} src={logoSrc} /></div>{/if}
       </div>
     {/each}
   {:else}
     <div class="center" in:pop|global={{ duration: enter }}>
-      <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} dur={enter} />
-      <div class="logo-mark"><Logo size={logoSize} /></div>
+      <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} dur={enter} logo={logo === 'title'} {logoSrc} />
+      {#if logo === 'corner'}<div class="logo-mark"><Logo size={logoSize} src={logoSrc} /></div>{/if}
     </div>
   {/if}
 </div>

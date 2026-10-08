@@ -6,8 +6,8 @@
   import Logo from '../Logo.svelte'
   import { TITLE_LAYOUT } from '../title-layout'
 
-  interface Props { hold: HoldView; format: OutputFormat; w: number; h: number }
-  let { hold, format, w, h }: Props = $props()
+  interface Props { hold: HoldView; format: OutputFormat; w: number; h: number; logoSrc?: string | null }
+  let { hold, format, w, h, logoSrc = null }: Props = $props()
 
   // Twin output = two independent 960 px halves, each carrying its own background, lockup and message.
   const halves = $derived(format === 'twin' ? [0, 1] : [0])
@@ -21,7 +21,7 @@
     <div class="hold-half" style="left:{i * 960}px;width:{hw}px;height:{h}px">
       <SkyBackground watermark={hold.watermark ?? hold.title.title} font={hold.fonts.eventTitle} lowfx={true} w={hw} {h} />
       <TitleLockup title={hold.title} style={hold.titleStyle} {format} font={hold.fonts.eventTitle} labelFont={hold.fonts.labels} top={cfg.holdTop} />
-      <div class="hold-logo"><Logo size={format === 'wide' ? 160 : format === 'hd' ? 116 : 100} /></div>
+      <div class="hold-logo"><Logo size={format === 'wide' ? 160 : format === 'hd' ? 116 : 100} src={logoSrc} /></div>
       <div class="hold-msg" style:--ms="{cfg.ms}px" style:font-family={hold.fonts.headings}>{hold.message}</div>
     </div>
   {/each}
