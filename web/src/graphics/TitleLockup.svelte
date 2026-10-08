@@ -3,7 +3,7 @@
   import { fade } from 'svelte/transition'
   import { cubicIn } from 'svelte/easing'
   import { fitText } from '../lib/fit-text'
-  import { TITLE_LAYOUT, breakTitle } from './title-layout'
+  import { TITLE_LAYOUT, breakTitle, type TitleLayout } from './title-layout'
   import Logo from './Logo.svelte'
 
   interface Props {
@@ -21,10 +21,12 @@
     /** Draw the logo as part of the block, above the pre-title. */
     logo?: boolean
     logoSrc?: string | null
+    /** Overrides parts of the format's layout (e.g. a narrower box for the QR scene). */
+    layout?: Partial<TitleLayout>
   }
-  let { title, style, format, font, labelFont, top, dur = 0, logo = false, logoSrc = null }: Props = $props()
+  let { title, style, format, font, labelFont, top, dur = 0, logo = false, logoSrc = null, layout }: Props = $props()
 
-  const cfg = $derived(TITLE_LAYOUT[format])
+  const cfg = $derived({ ...TITLE_LAYOUT[format], ...layout })
   let fontsTick = $state(0)
   $effect(() => {
     const f = document.fonts
