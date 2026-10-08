@@ -1,0 +1,80 @@
+<script lang="ts">
+  import { control, send, selectOutput } from './store'
+  import { shortcutCommand } from './shortcuts'
+  import TopBar from './TopBar.svelte'
+  import Monitors from './Monitors.svelte'
+  import LayerControls from './LayerControls.svelte'
+  import MasterBar from './MasterBar.svelte'
+  import ShowTab from './tabs/ShowTab.svelte'
+  import TextFontsTab from './tabs/TextFontsTab.svelte'
+  import OutputsTab from './tabs/OutputsTab.svelte'
+  import SettingsTab from './tabs/SettingsTab.svelte'
+
+  const TABS = ['Show', 'Text & Fonts', 'Outputs', 'Settings'] as const
+  let tab = $state<(typeof TABS)[number]>('Show')
+
+  const st = $derived($control.payload?.state)
+  const pending = $derived($control.payload?.pending ?? {})
+  const presence = $derived($control.payload?.presence ?? {})
+
+  function onKeydown(e: KeyboardEvent) {
+    if (!st || !$control.connected || e.ctrlKey || e.metaKey || e.altKey) return
+    const cmd = shortcutCommand(
+      { key: e.key, shiftKey: e.shiftKey, targetTag: (e.target as HTMLElement | null)?.tagName ?? 'BODY' },
+      { outputs: st.outputs.map((o) => o.id), armed: st.armed, hold: st.overlay.hold.on, ftb: st.overlay.ftb },
+    )
+    if (cmd) {
+      e.preventDefault()
+      send(cmd)
+    }
+  }
+  function onKeyup(e: KeyboardEvent) {
+    // Stop a focused button from also "clicking" on Space.
+    if (e.key === ' ' && (e.target as HTMLElement | null)?.tagName === 'BUTTON') e.preventDefault()
+  }
+</script>
+
+<svelte:window onkeydown={onKeydown} onkeyup={onKeyup} />
+
+{#if !$control.connected}
+  <div class="banner" role="alert">Disconnected — reconnecting…</div>
+{/if}
+{#if $control.error}
+  <div class="toast" role="status">{$control.error}</div>
+{/if}
+
+<fieldset class="bare shell" disabled={!$control.connected}>
+  <TopBar />
+  <div class="main">
+    <section class="left">
+      <div class="tabs" role="tablist">
+        {#each TABS as t (t)}
+          <button class="tab" role="tab" aria-selected={tab === t} onclick={() => (tab = t)}>{t}</button>
+        {/each}
+      </div>
+      {#if tab === 'Show'}
+        <ShowTab />
+      {:else if tab === 'Text & Fonts'}
+        <TextFontsTab />
+      {:else if tab === 'Outputs'}
+        <OutputsTab />
+      {:else}
+        <SettingsTab />
+      {/if}
+    </section>
+    <section class="right">
+      <div class="otabs" role="tablist" aria-label="Outputs">
+        {#each st?.outputs ?? [] as o (o.id)}
+          <button class="otab" role="tab" data-output-tab={o.id} aria-selected={$control.selectedOutput === o.id}
+            onclick={() => selectOutput(o.id)}>
+            <span class="dot" class:on={(presence[o.id]?.program ?? 0) > 0}></span>{o.name}
+            {#if (pending[o.id] ?? 0) > 0}<span class="badge" data-pending>{pending[o.id]}</span>{/if}
+          </button>
+        {/each}
+      </div>
+      <Monitors />
+      <LayerControls />
+    </section>
+  </div>
+  <MasterBar />
+</fieldset>
