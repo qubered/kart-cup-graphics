@@ -8,50 +8,36 @@
 </script>
 
 <div class="track-card">
-  <div class="bar"></div>
-  <div class="med"><Medallion image={card.cupEmblem} size={110} {dur} /></div>
-  <div class="texts">
-    {#key card.raceLabel + '\u0000' + card.cupName + '\u0000' + card.trackName}
-      <div class="txt" in:fade={{ duration: dur }} out:fade={{ duration: dur }}>
-        <div class="top">
-          <span class="chip" style:font-family={fonts.labels}>{card.raceLabel}</span>
-          <span class="cup" style:font-family={fonts.labels} use:fitText={{ max: 170, text: card.cupName }}>{card.cupName}</span>
-        </div>
-        <span class="track-name" style:font-family={fonts.headings} style:font-style={upright ? 'normal' : 'italic'} use:fitText={{ max: 352, text: card.trackName }}>{card.trackName}</span>
+  <div class="bar"><div class="chk"></div></div>
+  <Medallion image={card.cupEmblem} size={120} emblem {dur} />
+  {#key card.raceLabel + '\u0000' + card.cupName + '\u0000' + card.trackName}
+    <div class="txt" in:fade={{ duration: dur }} out:fade={{ duration: dur }}>
+      <div class="row">
+        <span class="race" style:font-family={fonts.names}>{card.raceLabel}</span>
+        <span class="cup" style:font-family={fonts.labels}>{card.cupName}</span>
       </div>
-    {/key}
-  </div>
+      <div class="track-name" style:display="block" style:font-family={fonts.headings} style:font-style={upright ? 'normal' : 'italic'} use:fitText={{ max: 352, text: card.trackName }}><span>{card.trackName}</span></div>
+    </div>
+  {/key}
 </div>
 
 <style>
-  .track-card { position: relative; width: 540px; height: 120px; }
-  .bar {
-    position: absolute; left: 52px; top: 12px; right: 0; height: 96px;
-    background: linear-gradient(180deg, #1d4870, #0e2a46);
-    clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%);
+  .track-card { position: absolute; left: 0; top: 0; width: 540px; height: 120px; }
+  .bar { position: absolute; left: 56px; right: 0; top: 14px; height: 92px; background: var(--mk-bar); clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%); }
+  .bar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--mk-yellow); }
+  .chk {
+    position: absolute; right: 0; top: 6px; bottom: 0; width: 120px; background-size: 22px 22px;
+    background-image: conic-gradient(rgba(255, 255, 255, 0.16) 25%, transparent 0 50%, rgba(255, 255, 255, 0.16) 0 75%, transparent 0);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 80%); mask-image: linear-gradient(to right, transparent, #000 80%);
   }
-  .bar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 7px; background: #ffd21f; }
-  .bar::after {
-    content: ''; position: absolute; right: 0; top: 7px; bottom: 0; width: 45%;
-    background-image: conic-gradient(rgba(255, 255, 255, 0.08) 25%, transparent 0 50%, rgba(255, 255, 255, 0.08) 0 75%, transparent 0);
-    background-size: 20px 20px;
-    -webkit-mask-image: linear-gradient(to left, #000, transparent);
-    mask-image: linear-gradient(to left, #000, transparent);
+  .track-card > :global(.medallion) { position: absolute; left: 0; top: 0; }
+  .txt { position: absolute; inset: 0; }
+  .row { position: absolute; left: 138px; top: 28px; display: flex; align-items: center; gap: 16px; }
+  .race {
+    background: var(--mk-yellow); color: var(--mk-navy); font: italic 900 15px/1 var(--font-name); padding: 4px 10px; border-radius: 4px;
+    transform: skewX(-12deg); letter-spacing: 1px; white-space: nowrap;
   }
-  .med { position: absolute; left: 0; top: 5px; }
-  .texts { position: absolute; left: 128px; top: 22px; width: 352px; height: 80px; display: grid; }
-  .txt { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-  .top { display: flex; align-items: center; gap: 12px; height: 28px; }
-  .chip {
-    display: inline-block; padding: 3px 12px 2px; background: #ffd21f; color: #14213d; transform: skewX(-12deg);
-    font-weight: 800; font-size: 18px; letter-spacing: 0.06em; white-space: nowrap; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
-  }
-  .cup {
-    max-width: 170px; white-space: nowrap; overflow: hidden;
-    font-size: 18px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #aee9ff;
-  }
-  .track-name {
-    max-width: 352px; white-space: nowrap; overflow: hidden; padding-right: 6px; margin-top: 2px;
-    font-size: 40px; font-weight: 900; line-height: 1.15; color: #fff; text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
-  }
+  .cup { font: 800 15px/1 var(--font-label); color: var(--mk-label-cyan); letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
+  .track-name { position: absolute; left: 138px; top: 56px; width: 352px; font: italic 900 34px/1.05 var(--font-head); color: #fff; white-space: nowrap; overflow: hidden; }
+  .track-name > span { display: inline-block; transform-origin: left center; white-space: nowrap; }
 </style>

@@ -15,7 +15,8 @@ test('twin lower thirds at fixed slots with player colours', async ({ page }) =>
 test('long names and track names fit', async ({ page }) => {
   await command({ type: 'setPlayer', index: 0, patch: { name: 'ALEXANDRIA-ROSE FEATHERSTONE' } })
   await command({ type: 'setRace', patch: { mode: 'track', trackId: 'tour-singapore-speedway' } }); await command({ type: 'take', mode: 'cut', outputIds: ['twins'] }); await page.goto('/out/twins'); await page.waitForSelector('body[data-ready]')
-  for (const sel of ['.lower-third[data-slot="0"] .name', '.track-card .track-name']) expect(await page.locator(sel).first().evaluate(e => e.scrollWidth <= e.clientWidth)).toBe(true)
+  for (const sel of ['.lower-third[data-slot="0"] .name', '.track-card .track-name']) expect(await page.locator(sel).first().evaluate(e => e.firstElementChild!.getBoundingClientRect().width <= e.getBoundingClientRect().width + 1)).toBe(true)
+  expect(await page.locator('.lower-third[data-slot="0"] .name').evaluate(e => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(26) // 60% floor of 44px
 })
 
 test('on-air rename updates without remount', async ({ page }) => {
