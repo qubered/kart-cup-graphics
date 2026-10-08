@@ -86,7 +86,8 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
     case 'saveResults': {
       const entry = { raceNo: cmd.raceNo, trackId: cmd.trackId, positions: [...cmd.positions] }
       const races = [...state.draft.scores.races.filter((r) => r.raceNo !== cmd.raceNo), entry].sort((a, b) => a.raceNo - b.raceNo)
-      return liveScores(withDraft(state, { scores: { ...state.draft.scores, races } }), ctx)
+      const adjustments = cmd.adjustments ? [...cmd.adjustments] : state.draft.scores.adjustments
+      return liveScores(withDraft(state, { scores: { races, adjustments } }), ctx)
     }
     case 'setAdjustment': {
       const adjustments = state.draft.scores.adjustments.map((v, i) => (i === cmd.index ? cmd.value : v))
