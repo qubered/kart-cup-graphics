@@ -57,11 +57,15 @@ export const layersSchema: z.ZodType<Layers> = z.object({
   lineupShown: z.number().int().min(1).max(4).optional(),
 })
 
-export const presetScopeSchema: z.ZodType<PresetScope> = z.object({
-  layers: z.boolean(), armed: z.boolean(), show: z.boolean(), scores: z.boolean(), transition: z.boolean(), mattify: z.boolean(),
-})
+// Presets saved before `players` was its own part get players = show, which is what they restored before.
+export const presetScopeSchema: z.ZodType<PresetScope, z.ZodTypeDef, unknown> = z.preprocess(
+  (v) => (v && typeof v === 'object' && !('players' in v) ? { ...v, players: (v as { show?: unknown }).show } : v),
+  z.object({
+    layers: z.boolean(), armed: z.boolean(), show: z.boolean(), players: z.boolean(), scores: z.boolean(), transition: z.boolean(), mattify: z.boolean(),
+  }),
+) as z.ZodType<PresetScope, z.ZodTypeDef, unknown>
 const partialScopeSchema = z.object({
-  layers: z.boolean(), armed: z.boolean(), show: z.boolean(), scores: z.boolean(), transition: z.boolean(), mattify: z.boolean(),
+  layers: z.boolean(), armed: z.boolean(), show: z.boolean(), players: z.boolean(), scores: z.boolean(), transition: z.boolean(), mattify: z.boolean(),
 }).partial()
 export const presetSchema: z.ZodType<Preset, z.ZodTypeDef, unknown> = z.object({
   id: z.string().min(1).max(64),
@@ -74,7 +78,7 @@ export const presetSchema: z.ZodType<Preset, z.ZodTypeDef, unknown> = z.object({
   mattify: z.boolean(),
 })
 
-const SCOPE_KEYS = ['layers', 'armed', 'show', 'scores', 'transition', 'mattify'] as const
+const SCOPE_KEYS = ['layers', 'armed', 'show', 'players', 'scores', 'transition', 'mattify'] as const
 const cueScopeSchema = z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean()]))).partial()
 const cueScopePatchSchema = z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean().nullable()]))).partial()
 export const cueSchema: z.ZodType<Cue> = z.object({
@@ -89,6 +93,8 @@ export const programFrameSchema = z.object({
   mode: takeModeSchema,
   speed: transitionSpeedSchema,
   takenAt: z.number(),
+  layers: layersSchema.optional(),
+  draft: showDataSchema.optional(),
 })
 
 // presets/stacks/settings are optional on input so state files saved before they existed still load.
@@ -145,8 +151,8 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }).optional(),
     lineupShown: z.number().int().min(1).max(4).optional(),
   }) }),
-  z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), scope: partialScopeSchema.optional() }),
-  z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), capture: z.boolean().optional(), scope: partialScopeSchema.optional() }),
+  z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
+  z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('deletePreset'), id: z.string() }),
   z.object({ type: z.literal('recallPreset'), id: z.string(), take: takeModeSchema.optional() }),
   z.object({ type: z.literal('createStack'), name: z.string().trim().min(1).max(100) }),

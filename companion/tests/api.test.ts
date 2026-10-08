@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { armCommand, baseUrl, cueActionCommand, cueKey, cueState, KartCupApi, recallCommand, resolveOnOff, splitCueKey, stepSelectionCommand, takeCommand, type StackInfo } from '../src/api.js'
+import { overwritePresetCommand, savePresetCommand, armCommand, baseUrl, cueActionCommand, cueKey, cueState, KartCupApi, recallCommand, resolveOnOff, splitCueKey, stepSelectionCommand, takeCommand, type StackInfo } from '../src/api.js'
 
 const stacks: StackInfo[] = [{ id: 'stack-1', name: 'Show', current: 'cue-1', selected: 'cue-2', cues: [] }]
 
@@ -31,6 +31,11 @@ describe('commands', () => {
     expect(armCommand(['wide', 'twins'], 'wide', 'toggle')).toEqual({ type: 'arm', outputIds: ['twins'] })
     expect(armCommand(['wide'], 'wide', 'on')).toEqual({ type: 'arm', outputIds: ['wide'] })
     expect(resolveOnOff('off', true)).toBe(false); expect(resolveOnOff('toggle', false)).toBe(true)
+  })
+  it('save / overwrite from PVW or PGM', () => {
+    expect(savePresetCommand(' Look ', 'pgm')).toEqual({ type: 'savePreset', name: 'Look', from: 'pgm' })
+    expect(savePresetCommand('', undefined)).toEqual({ type: 'savePreset', name: 'New preset', from: 'pvw' })
+    expect(overwritePresetCommand('preset-1', 'pgm')).toEqual({ type: 'updatePreset', id: 'preset-1', from: 'pgm' })
   })
   it('builds the server url', () => {
     expect(baseUrl('', undefined)).toBe('http://127.0.0.1')

@@ -1,7 +1,7 @@
 import type { CatalogIndex } from './catalog'
 import { createDefaultState, DEFAULT_PRESET_SCOPE, emptyLayers, emptyProgram } from './defaults'
 import { FORMAT_CANVAS, SUPPORTED_SCENES, deriveView } from './view'
-import type { Command, CueScopePatch, CueStack, Layers, OutputConfig, Preset, PresetScope, ProgramFrame, RaceState, ShowState, Typography } from './types'
+import type { Command, CueScopePatch, CueStack, Layers, OutputConfig, Preset, PresetScope, PresetSource, ProgramFrame, RaceState, ShowState, Typography } from './types'
 
 export class CommandError extends Error {
   constructor(message: string) {
@@ -26,7 +26,10 @@ function pick<T>(list: T[], random: () => number): T {
 }
 
 function programFor(state: ShowState, id: string, layers: Layers, mode: ProgramFrame['mode'], ctx: ReduceContext): ProgramFrame {
-  return { view: deriveView(state.draft, layers, requireOutput(state, id), ctx.catalog), mode, speed: state.transition, takenAt: ctx.now }
+  return {
+    view: deriveView(state.draft, layers, requireOutput(state, id), ctx.catalog), mode, speed: state.transition, takenAt: ctx.now,
+    layers: structuredClone(layers), draft: structuredClone(state.draft),
+  }
 }
 
 function withDraft(state: ShowState, draft: Partial<ShowState['draft']>): ShowState {
@@ -111,12 +114,25 @@ function fireAt(state: ShowState, stackId: string, index: number, ctx: ReduceCon
 }
 
 type Snapshot = Pick<Preset, 'layers' | 'armed' | 'draft' | 'transition' | 'mattify'>
-function snapshot(state: ShowState): Snapshot {
-  return {
+/** Snapshot the show. PVW = the draft as it is now. PGM = what is on air: each output's taken layers, the show data of the latest take
+ *  (scores are live, so they come from the current draft), its transition speed and the current arming / Mattify. */
+function snapshot(state: ShowState, from: PresetSource = 'pvw'): Snapshot {
+  const pvw: Snapshot = {
     layers: structuredClone(state.layers), armed: [...state.armed], draft: structuredClone(state.draft),
     transition: state.transition, mattify: state.settings.mattify,
   }
+  if (from === 'pvw') return pvw
+  const frames = state.outputs.map((o) => state.program[o.id]).filter((f): f is ProgramFrame => !!f)
+  const latest = frames.reduce<ProgramFrame | null>((a, f) => (!a || f.takenAt >= a.takenAt ? f : a), null)
+  const layers = structuredClone(state.layers)
+  for (const o of state.outputs) { const l = state.program[o.id]?.layers; if (l) layers[o.id] = structuredClone(l) }
+  return {
+    ...pvw, layers,
+    draft: { ...structuredClone(latest?.draft ?? state.draft), scores: structuredClone(state.draft.scores) },
+    transition: latest?.speed ?? state.transition,
+  }
 }
+
 /** Apply a cue scope patch: booleans set, null removes the override (inherit). Returns undefined when nothing is overridden. */
 function patchCueScope(cur: Partial<PresetScope> | undefined, patch: CueScopePatch | undefined): Partial<PresetScope> | undefined {
   const out: Partial<PresetScope> = { ...cur }
@@ -141,9 +157,10 @@ function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | u
   }
   if (sc.armed) next = { ...next, armed: preset.armed.filter((id) => state.outputs.some((o) => o.id === id)) }
   if (sc.show) {
-    const { event, typography, players, race } = structuredClone(preset.draft)
-    next = withDraft(next, { event, typography, players, race })
+    const { event, typography, race } = structuredClone(preset.draft)
+    next = withDraft(next, { event, typography, race })
   }
+  if (sc.players) next = withDraft(next, { players: structuredClone(preset.draft.players) })
   if (sc.scores) next = liveScores(withDraft(next, { scores: structuredClone(preset.draft.scores) }), ctx)
   if (sc.transition) next = { ...next, transition: preset.transition }
   if (sc.mattify) next = { ...next, settings: { ...next.settings, mattify: preset.mattify } }
@@ -210,12 +227,12 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       return { ...state, layers: { ...state.layers, [cmd.outputId]: { ...cur, ...patch } } }
     }
     case 'savePreset': {
-      const preset: Preset = { id: nextId('preset', state.presets.map((p) => p.id)), name: cmd.name, scope: mergeScope(DEFAULT_PRESET_SCOPE, cmd.scope), ...snapshot(state) }
+      const preset: Preset = { id: nextId('preset', state.presets.map((p) => p.id)), name: cmd.name, scope: mergeScope(DEFAULT_PRESET_SCOPE, cmd.scope), ...snapshot(state, cmd.from) }
       return { ...state, presets: [...state.presets, preset], lastPreset: preset.id }
     }
     case 'updatePreset': {
       requirePreset(state, cmd.id)
-      const presets = state.presets.map((p) => (p.id === cmd.id ? { ...p, ...(cmd.name ? { name: cmd.name } : {}), ...(cmd.scope ? { scope: mergeScope(p.scope, cmd.scope) } : {}), ...(cmd.capture ? snapshot(state) : {}) } : p))
+      const presets = state.presets.map((p) => (p.id === cmd.id ? { ...p, ...(cmd.name ? { name: cmd.name } : {}), ...(cmd.scope ? { scope: mergeScope(p.scope, cmd.scope) } : {}), ...(cmd.from ? snapshot(state, cmd.from) : {}) } : p))
       return { ...state, presets }
     }
     case 'deletePreset': {

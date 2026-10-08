@@ -2,7 +2,7 @@
 
 Bitfocus Companion connection for the Kart Cup control server (HTTP, `/api/presets` + `/api/command`).
 
-**Actions:** GO (fire the standby cue), move standby cue next/previous, select cue (load into PVW), fire a specific cue, rewind stack, recall preset (optionally cut/auto), take (cut/auto), arm output / arm all, hold, clear, FTB.
+**Actions:** save new preset / overwrite preset from PVW or PGM, GO (fire the standby cue), move standby cue next/previous, select cue (load into PVW), fire a specific cue, rewind stack, recall preset (optionally cut/auto), take (cut/auto), arm output / arm all, hold, clear, FTB.
 **Feedbacks:** cue is PGM / PVW, preset last recalled, output armed, hold on, FTB on.
 **Variables:** `<stack-id>_pgm`, `<stack-id>_pvw` (preset names), `armed_outputs`, `preset_count`.
 **Presets:** auto-generated buttons per preset, per stack (GO / select prev / select next / rewind) and per cue (select, lit red on PGM and green on PVW), plus take, arm per output, hold, clear and FTB. They refresh when presets, stacks or outputs change.

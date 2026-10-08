@@ -3,7 +3,7 @@ import {
   type CompanionActionDefinitions, type CompanionFeedbackDefinitions, type CompanionPresetDefinitions,
   type DropdownChoice, type SomeCompanionConfigField,
 } from '@companion-module/base'
-import { armCommand, baseUrl, cueActionCommand, cueKey, cueState, KartCupApi, recallCommand, resolveOnOff, stepSelectionCommand, takeCommand, type ServerState } from './api.js'
+import { armCommand, overwritePresetCommand, savePresetCommand, baseUrl, cueActionCommand, cueKey, cueState, KartCupApi, recallCommand, resolveOnOff, stepSelectionCommand, takeCommand, type ServerState } from './api.js'
 
 interface Config { host: string; port: number }
 
@@ -114,7 +114,16 @@ class KartCupInstance extends InstanceBase<Config> {
     const outputOpt = { type: 'dropdown' as const, id: 'output', label: 'Output', choices: outputs, default: outputs[0]?.id ?? '' }
     const takeOpt = { type: 'dropdown' as const, id: 'take', label: 'Take', choices: TAKE_CHOICES, default: 'none' }
 
+    const sourceOpt = { type: 'dropdown' as const, id: 'source', label: 'Source', choices: [{ id: 'pvw', label: 'PVW (preview)' }, { id: 'pgm', label: 'PGM (on air)' }], default: 'pvw' }
     const actions: CompanionActionDefinitions = {
+      save_preset: {
+        name: 'Save new preset from PVW / PGM', options: [{ type: 'textinput', id: 'name', label: 'Preset name', default: 'New preset' }, sourceOpt],
+        callback: async (a) => { await this.send(savePresetCommand(a.options.name, a.options.source)) },
+      },
+      overwrite_preset: {
+        name: 'Overwrite preset from PVW / PGM', options: [presetOpt, sourceOpt],
+        callback: async (a) => { await this.send(overwritePresetCommand(String(a.options.preset), a.options.source)) },
+      },
       recall: {
         name: 'Recall preset', options: [presetOpt, takeOpt],
         callback: async (a) => { await this.send(recallCommand(String(a.options.preset), a.options.take)) },
