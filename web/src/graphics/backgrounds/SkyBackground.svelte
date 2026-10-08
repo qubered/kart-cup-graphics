@@ -1,90 +1,61 @@
 <script lang="ts">
+  import { ICON_SYMBOLS } from './icons'
   interface Props { watermark: string; font: string; lowfx: boolean; w: number; h: number }
   let { watermark, font, lowfx, w, h }: Props = $props()
 
   // Deterministic pseudo-random so sparkles don't jump on re-render.
   function rng(seed: number) { let s = seed; return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296 } }
+  // 150 on wide (count scales with area), a fifth of that with lowfx. Dots 4-12px + 18% four-point stars (44px).
   const sparkles = $derived.by(() => {
     const r = rng(7)
-    return Array.from({ length: lowfx ? 30 : 150 }, () => ({
-      x: r() * 100, y: r() * 100, size: 4 + r() * 12, delay: r() * 5, dur: 2.2 + r() * 3,
-    }))
+    const n = Math.round(150 * (w * h) / (3840 * 1152) / (lowfx ? 5 : 1))
+    return Array.from({ length: n }, () => {
+      const big = r() < 0.18
+      const x = r() * w, y = r() * h, size = 4 + r() * 8, delay = r() * 4, dur = 2.4 + r() * 2.6
+      return { big, x, y, size, delay, dur }
+    })
   })
-
-  const text = $derived((watermark || 'MARIO KART').toUpperCase())
-  // Fit the watermark line within the canvas width, capped by height.
-  const fs = $derived(Math.round(Math.min(h * 0.42, (w * 1.05) / (Math.max(text.length, 1) * 0.85))))
-  const crests = [
-    { x: 8, y: 14, s: 1.0, dur: 46, delay: 0 },
-    { x: 38, y: 62, s: 1.5, dur: 62, delay: -20 },
-    { x: 66, y: 8, s: 0.8, dur: 52, delay: -10 },
-    { x: 86, y: 54, s: 1.2, dur: 70, delay: -35 },
-  ]
+  const text = $derived(watermark || 'MARIO KART')
 </script>
 
-<div class="sky" style="width:{w}px;height:{h}px;--w:{w}px">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>{@html ICON_SYMBOLS}</defs></svg>
+<div class="bg-sky" style:width="{w}px" style:height="{h}px" style:--h="{h}px" style:font-family={font}>
   <div class="checker"></div>
-
-  {#each crests as c (c.x)}
-    <svg class="crest" style="left:{c.x}%;top:{c.y}%;width:{h * 0.34 * c.s}px;height:{h * 0.34 * c.s}px;animation-duration:{c.dur}s;animation-delay:{c.delay}s" viewBox="-50 -50 100 100" aria-hidden="true">
-      <path d="M-38 -44H38V6C38 28 18 42 0 50C-18 42 -38 28 -38 6Z" fill="none" stroke="#fff" stroke-width="3" />
-      <path d="M-24 -30H24V4C24 18 12 28 0 34C-12 28 -24 18 -24 4Z" fill="none" stroke="#fff" stroke-width="2" />
-    </svg>
-  {/each}
-
-  <div class="watermark" style="font-family:{font};font-size:{fs}px;line-height:{fs * 0.86}px;left:{w * 0.03}px;top:{h * 0.08}px">
-    <div>{text}</div>
-    <div class="second">{text}</div>
+  <div class="wm w1">{text}</div><div class="wm w2">{text}</div>
+  <svg class="crest c1" viewBox="0 0 400 400" aria-hidden="true"><use href="#i-crest" /></svg>
+  <svg class="crest c2" viewBox="0 0 400 400" aria-hidden="true"><use href="#i-crest" /></svg>
+  <div class="sweep-track"><div class="sweep"></div></div>
+  <div class="sparkles">
+    {#each sparkles as s, i (i)}
+      {#if s.big}
+        <b style="left:{s.x}px;top:{s.y}px;animation-delay:{s.delay}s;animation-duration:{s.dur}s"></b>
+      {:else}
+        <i style="left:{s.x}px;top:{s.y}px;width:{s.size}px;height:{s.size}px;animation-delay:{s.delay}s;animation-duration:{s.dur}s"></i>
+      {/if}
+    {/each}
   </div>
-
-  <div class="sweep"></div>
-
-  {#each sparkles as s, i (i)}
-    <i class="sparkle" style="left:{s.x}%;top:{s.y}%;width:{s.size}px;height:{s.size}px;animation-delay:{s.delay}s;animation-duration:{s.dur}s"></i>
-  {/each}
 </div>
 
 <style>
-  .sky {
-    position: absolute; left: 0; top: 0; overflow: hidden;
-    background: linear-gradient(135deg, #25c8f6 0%, #0e9ce6 38%, #0b72d8 70%, #2b4ec6 100%);
-  }
-  .checker {
-    position: absolute; right: 0; top: 0; width: 55%; height: 100%; opacity: .09;
-    background: repeating-conic-gradient(#fff 0% 25%, transparent 0% 50%) 0 0 / 120px 120px;
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 70%);
-    mask-image: linear-gradient(to right, transparent, #000 70%);
-  }
-  .crest { position: absolute; opacity: .16; will-change: transform; animation: crest linear infinite; }
-  @keyframes crest {
-    0% { transform: translate(0, 0) rotate(-8deg); }
-    50% { transform: translate(60px, -40px) rotate(8deg); }
-    100% { transform: translate(0, 0) rotate(-8deg); }
-  }
-  .watermark {
-    position: absolute; color: #fff; opacity: .13; white-space: nowrap; font-weight: 900; letter-spacing: .02em;
-    user-select: none;
-  }
-  .watermark .second { margin-left: 8%; opacity: .75; }
-  .sweep {
-    position: absolute; left: 0; top: -20%; width: 22%; height: 140%; opacity: 0; will-change: transform, opacity;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .28), rgba(255, 255, 255, 0));
-    transform: translateX(-100%) skewX(-18deg);
-    animation: sweep 9s ease-in-out infinite;
-  }
-  @keyframes sweep {
-    0% { transform: translateX(-100%) skewX(-18deg); opacity: 0; }
-    5% { opacity: 1; }
-    30% { transform: translateX(var(--w)) skewX(-18deg); opacity: 1; }
-    32%, 100% { transform: translateX(var(--w)) skewX(-18deg); opacity: 0; }
-  }
-  .sparkle {
-    position: absolute; opacity: 0; background: #fff; will-change: transform, opacity;
-    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-    animation: twinkle ease-in-out infinite;
-  }
-  @keyframes twinkle {
-    0%, 100% { opacity: 0; transform: scale(.3) rotate(0deg); }
-    50% { opacity: .9; transform: scale(1) rotate(45deg); }
-  }
+  .bg-sky { position: absolute; left: 0; top: 0; background: var(--sky); overflow: hidden; }
+  .checker { position: absolute; right: 0; top: 0; width: 39.06%; height: 100%;            /* 1500px of 3840 */
+    background-image: conic-gradient(var(--sky-checker) 25%, transparent 0 50%, var(--sky-checker) 0 75%, transparent 0);
+    background-size: 150px 150px; -webkit-mask-image: linear-gradient(to left, #000 0%, transparent 85%); }
+  .wm { position: absolute; font-size: calc(var(--h) * .26); font-weight: 400; line-height: 1; color: var(--sky-watermark);   /* 300px @1152 */
+    transform: rotate(-12deg); white-space: nowrap; letter-spacing: -4px; }
+  .wm.w1 { left: -5.2%; top: 3.5%; }          /* (-200, 40) on wide */
+  .wm.w2 { left: 49.5%; top: 66%; }           /* (1900, 760) on wide */
+  .crest { position: absolute; color: var(--sky-crest); will-change: transform; animation: crest-drift 18s ease-in-out infinite alternate; }
+  .crest.c1 { left: 3.1%; top: 45%; width: calc(var(--h) * .66); height: calc(var(--h) * .66); }               /* 760px */
+  .crest.c2 { left: 76.8%; top: -15.6%; width: calc(var(--h) * .78); height: calc(var(--h) * .78); animation-duration: 24s; } /* 900px */
+  @keyframes crest-drift { from { transform: rotate(-14deg) translateY(0); } to { transform: rotate(-8deg) translateY(-50px); } }
+  .sweep-track { position: absolute; inset: 0; will-change: transform; animation: sweep 9s ease-in-out infinite; }
+  .sweep { position: absolute; top: -200px; left: 0; width: 700px; height: calc(var(--h) + 400px); transform: skewX(-22deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); }
+  @keyframes sweep { 0% { transform: translateX(-30%); } 60%, 100% { transform: translateX(130%); } }
+  .sparkles i { position: absolute; display: block; border-radius: 50%; background: #fff; box-shadow: 0 0 14px 4px rgba(255,255,255,.65); opacity: 0; animation: twinkle 3.2s ease-in-out infinite; }
+  .sparkles b { position: absolute; display: block; width: 44px; height: 44px; opacity: 0; animation: twinkle 4s ease-in-out infinite;
+    background: radial-gradient(circle, #fff 0 3px, transparent 4px), linear-gradient(#fff, #fff) center/4px 100% no-repeat, linear-gradient(#fff, #fff) center/100% 4px no-repeat;
+    filter: drop-shadow(0 0 6px #fff); }
+  @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
 </style>

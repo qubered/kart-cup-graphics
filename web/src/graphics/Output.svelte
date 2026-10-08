@@ -30,7 +30,7 @@
   <div id="canvas" style="width:{view.canvas.w}px;height:{view.canvas.h}px">
     <!-- Layer order, bottom to top: Background, Scene, Track card, Lower thirds, HOLD, FTB. -->
 
-    <!-- BACKGROUND (A, B here; Background C / StickerWall is added by the graphics task) -->
+    <!-- BACKGROUND (A, B, C) -->
     {#if view.background}
       {#key view.background.id}
         <div class="layer" data-layer="background" data-bg={view.background.id} in:fade={{ duration: enter }} out:fade={{ duration: exit }}>

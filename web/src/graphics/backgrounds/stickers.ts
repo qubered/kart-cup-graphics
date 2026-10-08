@@ -1,42 +1,52 @@
-export const TILE_W = 1280
-export const TILE_H = 1152
-/** Wordmark bands: B and D (D is offset by half a tile). */
-export const BANDS = [
-  { y: 288, h: 168, dx: 0 },
-  { y: 744, h: 168, dx: 640 },
-] as const
-export const BAND_MAX = 980
+import { STICKER_TILE, TILE_H, TILE_W } from './icons'
 
-export type StickerShape = 'round' | 'ellipse' | 'tag' | 'stripe'
-export interface Sticker { x: number; y: number; w: number; h: number; text: string; shape: StickerShape; tone: number; rot: number; size: number }
+export { TILE_H, TILE_W }
 
-const rowA = { y: 24, h: 240 }
-const rowC = { y: 480, h: 240 }
-const rowE = { y: 936, h: 192 }
+const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
 
-const s = (row: { y: number; h: number }, x: number, w: number, text: string, shape: StickerShape, tone: number, rot: number, size: number): Sticker =>
-  ({ x, y: row.y, w, h: row.h, text, shape, tone, rot, size })
+/** The sticker tile with the wordmark bands set to `watermark` (same substitution as the mockup). */
+export function stickerTile(watermark: string): string {
+  return STICKER_TILE.replace('>WM<', '>' + esc(watermark) + '<')
+}
 
-/** One 1280x1152 tile of stickers on a 24px grid (rows A, C, E). */
-export const STICKERS: Sticker[] = [
-  s(rowA, 24, 360, 'FASTEST LAP', 'round', 0, -2, 64),
-  s(rowA, 408, 240, '1ST', 'ellipse', 2, 3, 120),
-  s(rowA, 672, 312, 'ITEM BOX', 'tag', 1, -1.5, 64),
-  s(rowA, 1008, 240, 'BOOST', 'stripe', 3, 2, 60),
-  s(rowC, 24, 288, 'BLUE SHELL', 'stripe', 1, 2, 56),
-  s(rowC, 336, 408, 'DRIFT KING', 'round', 3, -2.5, 72),
-  s(rowC, 768, 216, '150cc', 'ellipse', 0, 2, 64),
-  s(rowC, 1008, 240, 'LAP 3/3', 'tag', 2, -2, 58),
-  s(rowE, 24, 288, 'START', 'tag', 2, -2, 70),
-  s(rowE, 336, 360, 'GOAL!', 'round', 1, 2, 88),
-  s(rowE, 720, 264, 'MUSHROOM', 'stripe', 0, -1.5, 52),
-  s(rowE, 1008, 240, 'STAR', 'ellipse', 3, 2.5, 68),
-]
+/** `<use>` copies of the tile (the original sits at x = 0), as in the mockup. */
+export function tileUses(w: number): string {
+  const copies = Math.ceil(w / TILE_W) + 2
+  let uses = ''
+  for (let i = -1; i < copies; i++) if (i !== 0) uses += `<use href="#sheet-tile" x="${i * TILE_W}"/>`
+  return uses
+}
+export const tileCopies = (w: number) => Math.ceil(w / TILE_W) + 2
 
-/** Grey sticker tones: [fill, ink]. */
-export const TONES: [string, string][] = [
-  ['#dcdcdc', '#9d9d9d'],
-  ['#cfcfcf', '#f6f6f6'],
-  ['#e6e6e6', '#a8a8a8'],
-  ['#c4c4c4', '#ededed'],
-]
+/** Parade: 7 vehicles per 3840 px (positions scaled to the canvas), duplicated one canvas width to the right for a seamless loop. */
+export const PARADE_X = [60, 600, 1100, 1700, 2300, 2800, 3350]
+export const PARADE_SCALE = [1, 1.15, 0.9, 1.25, 1, 1.1, 0.95]
+export function paradeVehicles(w: number) {
+  return [0, w].flatMap(off => PARADE_X.map((x, i) => ({
+    id: `${off}-${i}`, href: i % 3 === 1 ? '#bike' : '#kart', w: 240 * PARADE_SCALE[i], h: 150 * PARADE_SCALE[i],
+    left: x * (w / 3840) + off, delay: i * 0.13,
+  })))
+}
+
+const BASE_ATTR = 'data-base'
+/**
+ * Fit SVG sticker text. `text[data-max]`: shrink the font-size 1px at a time down to 60% of its base size, then compress the
+ * glyphs to `data-max` with textLength/spacingAndGlyphs (the SVG equivalent of scaleX). `text[data-fitw]` (wordmark): shrink only.
+ */
+export function fitStickerText(root: Element) {
+  root.querySelectorAll<SVGTextElement>('text[data-max], text[data-fitw]').forEach(t => {
+    if (!t.hasAttribute(BASE_ATTR)) t.setAttribute(BASE_ATTR, t.getAttribute('font-size') ?? '16')
+    const base = +t.getAttribute(BASE_ATTR)!
+    t.removeAttribute('textLength'); t.removeAttribute('lengthAdjust')
+    t.setAttribute('font-size', String(base))
+    const wordmark = t.hasAttribute('data-fitw')
+    const max = +(t.getAttribute(wordmark ? 'data-fitw' : 'data-max') as string)
+    let w = t.getComputedTextLength()
+    if (w <= max) return
+    if (wordmark) { t.setAttribute('font-size', String(Math.floor(base * max / w))); return }
+    const floor = Math.max(8, base * 0.6)
+    let fs = base
+    while (w > max && fs > floor) { fs -= 1; t.setAttribute('font-size', String(fs)); w = t.getComputedTextLength() }
+    if (w > max) { t.setAttribute('textLength', String(max - 2)); t.setAttribute('lengthAdjust', 'spacingAndGlyphs') }
+  })
+}
