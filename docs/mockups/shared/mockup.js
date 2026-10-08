@@ -75,13 +75,48 @@ window.MK = (function () {
       <div class="row"><span class="race">${esc(r.label)}</span><span class="cup">${esc(r.cup)}</span></div>
       <div class="track-name" data-fit="352"><span>${esc(r.track)}</span></div></div>`;
   }
-  /* maxW: wide 3600 · hd 1800 · twin half 900 — the title line shrinks to fit */
-  function titleLockup(e, style, ts, ps, extraStyle = '', maxW = 3600) {
-    const full = e.title + (e.accent ? ' ' + e.accent : '');
-    return `<div class="title-lockup" data-guide="title-lockup" data-style="${style}" style="--ts:${ts}px;--ps:${ps}px;${extraStyle}">
-      <div class="pre">${esc(e.pre)}</div><br><div class="t" data-fit="${maxW}" data-fit-min="0" data-t="${esc(full)}"><span class="m">${esc(e.title)}</span>${e.accent ? ` <span class="a">${esc(e.accent)}</span>` : ''}</div></div>`;
+  /* EVENT TITLE LOCKUP — line breaking rule (the app must implement the same):
+       wide ("line"): TITLE ACCENT on one line.
+       hd / twin ("stack"): the accent gets its own line; the title is split into 1..maxLines lines (hd 2, twin 3) at spaces.
+       Candidate splits are scored by the size they would fit at (measured), capped by ts and by maxH / (lines × 1.16).
+       Pick the FEWEST lines whose size ≥ 85% of ts; if none reaches 85%, the split with the largest size.
+       Then every line is fitted to max (fitText, no floor) and all lines take the smallest size. */
+  const TITLE_SIZES = {
+    wide: { layout: 'line',  ts: 210, ps: 58, ms: 90, max: 3600, maxLines: 1, maxH: 9999, top: '50%', holdTop: '42%' },
+    hd:   { layout: 'stack', ts: 190, ps: 50, ms: 64, max: 1700, maxLines: 2, maxH: 640,  top: '50%', holdTop: '42%' },
+    twin: { layout: 'stack', ts: 170, ps: 40, ms: 56, max: 860,  maxLines: 3, maxH: 760,  top: '50%', holdTop: '43%' },   /* per 960 half */
+  };
+  function titleLockup(e, style, z, extraStyle = '') {
+    return `<div class="title-lockup" data-guide="title-lockup" data-style="${style}" data-layout="${z.layout}" style="--ts:${z.ts}px;--ps:${z.ps}px;${extraStyle}">
+      <div class="pre">${esc(e.pre)}</div><div class="lines" data-title="${esc(e.title)}" data-accent="${esc(e.accent)}" data-layout="${z.layout}"
+        data-ts="${z.ts}" data-max="${z.max}" data-max-lines="${z.maxLines}" data-maxh="${z.maxH}"></div></div>`;
   }
-  const TITLE_SIZES = { wide: { ts: 210, ps: 58, ms: 90, max: 3600 }, hd: { ts: 150, ps: 42, ms: 64, max: 1800 }, twin: { ts: 92, ps: 26, ms: 44, max: 900 } };
+  function titleLine(t, a, max) {
+    const txt = [t, a].filter(Boolean).join(' ');
+    const inner = (t ? `<span class="m">${esc(t)}</span>` : '') + (t && a ? ' ' : '') + (a ? `<span class="a">${esc(a)}</span>` : '');
+    return `<div class="ln" data-fit="${max}" data-fit-min="0" data-fit-group="title" data-t="${esc(txt)}">${inner}</div>`;
+  }
+  function layoutTitles(root) {
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.font = `900 100px ${getComputedStyle(document.documentElement).getPropertyValue('--font-event').trim()}`;
+    const fitSize = (txt, max) => max / (ctx.measureText(txt).width / 100 + 0.28);          /* 0.28em = left+right padding */
+    const splits = (w, n) => (n === 1 ? [[w.join(' ')]] : Array.from({ length: w.length - n + 1 }, (_, i) => i + 1)
+      .flatMap((k) => splits(w.slice(k), n - 1).map((rest) => [w.slice(0, k).join(' ')].concat(rest))));
+    root.querySelectorAll('.lines[data-title]').forEach((box) => {
+      const d = box.dataset, ts = +d.ts, max = +d.max, accent = d.accent;
+      if (d.layout === 'line') { box.innerHTML = titleLine(d.title, accent, max); return; }
+      const words = d.title.split(/\s+/).filter(Boolean), cands = [];
+      for (let n = 1; n <= Math.min(+d.maxLines, words.length); n++) splits(words, n).forEach((ls) => {
+        const all = accent ? ls.concat([accent]) : ls;
+        const size = Math.min(ts, ...all.map((t) => fitSize(t, max)), +d.maxh / (all.length * 1.16));
+        cands.push({ ls, n, size });
+      });
+      const best = cands.filter((c) => c.size >= 0.85 * ts).sort((x, y) => x.n - y.n || y.size - x.size)[0]
+                || cands.sort((x, y) => y.size - x.size || x.n - y.n)[0];
+      box.innerHTML = best.ls.map((t) => titleLine(t, '', max)).join('') + (accent ? titleLine('', accent, max) : '');
+      box.querySelectorAll('.ln').forEach((l) => { l.style.fontSize = Math.floor(best.size) + 'px'; });
+    });
+  }
   const UPRIGHT = ['Mario Kart F2', 'MK F2', 'Lexend Zetta', 'Titan One', 'Luckiest Guy', 'Lilita One', 'Russo One'];
   function heading(text, look, hs, opts = {}) {
     const full = text + (opts.accent ? ' ' + opts.accent : '');
@@ -211,6 +246,11 @@ window.MK = (function () {
       const span = e.querySelector(':scope > span');
       if (e.scrollWidth > max && span) span.style.transform = `scaleX(${(max / span.offsetWidth).toFixed(4)})`;
     });
+    /* data-fit-group: every member takes the group's smallest fitted size (title lockup lines) */
+    const groups = {};
+    root.querySelectorAll('[data-fit-group]').forEach((e) => { const g = e.closest('.title-lockup') || root; const k = e.getAttribute('data-fit-group');
+      (groups[k] = groups[k] || new Map()).set(g, (groups[k].get(g) || []).concat(e)); });
+    Object.values(groups).forEach((m) => m.forEach((els) => { const min = Math.min(...els.map((e) => parseFloat(getComputedStyle(e).fontSize))); els.forEach((e) => { e.style.fontSize = min + 'px'; }); }));
     root.querySelectorAll('svg text[data-max]').forEach((t) => {
       t.removeAttribute('textLength'); const w = t.getComputedTextLength(), m = +t.getAttribute('data-max');
       if (w > m) { t.setAttribute('textLength', m); t.setAttribute('lengthAdjust', 'spacingAndGlyphs'); }
@@ -251,7 +291,7 @@ window.MK = (function () {
     addEventListener('resize', fit); fit();
     const imgs = Array.from(c.querySelectorAll('img')).map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))).filter(Boolean);
     Promise.all([document.fonts.ready, Promise.race([Promise.all(imgs), new Promise((r) => setTimeout(r, 4000))])]).then(() => {
-      fitText(c); if (param('guides') === '1') guides(c, () => scale); document.body.setAttribute('data-ready', '');
+      layoutTitles(c); fitText(c); if (param('guides') === '1') guides(c, () => scale); document.body.setAttribute('data-ready', '');
     });
     return { canvas: c, f, SAMPLE };
   }

@@ -870,8 +870,22 @@ test('visual: twin + hd snapshots', async ({ page }) => { await command({ type: 
 
 - [ ] **Step 2: Run `npx playwright test tests/e2e/graphics.spec.ts` and confirm it FAILS.**
 - [ ] **Step 3: Implement the components.** Reference pages: `docs/mockups/overlays/twin-lower-thirds.html`, `hd-lower-thirds.html`, `wide-lower-thirds.html` (with `?guides=1` for exact boxes), `docs/mockups/titles/title-lockup.html` (S1/S3 × wide/hd/twin) and `titles/headings.html`.
-  - The title line uses `fitText` with `minRatio: 0` and max widths wide 3600, HD 1800, twin half 900.
-  - Its outline and drop shadow are in `em`.
+  - `TitleLockup` gets the format's layout from `TITLE_LAYOUT` (`web/src/graphics/title-layout.ts`):
+
+    | Format | Layout | ts | ps | max | maxLines | maxH |
+    |---|---|---|---|---|---|---|
+    | wide | `line` | 210 | 58 | 3600 | 1 | — |
+    | hd | `stack` | 190 | 50 | 1700 | 2 | 640 |
+    | twin | `stack` | 170 | 40 | 860 | 3 | 760 |
+
+  - `breakTitle(title, accent, layout, measure): { lines: string[]; accentLine: boolean; size: number }` is pure and unit-tested. `measure(text)` = width at 100 px.
+    - Try every split into ≤ maxLines at spaces. Score = min(ts, max ÷ (w/100 + 0.28) for each line incl. the accent, maxH ÷ (lines × 1.16)).
+    - Pick the fewest lines with score ≥ 0.85 × ts; else the highest score.
+    - Port it from `layoutTitles()` in `docs/mockups/shared/mockup.js`.
+  - Each line then gets `fitText` with `minRatio: 0`, and all lines take the smallest size. Outline and drop shadow are in `em`.
+  - Unit tests with a fake measure where each char = 118 px at 100 px:
+    - `breakTitle('KART CUP','2026','stack',…)` → hd: lines `['KART CUP']`; twin: lines `['KART','CUP']`.
+    - Wide → a single line containing the accent.
 - [ ] **Step 4: Run the tests and confirm they PASS.** Run `--update-snapshots` once to create the baselines, check them by eye against the mockups, then re-run without the flag.
 - [ ] **Step 5: Commit.** `git commit -m "feat: medallion lower thirds, T1 track card, title lockup and headings"`
 

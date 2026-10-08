@@ -281,7 +281,18 @@ All three animate continuously using `transform`/`opacity` only.
 ### Text fitting (applies to every operator-typed text)
 
 - **Names, track names, sticker text:** shrink the font 1 px at a time down to a floor of **60%** of its base size. If it still doesn't fit, compress the text horizontally (`scaleX`) until it does. Text never overflows and never becomes tiny.
-- **Event title line:** shrinks with no floor to its maximum width: wide **3600** px, HD **1800** px, each twin half **900** px. Base sizes are wide 210 / pre-title 58, HD 150 / 42, twin 92 / 26. Outline and drop shadow are in `em`, so they shrink with the text.
+- **Event title lockup (title scene and HOLD):** the layout depends on the screen shape.
+
+  | Format | Layout | Title size / pre-title | Max line width | Max stack height |
+  |---|---|---|---|---|
+  | Wide | `TITLE ACCENT` on one line | 210 / 58 | 3600 | — |
+  | HD | Title in 1–2 lines, then the accent on its own line | 190 / 50 | 1700 | 640 |
+  | Twin (per 960 half) | Title in 1–3 lines, then the accent on its own line | 170 / 40 | 860 | 760 |
+
+  - **Line breaking:** split the title at spaces, trying every grouping up to the line limit. Score each by the size it would fit at, capped by the base size and by max height ÷ (lines × 1.16). Use the fewest lines that reach ≥ 85% of the base size; if none does, use the largest-size split.
+  - **Sizing:** every line is then fitted to the max width with no floor, and all lines take the smallest size.
+  - Outline and drop shadow are in `em`, so they shrink with the text.
+  - Examples: "KART CUP 2026" → wide one line; HD `KART CUP / 2026`; twin `KART / CUP / 2026`.
 
 ### Typography
 

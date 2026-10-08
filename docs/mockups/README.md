@@ -51,7 +51,7 @@ The mockups need internet for Google Fonts and Mario Wiki images. The real app s
 ## Text-fitting rules (also in spec §5)
 
 - **Names, track names, sticker text:** shrink to a floor of 60% of the base size, then compress the inner `<span>` with `scaleX`. See `fitText` in `shared/mockup.js`; try `overlays/twin-lower-thirds.html?names=ALEXANDRIA-ROSE%20FEATHERSTONE,PRIYA,TOM,ALEX&track=Tour%20Singapore%20Speedway`.
-- **Event title:** no floor; max width wide 3600, HD 1800, twin half 900 (`MK.TITLE_SIZES`).
+- **Event title lockup:** wide = one line; HD = title in 1–2 lines + accent line; twin = title in 1–3 lines + accent line, per half. Line breaks are chosen by measured fit: the fewest lines that reach ≥ 85% of the base size (see `layoutTitles()` and `MK.TITLE_SIZES`). Every line is fitted with no floor and all lines share the smallest size. Try `titles/title-lockup.html?format=twin&title=SUPER%20MEGA%20KART%20CHAMPIONSHIP`.
 - **Gotcha:** the sticker tile repeats through SVG `<use>`. Its classes must be unscoped, because ancestor selectors don't match inside `<use>` copies.
 
 ## Rules for implementers
