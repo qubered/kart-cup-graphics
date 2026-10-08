@@ -52,7 +52,9 @@ export interface Preset {
   draft: ShowData; transition: TransitionSpeed; mattify: boolean
 }
 /** One step in a stack: recall a preset, then cut/auto it to air (take: null = recall only, take by hand). The same preset may appear in many cues. */
-export interface Cue { id: string; presetId: string; take: TakeMode | null }
+export interface Cue { id: string; presetId: string; take: TakeMode | null; scope?: Partial<PresetScope> }
+/** Patch for a cue's scope override: true/false forces that part on/off for this cue, null goes back to inheriting the preset's scope. */
+export type CueScopePatch = { [K in keyof PresetScope]?: boolean | null }
 /** An ordered, user-built list of cues. current = on air (last fired). selected = standby: its design is loaded into Preview and GO fires it.
  *  With nothing selected, GO fires the cue after current (or the first). */
 export interface CueStack { id: string; name: string; cues: Cue[]; current: string | null; selected: string | null }
@@ -86,8 +88,8 @@ export type Command =
   | { type: 'renameStack'; id: string; name: string }
   | { type: 'deleteStack'; id: string }
   | { type: 'resetStack'; id: string }
-  | { type: 'addCue'; stackId: string; presetId: string; take: TakeMode | null; index?: number }
-  | { type: 'updateCue'; stackId: string; cueId: string; presetId?: string; take?: TakeMode | null }
+  | { type: 'addCue'; stackId: string; presetId: string; take: TakeMode | null; index?: number; scope?: CueScopePatch }
+  | { type: 'updateCue'; stackId: string; cueId: string; presetId?: string; take?: TakeMode | null; scope?: CueScopePatch }
   | { type: 'removeCue'; stackId: string; cueId: string }
   | { type: 'moveCue'; stackId: string; cueId: string; delta: 1 | -1 }
   | { type: 'selectCue'; stackId: string; cueId: string }

@@ -1,7 +1,15 @@
 <script lang="ts">
   import { control, send } from '../store'
-  import type { TakeMode } from '../../../../shared/types'
+  import type { PresetScope, TakeMode } from '../../../../shared/types'
 
+  const SCOPES: { key: keyof PresetScope; label: string }[] = [
+    { key: 'layers', label: 'Layers' }, { key: 'armed', label: 'Arming' }, { key: 'show', label: 'Show data' },
+    { key: 'scores', label: 'Scores' }, { key: 'transition', label: 'Speed' }, { key: 'mattify', label: 'Mattify' },
+  ]
+  /** Click cycles: inherit the preset's setting, force on, force off. */
+  function cycleScope(stackId: string, cueId: string, key: keyof PresetScope, own: boolean | undefined) {
+    send({ type: 'updateCue', stackId, cueId, scope: { [key]: own === undefined ? true : own ? false : null } })
+  }
   const st = $derived($control.payload?.state)
   const presets = $derived(st?.presets ?? [])
   const stacks = $derived(st?.stacks ?? [])
@@ -13,6 +21,7 @@
   let renaming = $state(false)
   let renameTo = $state('')
 
+  const presetOf = (id: string) => presets.find((p) => p.id === id)
   const nameOf = (id: string) => presets.find((p) => p.id === id)?.name ?? '?'
   const takeVal = (t: TakeMode | null) => t ?? 'none'
   const takeArg = (v: string): TakeMode | null => (v === 'cut' || v === 'auto' ? v : null)
@@ -93,10 +102,22 @@
         <span class="row" style="margin-left:auto">
           <button type="button" data-select onclick={() => send({ type: 'selectCue', stackId: stack.id, cueId: c.id })}>Select</button>
           <button type="button" data-fire onclick={() => send({ type: 'fireCue', stackId: stack.id, cueId: c.id })}>Fire</button>
+          <button type="button" data-save-to-preset title="Overwrite this cue's preset with everything as it is now (affects every cue using it)"
+            onclick={() => confirm(`Overwrite preset "${nameOf(c.presetId)}" with the current state?`) && send({ type: 'updatePreset', id: c.presetId, capture: true })}>Save to preset</button>
           <button type="button" aria-label="Move up" onclick={() => send({ type: 'moveCue', stackId: stack.id, cueId: c.id, delta: -1 })} disabled={i === 0}>↑</button>
           <button type="button" aria-label="Move down" onclick={() => send({ type: 'moveCue', stackId: stack.id, cueId: c.id, delta: 1 })} disabled={i === stack.cues.length - 1}>↓</button>
           <button type="button" class="danger" aria-label="Remove cue" onclick={() => send({ type: 'removeCue', stackId: stack.id, cueId: c.id })}>✕</button>
         </span>
+      </div>
+      <div class="row scoperow" data-cue-scope={c.id}>
+        <span class="dim" style="width:22px"></span><span class="dim" style="font-size:11px">Recall:</span>
+        {#each SCOPES as sc (sc.key)}
+          {@const own = c.scope?.[sc.key]}
+          {@const eff = own ?? presetOf(c.presetId)?.scope[sc.key] ?? false}
+          <button type="button" class="chip" class:on={eff} class:forced={own !== undefined} data-scope={sc.key}
+            title={own === undefined ? `Inherits the preset (${eff ? 'on' : 'off'}). Click to force on.` : `Forced ${own ? 'on' : 'off'} for this cue. Click to cycle.`}
+            onclick={() => cycleScope(stack.id, c.id, sc.key, own)}>{sc.label}{own === undefined ? '' : own ? ' ✓' : ' ✕'}</button>
+        {/each}
       </div>
     {/each}
 
@@ -114,6 +135,10 @@
 {/if}
 
 <style>
+  .scoperow { gap: 4px; padding: 0 0 6px; }
+  .chip { font-size: 11px; padding: 2px 6px; opacity: .45; }
+  .chip.on { opacity: .9; }
+  .chip.forced { opacity: 1; outline: 1px solid var(--ui-preview, #4ade80); }
   .cue .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; }
   .cue.current .tag { color: var(--ui-program, #f87171); }
   .cue.standby .tag { color: var(--ui-preview, #4ade80); }

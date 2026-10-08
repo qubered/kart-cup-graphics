@@ -90,7 +90,7 @@ export function createHttpHandler(opts: HttpOpts): (req: IncomingMessage, res: S
       const s = store.state
       return json(res, 200, {
         presets: s.presets.map((p) => ({ id: p.id, name: p.name })), lastPreset: s.lastPreset, armed: s.armed,
-        stacks: s.stacks.map((k) => ({ id: k.id, name: k.name, current: k.current, selected: k.selected, cues: k.cues.map((c) => ({ id: c.id, presetId: c.presetId, take: c.take })) })),
+        stacks: s.stacks.map((k) => ({ id: k.id, name: k.name, current: k.current, selected: k.selected, cues: k.cues.map((c) => ({ id: c.id, presetId: c.presetId, take: c.take, scope: c.scope })) })),
         outputs: s.outputs.map((o) => ({ id: o.id, name: o.name })), hold: s.overlay.hold.on, ftb: s.overlay.ftb,
       })
     }

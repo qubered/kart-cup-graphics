@@ -74,9 +74,12 @@ export const presetSchema: z.ZodType<Preset, z.ZodTypeDef, unknown> = z.object({
   mattify: z.boolean(),
 })
 
+const SCOPE_KEYS = ['layers', 'armed', 'show', 'scores', 'transition', 'mattify'] as const
+const cueScopeSchema = z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean()]))).partial()
+const cueScopePatchSchema = z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean().nullable()]))).partial()
 export const cueSchema: z.ZodType<Cue> = z.object({
-  id: z.string().min(1).max(64), presetId: z.string().min(1).max(64), take: takeModeSchema.nullable(),
-})
+  id: z.string().min(1).max(64), presetId: z.string().min(1).max(64), take: takeModeSchema.nullable(), scope: cueScopeSchema.optional(),
+}) as unknown as z.ZodType<Cue>
 export const cueStackSchema: z.ZodType<CueStack, z.ZodTypeDef, unknown> = z.object({
   id: z.string().min(1).max(64), name: z.string().max(100), cues: z.array(cueSchema), current: z.string().nullable(), selected: z.string().nullable().default(null),
 })
@@ -149,8 +152,8 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('renameStack'), id: z.string(), name: z.string().trim().min(1).max(100) }),
   z.object({ type: z.literal('deleteStack'), id: z.string() }),
   z.object({ type: z.literal('resetStack'), id: z.string() }),
-  z.object({ type: z.literal('addCue'), stackId: z.string(), presetId: z.string(), take: takeModeSchema.nullable(), index: z.number().int().min(0).optional() }),
-  z.object({ type: z.literal('updateCue'), stackId: z.string(), cueId: z.string(), presetId: z.string().optional(), take: takeModeSchema.nullable().optional() }),
+  z.object({ type: z.literal('addCue'), stackId: z.string(), presetId: z.string(), take: takeModeSchema.nullable(), index: z.number().int().min(0).optional(), scope: cueScopePatchSchema.optional() }),
+  z.object({ type: z.literal('updateCue'), stackId: z.string(), cueId: z.string(), presetId: z.string().optional(), take: takeModeSchema.nullable().optional(), scope: cueScopePatchSchema.optional() }),
   z.object({ type: z.literal('removeCue'), stackId: z.string(), cueId: z.string() }),
   z.object({ type: z.literal('moveCue'), stackId: z.string(), cueId: z.string(), delta: z.union([z.literal(1), z.literal(-1)]) }),
   z.object({ type: z.literal('fireCue'), stackId: z.string(), cueId: z.string() }),

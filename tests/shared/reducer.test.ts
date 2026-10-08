@@ -261,6 +261,22 @@ describe('reducer', () => {
         expect(s.stacks[0]).toMatchObject({ current: 'cue-3', selected: null }); expect(s.program.wide).toBe(before)
         expect(reduce(s, { type: 'goStack', stackId: 'stack-1' }, ctx)).toBe(s)
       })
+      it('edits made in Preview go to air with GO; a fresh recall restores the saved version', () => {
+        let s = reduce(built(), { type: 'selectCue', stackId: 'stack-1', cueId: 'cue-1' }, ctx)
+        s = reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'nextRace', background: 'C' } }, ctx)
+        s = reduce(s, { type: 'setPlayer', index: 1, patch: { name: 'EDITED' } }, ctx)
+        const live = reduce(s, { type: 'goStack', stackId: 'stack-1' }, ctx)
+        expect(live.program.wide.view.scene?.kind).toBe('nextRace'); expect(live.program.wide.view.background?.id).toBe('C')
+        expect(live.stacks[0]).toMatchObject({ current: 'cue-1', selected: 'cue-2' })
+        // Selecting it again reloads the saved preset, dropping the edits.
+        const again = reduce(live, { type: 'selectCue', stackId: 'stack-1', cueId: 'cue-1' }, ctx)
+        expect(again.layers.wide.scene).toBe('lineup'); expect(again.draft.players[1].name).not.toBe('EDITED')
+        // Recalling a preset replaces Preview, so GO then loads the cue fresh instead of taking the other preset.
+        const swapped = reduce(s, { type: 'recallPreset', id: 'preset-2' }, ctx)
+        expect(swapped.stacks[0].selected).toBeNull()
+        const go = reduce(swapped, { type: 'goStack', stackId: 'stack-1' }, ctx)
+        expect(go.stacks[0].current).toBe('cue-1'); expect(go.program.wide.view.scene?.kind).toBe('lineup')
+      })
       it('with nothing selected GO starts at the top; stepSelection moves standby', () => {
         let s = reduce(built(), { type: 'goStack', stackId: 'stack-1' }, ctx)
         expect(s.stacks[0]).toMatchObject({ current: 'cue-1', selected: 'cue-2' })
@@ -282,6 +298,23 @@ describe('reducer', () => {
         expect(s.stacks.map((k) => k.current)).toEqual(['cue-2', null]); expect(s.stacks[0].selected).toBe('cue-3')
         expect(() => reduce(s, { type: 'fireCue', stackId: 'stack-1', cueId: 'cue-4' }, ctx)).toThrow(CommandError)
         expect(() => reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'nope', take: null }, ctx)).toThrow(CommandError)
+      })
+      it('a cue can override the preset scope per part, and null goes back to inheriting', () => {
+        // preset-1 = lineup scene with player name SAM saved; preset scope has show on, scores off.
+        let s = reduce(base, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, ctx)
+        s = reduce(reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } }, ctx), { type: 'savePreset', name: 'L' }, ctx)
+        s = reduce(s, { type: 'createStack', name: 'K' }, ctx)
+        s = reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: null, scope: { show: false, layers: null } }, ctx)
+        expect(s.stacks[0].cues[0].scope).toEqual({ show: false })
+        let t = reduce(reduce(s, { type: 'setPlayer', index: 0, patch: { name: 'OTHER' } }, ctx), { type: 'setLayers', outputId: 'wide', patch: { scene: 'none' } }, ctx)
+        t = reduce(t, { type: 'selectCue', stackId: 'stack-1', cueId: 'cue-1' }, ctx)
+        expect(t.draft.players[0].name).toBe('OTHER'); expect(t.layers.wide.scene).toBe('lineup')
+        // Force scores on for this cue only (preset has it off), clear the show override.
+        const u = reduce(t, { type: 'updateCue', stackId: 'stack-1', cueId: 'cue-1', scope: { scores: true, show: null } }, ctx)
+        expect(u.stacks[0].cues[0].scope).toEqual({ scores: true }); expect(u.draft.players[0].name).toBe('SAM')
+        expect(u.presets[0].scope.scores).toBe(false)
+        const cleared = reduce(u, { type: 'updateCue', stackId: 'stack-1', cueId: 'cue-1', scope: { scores: null } }, ctx)
+        expect(cleared.stacks[0].cues[0].scope).toBeUndefined()
       })
       it('removing a cue or preset keeps stacks consistent', () => {
         let s = reduce(built(), { type: 'fireCue', stackId: 'stack-1', cueId: 'cue-2' }, ctx)
