@@ -4,6 +4,7 @@
   import { STAGGER_MS, pop, slideIn } from '../motion'
   import Heading from '../Heading.svelte'
   import Medallion from '../Medallion.svelte'
+  import Swap from '../Swap.svelte'
 
   type S = Extract<SceneView, { kind: 'winner' }>
   let { scene, view, enter = 0, lowfx = false }: { scene: S; view: ViewModel; enter?: number; lowfx?: boolean } = $props()
@@ -29,22 +30,31 @@
   <div class="rays" style:left="{rayC.x}px" style:top="{rayC.y}px" style:--rs="{wide ? 3000 : 2400}px"></div>
 
   <div class="winner-medal" style:left="{K.mx}px" style:top="{K.my}px" style:width="{K.med}px" style:height="{K.med}px" in:pop|global={{ duration: enter }}>
-    <div class="bob"><Medallion image={scene.player.art || scene.player.icon} size={K.med} stars dur={enter} /></div>
+    <div class="bob"><Medallion image={scene.player.icon} size={K.med} stars dur={enter} /></div>
   </div>
 
   <div class="winner-text" style:left={wide ? '1800px' : '0'} style:right={wide ? undefined : '0'} style:top={wide ? '200px' : '36px'}
     style:width={wide ? '1900px' : undefined} style:text-align={wide ? 'left' : 'center'}>
     <div class="wh" style:--hs="{K.head}px" in:slideIn|global={{ duration: enter, dx: 200, delay: st }}>
-      <Heading text="WINNER" look={view.headingLook} font={view.fonts.headings} upright={view.headingUpright} size={K.head} />
+      <Swap key="{view.headingLook}|{view.fonts.headings}|{view.headingUpright}" dur={enter}>
+        <Heading text="WINNER" look={view.headingLook} font={view.fonts.headings} upright={view.headingUpright} size={K.head} />
+      </Swap>
     </div>
     <div class="wname" style:top={wide ? undefined : `${K.my + K.med + 20 - 36}px`}>
-      <div class="name" style:display="block" style:font-size="{K.nm}px" style:font-family={view.fonts.names} style:width="{K.nmw}px"
-        style:margin-left={wide ? undefined : 'auto'} style:margin-right={wide ? undefined : 'auto'}
-        in:slideIn|global={{ duration: enter, dx: 200, delay: 2 * st }}
-        use:fitText={{ max: K.nmw, text: scene.player.name }}><span>{scene.player.name}</span></div>
+      <div in:slideIn|global={{ duration: enter, dx: 200, delay: 2 * st }}>
+        <Swap key={scene.player.name} dur={enter} block>
+          <div class="name" style:display="block" style:font-size="{K.nm}px" style:font-family={view.fonts.names} style:width="{K.nmw}px"
+            style:margin-left={wide ? undefined : 'auto'} style:margin-right={wide ? undefined : 'auto'}
+            use:fitText={{ max: K.nmw, text: scene.player.name }}><span>{scene.player.name}</span></div>
+        </Swap>
+      </div>
       <div class="sub" style:justify-content={wide ? 'flex-start' : 'center'} in:slideIn|global={{ duration: enter, dx: 200, delay: 3 * st }}>
-        <span class="char" style:font-size="{K.ch}px" style:letter-spacing="{K.chs}px" style:font-family={view.fonts.labels}>{scene.player.character}</span>
-        <span class="pts" style:font-size="{K.pts}px" style:padding={K.ppad} style:font-family={view.fonts.names}>{scene.total} PTS</span>
+        <Swap key={scene.player.character} dur={enter}>
+          <span class="char" style:font-size="{K.ch}px" style:letter-spacing="{K.chs}px" style:font-family={view.fonts.labels}>{scene.player.character}</span>
+        </Swap>
+        <Swap key={scene.total} dur={enter}>
+          <span class="pts" style:font-size="{K.pts}px" style:padding={K.ppad} style:font-family={view.fonts.names}>{scene.total} PTS</span>
+        </Swap>
       </div>
     </div>
   </div>
