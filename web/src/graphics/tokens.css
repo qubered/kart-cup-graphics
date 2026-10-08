@@ -1,0 +1,91 @@
+/*
+ * Kart Cup — design tokens (reference).
+ * Every value here is the approved value from brainstorming. The real app should
+ * copy these verbatim into its own CSS (web/src/graphics/tokens.css).
+ *
+ * Mockup-only: Google Fonts @import below. The real app self-hosts via @fontsource.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,400;0,500;0,700;0,800;0,900;1,800;1,900&family=Exo+2:ital,wght@0,900;1,900&family=Lexend+Zetta:wght@800;900&family=Saira:ital,wght@0,900;1,900&family=Roboto:ital,wght@0,900;1,900&family=Titan+One&family=Lilita+One&family=Russo+One&family=Baloo+2:wght@800&family=Luckiest+Guy&family=JetBrains+Mono:wght@500;700&display=swap');
+
+/* Mario Kart F2: LETTERS ONLY. Its digits are serif placeholders, so digits,
+   spaces and punctuation fall through to Lexend Zetta. */
+@font-face {
+  font-family: "MK F2";
+  src: url("../../../assets/fonts/mario_kart_f2.ttf") format("truetype");
+  unicode-range: U+0041-005A, U+0061-007A;
+}
+
+:root {
+  /* ---------- font roles (defaults) ---------- */
+  --font-event: "MK F2", "Lexend Zetta", sans-serif;   /* Event title (style: chrome) */
+  --font-head:  "Exo 2", "Rubik", sans-serif;           /* Headings (look: classic), 900 italic */
+  --font-name:  "Rubik", sans-serif;                    /* Names & numbers, 900 italic */
+  --font-label: "Rubik", sans-serif;                    /* Labels, 800 */
+
+  /* ---------- player colours ---------- */
+  --p-red: #e60012; --p-blue: #1e6cff; --p-green: #22b14c; --p-yellow: #ffc400;
+  --p-pink: #ff5fa2; --p-orange: #ff8a00; --p-purple: #8b5cf6; --p-cyan: #06b6d4;
+  --p-text-light: #ffffff;   /* chip text on red/blue/green/pink/orange/purple */
+  --p-text-dark:  #14213d;   /* chip text on yellow/cyan */
+
+  /* ---------- core brand ---------- */
+  --mk-yellow: #ffd21f;          /* chips, frames, track-card stripe */
+  --mk-pill: #ffd31a;            /* title pre-title pill */
+  --mk-pill-shadow: #c99a00;
+  --mk-navy: #0b2a6f;            /* classic outline / chip text on yellow */
+  --mk-ink: #0a0f1c;             /* chrome outline */
+  --mk-label-cyan: #8fdcff;
+  --mk-bar: linear-gradient(180deg, #1d4870, #0e2a46);
+
+  /* ---------- medallion ---------- */
+  --medal-gold: linear-gradient(160deg, #fff4ad 0%, #ffd21f 35%, #e5a400 70%, #b97c00 100%);
+  --medal-rim: #4a3300;
+  --medal-inner-rim: #6e4d00;
+  --medal-inner: radial-gradient(circle at 50% 35%, #2a5088, #0d2147 72%);
+  --medal-star: #ffd21f;
+
+  /* ---------- title / heading treatments ---------- */
+  --chrome: linear-gradient(180deg, #ffffff 0%, #f1f4f7 28%, #c3cad3 46%, #4f5a67 50%, #7f8a97 60%, #cdd4db 82%, #ffffff 100%);
+  --iridescent: linear-gradient(165deg, #8be6ff 0%, #2a7bff 24%, #6a3dff 46%, #e02fbf 70%, #ff5a2e 94%);
+  --chrome-drop: rgba(4, 20, 60, .45);
+
+  /* ---------- background A: Menu Sky ---------- */
+  --sky: radial-gradient(ellipse 1400px 700px at 25% 10%, rgba(140,235,255,.55), transparent 70%),
+         radial-gradient(ellipse 1200px 800px at 85% 100%, rgba(40,70,200,.55), transparent 70%),
+         linear-gradient(160deg, #25c8f6 0%, #0e9ce6 38%, #0b72d8 72%, #2b4ec6 100%);
+  --sky-checker: rgba(255,255,255,.13);
+  --sky-watermark: rgba(255,255,255,.07);
+  --sky-crest: rgba(255,255,255,.13);
+
+  /* ---------- background B: Icon Pattern ---------- */
+  --pattern-bg: #0553a6;
+  --pattern-icon: #03458f;
+  --pattern-vignette: radial-gradient(ellipse at center, transparent 55%, rgba(0,20,70,.35));
+
+  /* ---------- background C: Sticker Wall ---------- */
+  --sticker-bg: #f3f3f3;
+  --sticker-line: #dadada;    /* outlines + icon colour */
+  --sticker-fill: #e3e3e3;    /* filled stickers */
+  --sticker-text: #d6d6d6;    /* text on outline stickers */
+  --sticker-knock: #f7f7f7;   /* knock-out text on filled stickers */
+  --sticker-ink: #111111;     /* karts, road, logo text */
+  --sticker-accent: #e60012;  /* logo title accent */
+
+  /* ---------- standings ---------- */
+  --row-dark: rgba(6, 22, 58, .78);
+  --row-leader: linear-gradient(180deg, #fff27a, #ffeb02 40%, #fede01);
+  --row-leader-ink: #281c03;
+  --row-leader-sub: #7a5a00;
+
+  /* ---------- motion ---------- */
+  --ease-overshoot: cubic-bezier(.24, .63, .38, 1.22);
+  --dur-fast: 300ms; --dur-normal: 500ms; --dur-slow: 900ms;   /* exit = 0.6 × enter, stagger 80ms */
+  --dur-ftb: 500ms;
+
+  /* ---------- operator UI (control + multiview) — NOT game-styled ---------- */
+  --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  --ui-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --ui-bg: #0f1115; --ui-panel: #15181e; --ui-panel-2: #12151a; --ui-line: #262a33; --ui-field: #333845;
+  --ui-text: #d1d5db; --ui-muted: #8b93a1; --ui-accent: #3b82f6;
+  --ui-preview: #16a34a; --ui-program: #dc2626; --ui-hold: #f59e0b; --ui-pending: #fbbf24;
+}
