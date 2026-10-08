@@ -4,3 +4,9 @@ data/
 .superpowers/
 .DS_Store
 *.log
+data/
+.e2e-data/
+dist/
+node_modules/
+test-results/
+playwright-report/

@@ -1,0 +1,47 @@
+{
+  "name": "kart-cup-graphics",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server/index.ts --dev",
+    "build": "vite build",
+    "start": "tsx server/index.ts",
+    "fetch-assets": "tsx scripts/fetch-assets.ts",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint web/src shared"
+  },
+  "dependencies": {
+    "svelte": "^5.0.0",
+    "ws": "^8.18.0",
+    "zod": "^3.23.8",
+    "@fontsource/rubik": "*",
+    "@fontsource/exo-2": "*",
+    "@fontsource/saira": "*",
+    "@fontsource/roboto": "*",
+    "@fontsource/lexend-zetta": "*",
+    "@fontsource/titan-one": "*",
+    "@fontsource/lilita-one": "*",
+    "@fontsource/russo-one": "*",
+    "@fontsource/baloo-2": "*",
+    "@fontsource/luckiest-guy": "*"
+  },
+  "devDependencies": {
+    "@playwright/test": "*",
+    "@sveltejs/vite-plugin-svelte": "*",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.0",
+    "browserslist": "*",
+    "eslint": "^9.0.0",
+    "eslint-plugin-compat": "*",
+    "eslint-plugin-svelte": "*",
+    "lightningcss": "*",
+    "sharp": "*",
+    "tsx": "*",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "*",
+    "vite": "*",
+    "vitest": "*"
+  }
+}
