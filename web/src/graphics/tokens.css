@@ -81,3 +81,14 @@
   --ui-text: #d1d5db; --ui-muted: #8b93a1; --ui-accent: #3b82f6;
   --ui-preview: #16a34a; --ui-program: #dc2626; --ui-hold: #f59e0b; --ui-pending: #fbbf24;
 }
+
+/* ---------- kart box: the panel used by the QR and notice scenes (navy, yellow border, chequered-flag strip) ---------- */
+.kart-box {
+  position: relative; overflow: hidden; box-sizing: border-box;
+  background: var(--mk-bar); border: 6px solid var(--mk-yellow); border-radius: 30px; color: #fff;
+  box-shadow: 0 0 0 5px var(--mk-navy), 0 14px 0 5px rgba(0, 0, 0, .3);
+}
+.kart-box::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 22px;
+  background: conic-gradient(#fff 25%, #0a0f1c 0 50%, #fff 0 75%, #0a0f1c 0) 0 0 / 22px 22px;
+}

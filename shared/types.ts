@@ -49,6 +49,8 @@ export interface Layers {
   logo?: LogoMode
   /** Layout of the QR scene. Absent = 'center'. */
   qrStyle?: QrStyle
+  /** Notice scene: also show the QR codes beside / under the text. */
+  noticeQr?: boolean
 }
 
 // ---- tournaments ----
@@ -132,7 +134,7 @@ export type SceneView =
   | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[] }
   | { kind: 'winner'; player: PlayerView; total: number }
   | RaceWinView | CupWinView | BracketView | MatchesView
-  | { kind: 'notice'; doc: NoticeDoc }
+  | { kind: 'notice'; doc: NoticeDoc; qr: QrItem[] | null }
   | { kind: 'qr'; style: QrStyle; title: TitleView; text: string; items: QrItem[] }
 export interface ViewModel {
   format: OutputFormat; canvas: { w: number; h: number }; safeArea: SafeArea; graphicsScale: number

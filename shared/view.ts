@@ -188,7 +188,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
       case 'cupWin': scene = cupWinView(winMatch(tournament, data, layers), layers, tournament, catalog); break
       case 'matches': scene = tournament ? matchesView(tournament, data, layers, output.format, catalog) : null; break
       case 'bracket': scene = tournament ? bracketView(tournament, data, catalog) : null; break
-      case 'notice': scene = { kind: 'notice', doc: structuredClone(data.notice) }; break
+      case 'notice': scene = { kind: 'notice', doc: structuredClone(data.notice), qr: layers.noticeQr ? data.qr.items.map((i) => ({ ...i })) : null }; break
       case 'qr': scene = { kind: 'qr', style: layers.qrStyle ?? 'center', title, text: data.qr.text, items: data.qr.items.map((i) => ({ ...i })) }; break
       default: scene = null
     }
