@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { light } from './presence'
   import { control, send } from './store'
 
   const st = $derived($control.payload?.state)
@@ -20,12 +21,13 @@
     <span class="lab">Take to · click to arm</span>
     <div class="ochips">
       {#each st?.outputs ?? [] as o (o.id)}
-        {@const online = (presence[o.id]?.program ?? 0) > 0}
+        {@const lt = light(presence[o.id], o.format)}
+        {@const online = lt !== 'off'}
         <button class="oc" class:arm={armed.includes(o.id)} data-arm={o.id} aria-pressed={armed.includes(o.id)}
           onclick={() => toggleArm(o.id)}>
           {#if (pending[o.id] ?? 0) > 0}<span class="p" data-pending>{pending[o.id]}</span>{/if}
-          <div class="nn"><span class="led" class:on={online}></span>{o.name}</div>
-          <div class="s">{online ? `${SIZE[o.format]}${armed.includes(o.id) ? ' · armed' : ''}` : 'offline'}</div>
+          <div class="nn"><span class="led" class:on={lt === 'on'} class:partial={lt === 'partial'}></span>{o.name}</div>
+          <div class="s">{lt === 'partial' ? 'one half only' : online ? `${SIZE[o.format]}${armed.includes(o.id) ? ' · armed' : ''}` : 'offline'}</div>
         </button>
       {/each}
       <button class="oc all" data-arm-all onclick={() => send({ type: 'arm', outputIds: (st?.outputs ?? []).map((o) => o.id) })}>ALL</button>

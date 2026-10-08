@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { light, lightTitle } from './presence'
   import { control } from './store'
 
   let now = $state(Date.now())
@@ -32,8 +33,9 @@
   <span class="now" data-now>Now: <b>{nowText}</b></span>
   <div class="stat">
     {#each st?.outputs ?? [] as o (o.id)}
-      <span title="{o.name}: {presence[o.id]?.program ?? 0} program, {presence[o.id]?.preview ?? 0} preview clients">
-        <span class="led" class:on={(presence[o.id]?.program ?? 0) > 0}></span>{o.name}
+      {@const lt = light(presence[o.id], o.format)}
+      <span title={lightTitle(o.name, presence[o.id], o.format)}>
+        <span class="led" class:on={lt === 'on'} class:partial={lt === 'partial'}></span>{o.name}
       </span>
     {/each}
     <span>On air <span class="onair">{onAir}</span></span>

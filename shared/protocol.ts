@@ -1,6 +1,6 @@
 // Wire types. Builders (buildOutputPayload/buildControlPayload/clientMessageSchema) are added by the shared-core agent below the types.
 import type { Command, FontStacks, ShowState, TakeMode, TitleView, TransitionSpeed, ViewModel } from './types'
-export type Subscription = { role: 'control' } | { role: 'multiview' } | { role: 'output'; outputId: string; view: 'program' | 'preview' }
+export type Subscription = { role: 'control' } | { role: 'multiview' } | { role: 'output'; outputId: string; view: 'program' | 'preview'; part?: 'left' | 'right' }
 export type ClientMessage = { type: 'subscribe'; sub: Subscription } | { type: 'command'; command: Command } | { type: 'ping' }
 export interface HoldView { message: string; title: TitleView; fonts: FontStacks; titleStyle: 'chrome' | 'classic'; watermark?: string }
 export interface OutputPayload {
@@ -8,7 +8,8 @@ export interface OutputPayload {
   frame: { mode: TakeMode; speed: TransitionSpeed; takenAt: number }
   hold: HoldView | null; ftb: boolean
 }
-export type Presence = Record<string, { program: number; preview: number }>
+/** left/right count the clients that render only that half of the output (a subset of program/preview). */
+export type Presence = Record<string, { program: number; preview: number; left: number; right: number }>
 export interface ControlPayload { type: 'state'; state: ShowState; presence: Presence; pending: Record<string, number> }
 export type ServerMessage = OutputPayload | ControlPayload | { type: 'pong' } | { type: 'error'; message: string }
 
@@ -24,7 +25,7 @@ import { emptyLayers } from './defaults'
 const subscriptionSchema: z.ZodType<Subscription> = z.union([
   z.object({ role: z.literal('control') }),
   z.object({ role: z.literal('multiview') }),
-  z.object({ role: z.literal('output'), outputId: z.string().max(200), view: z.enum(['program', 'preview']) }),
+  z.object({ role: z.literal('output'), outputId: z.string().max(200), view: z.enum(['program', 'preview']), part: z.enum(['left', 'right']).optional() }),
 ])
 
 export const clientMessageSchema = z.union([

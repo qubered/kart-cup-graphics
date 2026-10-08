@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { light } from '../control/presence'
   import { onMount } from 'svelte'
   import { connect } from '../lib/socket'
   import { fit } from '../lib/fit'
@@ -76,7 +77,10 @@
   }
   function lit(t: Extract<Tile, { kind: 'output' }>): boolean {
     const p = payload?.presence[t.outputId]
-    return !!p && (t.view === 'program' ? p.program : p.preview) > 0
+    if (!p) return false
+    if (t.view === 'preview') return p.preview > 0
+    const o = outputOf(t)
+    return !!o && light(p, o.format) === 'on'
   }
   const src = (t: Extract<Tile, { kind: 'output' }>) =>
     `/out/${encodeURIComponent(t.outputId)}?lowfx=1${t.view === 'preview' ? '&view=preview' : ''}`

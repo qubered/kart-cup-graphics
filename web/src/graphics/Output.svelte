@@ -11,8 +11,14 @@
   import TrackCardLayer from './TrackCardLayer.svelte'
   import LowerThirdsLayer from './LowerThirdsLayer.svelte'
 
-  interface Props { payload: OutputPayload | null; firstPaint: boolean; lowfx: boolean; debug: boolean; connected: boolean }
-  let { payload, firstPaint, lowfx, debug, connected }: Props = $props()
+  interface Props {
+    payload: OutputPayload | null; firstPaint: boolean; lowfx: boolean; debug: boolean; connected: boolean
+    /** Render only the left or right half of the canvas (e.g. one twin LED). The canvas itself is unchanged. */
+    part?: 'left' | 'right'
+    /** Superwide composite: no fixed debug panel / head styles (the parent provides them). */
+    embedded?: boolean
+  }
+  let { payload, firstPaint, lowfx, debug, connected, part, embedded = false }: Props = $props()
 
   const view = $derived(payload?.view ?? null)
   // First render after (re)load is always a CUT: every duration is 0.
@@ -27,7 +33,8 @@
 </svelte:head>
 
 {#if view}
-  <div id="canvas" style="width:{view.canvas.w}px;height:{view.canvas.h}px">
+  <div class="crop" data-part={part ?? 'full'} style="width:{part ? view.canvas.w / 2 : view.canvas.w}px;height:{view.canvas.h}px">
+  <div id={embedded ? undefined : 'canvas'} class="canvas" style="width:{view.canvas.w}px;height:{view.canvas.h}px{part === 'right' ? `;transform:translateX(-${view.canvas.w / 2}px)` : ''}">
     <!-- Layer order, bottom to top: Background, Scene, Track card, Lower thirds, HOLD, FTB. -->
 
     <!-- BACKGROUND (A, B, C) -->
@@ -62,9 +69,10 @@
     <!-- FTB: 500 ms opacity fade -->
     <Ftb on={payload?.ftb ?? false} />
   </div>
+  </div>
 {/if}
 
-{#if debug}
+{#if debug && !embedded}
   <div data-debug>
     out={payload?.outputId ?? '?'} {connected ? 'connected' : 'DISCONNECTED'}
     {view ? `${view.format} ${view.canvas.w}x${view.canvas.h}` : 'no view'}
@@ -74,8 +82,10 @@
 {/if}
 
 <style>
-  #canvas { position: relative; overflow: hidden; background: transparent; }
-  .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .crop { position: relative; overflow: hidden; background: transparent; }
+  .canvas { position: relative; overflow: hidden; background: transparent; }
+  /* Each layer is its own stacking context so z-indexes inside a layer never escape above later layers (scene, HOLD, ...). */
+  .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; isolation: isolate; }
   [data-debug] {
     position: fixed; left: 8px; bottom: 8px; z-index: 99999; padding: 4px 8px;
     font: 12px/1.3 monospace; color: #fff; background: rgba(0, 0, 0, .75); pointer-events: none; white-space: pre-wrap;

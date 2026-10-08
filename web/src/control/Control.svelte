@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { light } from './presence'
   import { control, send, selectOutput } from './store'
   import { shortcutCommand } from './shortcuts'
   import TopBar from './TopBar.svelte'
@@ -67,9 +68,10 @@
     <section class="right">
       <div class="otabs" role="tablist" aria-label="Outputs">
         {#each st?.outputs ?? [] as o (o.id)}
+          {@const lt = light(presence[o.id], o.format)}
           <button class="otab" role="tab" data-output-tab={o.id} aria-selected={$control.selectedOutput === o.id}
             onclick={() => selectOutput(o.id)}>
-            <span class="led" class:on={(presence[o.id]?.program ?? 0) > 0}></span>{o.name}
+            <span class="led" class:on={lt === 'on'} class:partial={lt === 'partial'}></span>{o.name}
             {#if (pending[o.id] ?? 0) > 0}<span class="badge" data-pending>{pending[o.id]}</span>{/if}
           </button>
         {/each}

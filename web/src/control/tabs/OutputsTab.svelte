@@ -69,8 +69,16 @@
                 <option value="hd">HD 1920×1080</option>
               </select>
             </td>
-            <td><code>{url}</code> <button type="button" onclick={() => copy(url, o.id)}>{copied === o.id ? 'Copied' : 'Copy'}</button></td>
-            <td data-clients>{presence[o.id]?.program ?? 0}</td>
+            <td>
+              <div class="urlrow"><code>{url}</code> <button type="button" onclick={() => copy(url, o.id)}>{copied === o.id ? 'Copied' : 'Copy'}</button></div>
+              {#if o.format === 'twin'}
+                {#each ['left', 'right'] as half (half)}
+                  <div class="urlrow" data-half-url={half}><code>{url}/{half}</code> <span class="dim">960×1152</span>
+                    <button type="button" onclick={() => copy(`${url}/${half}`, `${o.id}/${half}`)}>{copied === `${o.id}/${half}` ? 'Copied' : 'Copy'}</button></div>
+                {/each}
+              {/if}
+            </td>
+            <td data-clients>{presence[o.id]?.program ?? 0}{#if o.format === 'twin'}<div class="dim">L {presence[o.id]?.left ?? 0} · R {presence[o.id]?.right ?? 0}</div>{/if}</td>
             <td>
               <div class="row" style="gap:4px; flex-wrap:nowrap">
                 {#each SIDES as side (side)}
@@ -88,6 +96,14 @@
     </table>
   </div>
 
+  <div class="card" data-superwide>
+    <h2>Superwide 5760×1152</h2>
+    <p class="dim">One URL for the whole stage: left twin half (960) · wide (3840) · right twin half (960). It shows the Program of the
+      <code>wide</code> and <code>twins</code> outputs, so arm and take those as usual. Use <code>?wide=&lt;id&gt;&amp;twins=&lt;id&gt;</code> for other output ids.</p>
+    <div class="urlrow"><code>{base}/out/superwide</code>
+      <button type="button" onclick={() => copy(`${base}/out/superwide`, 'superwide')}>{copied === 'superwide' ? 'Copied' : 'Copy'}</button></div>
+  </div>
+
   <form class="card" onsubmit={add}>
     <h2>Add output</h2>
     <div class="row">
@@ -103,3 +119,7 @@
     {#if newId && !slugOk}<div class="msg err">Id must be unique and use only a-z, 0-9 and -.</div>{/if}
   </form>
 {/if}
+
+<style>
+  .urlrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 0; }
+</style>
