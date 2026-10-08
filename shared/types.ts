@@ -4,6 +4,7 @@ export type ColourId = 'red' | 'blue' | 'green' | 'yellow' | 'pink' | 'orange' |
 export type OutputFormat = 'wide' | 'twin' | 'hd'
 export type BackgroundId = 'A' | 'B' | 'C' | 'none'
 export type SceneId = 'none' | 'title' | 'lineup' | 'nextRace' | 'standings' | 'winner' | 'notice'
+export type LogoMode = 'off' | 'corner' | 'title'
 export type TransitionSpeed = 'fast' | 'normal' | 'slow'
 export type TakeMode = 'cut' | 'auto'
 export interface SafeArea { top: number; right: number; bottom: number; left: number }
@@ -28,14 +29,16 @@ export interface ShowData {
   scores: { races: RaceResult[]; adjustments: number[] }
 }
 /** `lineupShown`: how many line-up cards are revealed (1-4); absent = all four. */
-export interface Layers { background: BackgroundId; scene: SceneId; trackCard: boolean; lowerThirds: { on: boolean; players: number[] }; lineupShown?: number }
+export interface Layers { background: BackgroundId; scene: SceneId; trackCard: boolean; lowerThirds: { on: boolean; players: number[] }; lineupShown?: number
+  /** Where the logo sits on the title scene. Absent = 'corner'. */
+  logo?: LogoMode }
 
 export interface FontStacks { eventTitle: string; headings: string; names: string; labels: string }
 export interface TitleView { preTitle: string; title: string; accent: string }
 export interface PlayerView { slot: number; name: string; character: string; icon: string; art: string; colour: string; textColour: string }
 export interface TrackCardView { raceLabel: string; cupName: string; cupEmblem: string; trackName: string }
 export type SceneView =
-  | { kind: 'title'; title: TitleView }
+  | { kind: 'title'; title: TitleView; logo: LogoMode }
   | { kind: 'lineup'; players: PlayerView[] }
   | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; single: boolean; cupTracks: { name: string; thumb: string; current: boolean }[] }
   | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[] }
@@ -75,7 +78,7 @@ export interface ShowState {
   uploadedFonts: { family: string; file: string }[]
   presets: Preset[]; lastPreset: string | null; stacks: CueStack[]
   /** App-wide switches (not part of an exported show). Applied instantly, with no Take. */
-  settings: { mattify: boolean }
+  settings: { mattify: boolean; /** URL of the uploaded logo (normalised PNG); absent = the built-in roundel. */ logo?: string }
 }
 export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed; presets: Preset[]; stacks: CueStack[] }
 
@@ -119,5 +122,6 @@ export type Command =
   | { type: 'resetScores' } | { type: 'resetShow' } | { type: 'resetOnAirClock' }
   | { type: 'registerFont'; family: string; file: string }
   | { type: 'setMattify'; on: boolean }
+  | { type: 'setLogo'; url: string | null }
 
 export type { Catalog }

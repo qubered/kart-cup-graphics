@@ -63,6 +63,7 @@ export const layersSchema: z.ZodType<Layers> = z.object({
   trackCard: z.boolean(),
   lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }),
   lineupShown: z.number().int().min(1).max(4).optional(),
+  logo: z.enum(['off', 'corner', 'title']).optional(),
 })
 
 // Presets saved before `players` was its own part get players = show, which is what they restored before.
@@ -118,7 +119,7 @@ export const showStateSchema: z.ZodType<ShowState, z.ZodTypeDef, unknown> = z.ob
   uploadedFonts: z.array(z.object({ family: z.string(), file: z.string() })),
   presets: z.array(presetSchema).default([]),
   lastPreset: z.string().nullable().default(null),
-  settings: z.object({ mattify: z.boolean() }).default({ mattify: false }),
+  settings: z.object({ mattify: z.boolean(), logo: z.string().max(300).optional() }).default({ mattify: false }),
   stacks: z.array(cueStackSchema).default([]),
 })
 
@@ -159,6 +160,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     trackCard: z.boolean().optional(),
     lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }).optional(),
     lineupShown: z.number().int().min(1).max(4).optional(),
+    logo: z.enum(['off', 'corner', 'title']).optional(),
   }) }),
   z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
@@ -198,5 +200,6 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('resetShow') }),
   z.object({ type: z.literal('resetOnAirClock') }),
   z.object({ type: z.literal('setMattify'), on: z.boolean() }),
+  z.object({ type: z.literal('setLogo'), url: z.string().regex(/^\/uploads\/logo-\d+\.png$/).nullable() }),
   z.object({ type: z.literal('registerFont'), family: z.string().min(1).max(100), file: z.string().min(1).max(300) }),
 ]) as unknown as z.ZodType<Command>

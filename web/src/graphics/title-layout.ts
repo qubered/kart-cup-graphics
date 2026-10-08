@@ -16,12 +16,14 @@ export interface TitleLayout {
   /** Vertical centre of the lockup on the title scene / on HOLD. */
   top: string
   holdTop: string
+  /** Logo size when it is part of the title block. */
+  logo: number
 }
 
 export const TITLE_LAYOUT: Record<OutputFormat, TitleLayout> = {
-  wide: { layout: 'line', ts: 210, ps: 58, ms: 90, max: 3600, maxLines: 1, maxH: 9999, top: '50%', holdTop: '42%' },
-  hd: { layout: 'stack', ts: 190, ps: 50, ms: 64, max: 1700, maxLines: 2, maxH: 640, top: '50%', holdTop: '42%' },
-  twin: { layout: 'stack', ts: 170, ps: 40, ms: 56, max: 860, maxLines: 3, maxH: 760, top: '50%', holdTop: '43%' },
+  wide: { layout: 'line', ts: 210, ps: 58, ms: 90, max: 3600, maxLines: 1, maxH: 9999, top: '50%', holdTop: '42%', logo: 230 },
+  hd: { layout: 'stack', ts: 190, ps: 50, ms: 64, max: 1700, maxLines: 2, maxH: 640, top: '50%', holdTop: '42%', logo: 190 },
+  twin: { layout: 'stack', ts: 170, ps: 40, ms: 56, max: 860, maxLines: 3, maxH: 760, top: '50%', holdTop: '43%', logo: 150 },
 }
 
 export interface BrokenTitle { lines: string[]; accentLine: boolean; size: number }
