@@ -35,3 +35,10 @@ test('visual: twin + hd snapshots', async ({ page }) => {
   await page.goto('/out/twins'); await page.waitForSelector('body[data-ready]'); await expect(page.locator('#canvas')).toHaveScreenshot('twin-l3.png', { maxDiffPixelRatio: 0.01 })
   await page.goto('/out/stream'); await page.waitForSelector('body[data-ready]'); await expect(page.locator('#canvas')).toHaveScreenshot('hd-l3.png', { maxDiffPixelRatio: 0.01 })
 })
+
+test('visual: wide lower thirds + track card snapshot', async ({ page }) => {
+  await command({ type: 'setLayers', outputId: 'wide', patch: { background: 'none', scene: 'none', trackCard: true, lowerThirds: { on: true, players: [0, 1, 2, 3] } } })
+  await command({ type: 'take', mode: 'cut', outputIds: ['wide'] })
+  await page.goto('/out/wide'); await page.waitForSelector('body[data-ready]'); await page.waitForSelector('.lower-third')
+  await expect(page.locator('#canvas')).toHaveScreenshot('wide-l3.png', { maxDiffPixelRatio: 0.01 })
+})
