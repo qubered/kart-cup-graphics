@@ -69,13 +69,13 @@ const layersShape = {
 }
 export const layersSchema: z.ZodType<Layers> = z.object(layersShape)
 
-const SCOPE_KEYS = ['layers', 'armed', 'style', 'match', 'scores', 'transition', 'mattify'] as const
-/** Scope objects saved before the `show` split: show -> style + match (an explicit style/match wins). */
+const SCOPE_KEYS = ['layers', 'armed', 'style', 'match', 'players', 'scores', 'transition', 'mattify'] as const
+/** Scope objects saved before the `show` split: show -> style + match, and players (added later) defaults to show. An explicit new key wins. */
 export function migrateScope(v: unknown): unknown {
   if (typeof v !== 'object' || v === null || !('show' in v)) return v
   const { show, ...rest } = v as Record<string, unknown>
   const out: Record<string, unknown> = { ...rest }
-  if (typeof show === 'boolean') { out.style ??= show; out.match ??= show }
+  if (typeof show === 'boolean') { out.style ??= show; out.match ??= show; out.players ??= show }
   else if (show === null) { /* legacy cue patch "inherit": nothing to set */ }
   return out
 }
@@ -147,6 +147,8 @@ export const programFrameSchema = z.object({
   mode: takeModeSchema,
   speed: transitionSpeedSchema,
   takenAt: z.number(),
+  layers: layersSchema.optional(),
+  draft: showDataSchema.optional(),
 })
 
 // presets/stacks/settings are optional on input so state files saved before they existed still load.
@@ -209,8 +211,8 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     matchRef: matchRefSchema.optional(),
     matchSet: matchSetSchema.optional(),
   }) }),
-  z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), scope: partialScopeSchema.optional() }),
-  z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), capture: z.boolean().optional(), scope: partialScopeSchema.optional() }),
+  z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
+  z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('deletePreset'), id: z.string() }),
   z.object({ type: z.literal('recallPreset'), id: z.string(), take: takeModeSchema.optional() }),
   z.object({ type: z.literal('createStack'), name: z.string().trim().min(1).max(100) }),

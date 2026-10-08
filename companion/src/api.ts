@@ -89,3 +89,13 @@ export function armCommand(armed: string[], outputId: string, mode: unknown): Re
   const rest = armed.filter((id) => id !== outputId)
   return { type: 'arm', outputIds: on ? [...rest, outputId] : rest }
 }
+
+const sourceOf = (v: unknown): 'pvw' | 'pgm' => (v === 'pgm' ? 'pgm' : 'pvw')
+
+export function savePresetCommand(name: unknown, source: unknown): Record<string, unknown> {
+  return { type: 'savePreset', name: String(name ?? '').trim() || 'New preset', from: sourceOf(source) }
+}
+
+export function overwritePresetCommand(id: string, source: unknown): Record<string, unknown> {
+  return { type: 'updatePreset', id, from: sourceOf(source) }
+}

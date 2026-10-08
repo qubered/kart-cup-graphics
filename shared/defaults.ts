@@ -3,7 +3,7 @@ import { deriveView } from './view'
 import type { Layers, PresetScope, OutputConfig, ProgramFrame, ShowData, ShowState } from './types'
 
 /** New presets restore everything except scores, which would overwrite live results. */
-export const DEFAULT_PRESET_SCOPE: PresetScope = { layers: true, armed: true, show: true, scores: false, transition: true, mattify: true }
+export const DEFAULT_PRESET_SCOPE: PresetScope = { layers: true, armed: true, show: true, players: true, scores: false, transition: true, mattify: true }
 
 export const EMPTY_LAYERS: Layers = {
   background: 'none', scene: 'none', trackCard: false, lowerThirds: { on: false, players: [0, 1, 2, 3] },
@@ -53,7 +53,7 @@ export function createDefaultLayers(): Record<string, Layers> {
 
 export function emptyProgram(draft: ShowData, outputs: OutputConfig[], catalog: CatalogIndex, now: number, speed: ProgramFrame['speed'] = 'normal'): Record<string, ProgramFrame> {
   const program: Record<string, ProgramFrame> = {}
-  for (const o of outputs) program[o.id] = { view: deriveView(draft, emptyLayers(), o, catalog), mode: 'cut', speed, takenAt: now }
+  for (const o of outputs) program[o.id] = { view: deriveView(draft, emptyLayers(), o, catalog), mode: 'cut', speed, takenAt: now, layers: emptyLayers(), draft: structuredClone(draft) }
   return program
 }
 

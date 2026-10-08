@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { indexCatalog } from '../../shared/catalog'
 import { createDefaultState } from '../../shared/defaults'
 import { CommandError, reduce } from '../../shared/reducer'
-import { commandSchema } from '../../shared/schema'
+import { commandSchema, presetScopeSchema } from '../../shared/schema'
 import { fixtureCatalog } from '../fixtures/catalog'
 
 const idx = indexCatalog(fixtureCatalog)
@@ -166,17 +166,32 @@ describe('reducer', () => {
       it('scores are off by default and only restored when in scope', () => {
         let s = setup()
         s = reduce(s, { type: 'savePreset', name: 'Look' }, ctx)
-        expect(s.presets[1].scope).toEqual({ layers: true, armed: true, show: true, scores: false, transition: true, mattify: true })
+        expect(s.presets[1].scope).toEqual({ layers: true, armed: true, show: true, players: true, scores: false, transition: true, mattify: true })
         const t = reduce(scrambled(s), { type: 'recallPreset', id: 'preset-2' }, ctx)
         expect(t.draft.scores.races).toEqual([]); expect(t.draft.players[0].name).toBe('SAM')
       })
       it('scope toggles limit what a recall touches', () => {
         let s = setup()
-        s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { show: false, scores: false, transition: false, mattify: false, armed: false } }, ctx)
+        s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { show: false, players: false, scores: false, transition: false, mattify: false, armed: false } }, ctx)
         const t = scrambled(s)
         const back = reduce(t, { type: 'recallPreset', id: 'preset-1' }, ctx)
         expect(back.layers).toEqual(s.layers); expect(back.armed).toEqual(t.armed)
         expect(back.draft).toEqual(t.draft); expect(back.transition).toBe('fast'); expect(back.settings.mattify).toBe(false)
+      })
+      it('players are their own scope part, apart from show data', () => {
+        let s = setup()
+        s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { players: false } }, ctx)
+        const t = scrambled(s)
+        const back = reduce(t, { type: 'recallPreset', id: 'preset-1' }, ctx)
+        expect(back.draft.players).toEqual(t.draft.players); expect(back.draft.event.title).toBe('FINALS')
+        const only = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { players: true, show: false } }, ctx)
+        const b2 = reduce(scrambled(only), { type: 'recallPreset', id: 'preset-1' }, ctx)
+        expect(b2.draft.players[0].name).toBe('SAM'); expect(b2.draft.event.title).toBe('X')
+      })
+      it('scopes saved before players existed load with players following show', () => {
+        const old = { layers: true, armed: true, show: false, scores: false, transition: true, mattify: true }
+        expect(presetScopeSchema.parse(old)).toMatchObject({ players: false, show: false })
+        expect(presetScopeSchema.parse({ ...old, show: true })).toMatchObject({ players: true })
       })
       it('recalled scores refresh an on-air standings scene, and take uses the preset transition speed', () => {
         let s = setup()
@@ -186,6 +201,31 @@ describe('reducer', () => {
         const back = reduce(live, { type: 'recallPreset', id: 'preset-1', take: 'auto' }, ctx)
         expect(back.program.wide.speed).toBe('slow'); expect(back.program.wide.mode).toBe('auto')
         expect(back.draft.scores.races).toHaveLength(1)
+      })
+      it('saves from PGM (what is on air) or PVW (the draft), for new presets and overwrites', () => {
+        // On air: lineup on wide with SAM. Then PVW moves on: standings scene, other name, other speed.
+        let s = reduce(reduce(base, { type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } }, ctx), { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, ctx)
+        s = reduce(reduce(s, { type: 'arm', outputIds: ['wide'] }, ctx), { type: 'setTransition', speed: 'slow' }, ctx)
+        s = reduce(s, { type: 'take', mode: 'cut' }, ctx)
+        s = reduce(reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } }, ctx), { type: 'setPlayer', index: 0, patch: { name: 'LATER' } }, ctx)
+        s = reduce(s, { type: 'setTransition', speed: 'fast' }, ctx)
+        const pgm = reduce(s, { type: 'savePreset', name: 'From PGM', from: 'pgm' }, ctx).presets[0]
+        expect(pgm.layers.wide.scene).toBe('lineup'); expect(pgm.draft.players[0].name).toBe('SAM'); expect(pgm.transition).toBe('slow')
+        const pvw = reduce(s, { type: 'savePreset', name: 'From PVW' }, ctx).presets[0]
+        expect(pvw.layers.wide.scene).toBe('standings'); expect(pvw.draft.players[0].name).toBe('LATER'); expect(pvw.transition).toBe('fast')
+        // Overwrite keeps id, name and scope but replaces the content, from either side.
+        let o = reduce(s, { type: 'savePreset', name: 'P' }, ctx)
+        o = reduce(o, { type: 'updatePreset', id: 'preset-1', from: 'pgm' }, ctx)
+        expect(o.presets[0]).toMatchObject({ id: 'preset-1', name: 'P', transition: 'slow' }); expect(o.presets[0].layers.wide.scene).toBe('lineup')
+        o = reduce(o, { type: 'updatePreset', id: 'preset-1', from: 'pvw' }, ctx)
+        expect(o.presets[0].layers.wide.scene).toBe('standings')
+        // Renaming alone does not touch the content.
+        expect(reduce(o, { type: 'updatePreset', id: 'preset-1', name: 'Q' }, ctx).presets[0].layers.wide.scene).toBe('standings')
+      })
+      it('PGM scores are the live scores, not the scores at the last take', () => {
+        let s = reduce(reduce(base, { type: 'arm', outputIds: ['wide'] }, ctx), { type: 'take', mode: 'cut' }, ctx)
+        s = reduce(s, { type: 'saveResults', raceNo: 1, trackId: 'water-park', positions: [1, 2, 3, 4] }, ctx)
+        expect(reduce(s, { type: 'savePreset', name: 'P', from: 'pgm' }, ctx).presets[0].draft.scores.races).toHaveLength(1)
       })
       it('snapshots by value', () => {
         const s = setup()
@@ -214,7 +254,7 @@ describe('reducer', () => {
     it('update, rename, delete', () => {
       let s = designed()
       s = reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'winner' } }, ctx)
-      s = reduce(s, { type: 'updatePreset', id: 'preset-1', name: 'Renamed', capture: true }, ctx)
+      s = reduce(s, { type: 'updatePreset', id: 'preset-1', name: 'Renamed', from: 'pvw' }, ctx)
       expect(s.presets[0]).toMatchObject({ name: 'Renamed' }); expect(s.presets[0].layers.wide.scene).toBe('winner')
       s = reduce(s, { type: 'savePreset', name: 'Two' }, ctx)
       const del = reduce(s, { type: 'deletePreset', id: 'preset-2' }, ctx)
@@ -309,13 +349,13 @@ describe('reducer', () => {
         let s = reduce(base, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, ctx)
         s = reduce(reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } }, ctx), { type: 'savePreset', name: 'L' }, ctx)
         s = reduce(s, { type: 'createStack', name: 'K' }, ctx)
-        s = reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: null, scope: { show: false, layers: null } }, ctx)
-        expect(s.stacks[0].cues[0].scope).toEqual({ show: false })
+        s = reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: null, scope: { players: false, layers: null } }, ctx)
+        expect(s.stacks[0].cues[0].scope).toEqual({ players: false })
         let t = reduce(reduce(s, { type: 'setPlayer', index: 0, patch: { name: 'OTHER' } }, ctx), { type: 'setLayers', outputId: 'wide', patch: { scene: 'none' } }, ctx)
         t = reduce(t, { type: 'selectCue', stackId: 'stack-1', cueId: 'cue-1' }, ctx)
         expect(t.draft.players[0].name).toBe('OTHER'); expect(t.layers.wide.scene).toBe('lineup')
         // Force scores on for this cue only (preset has it off), clear the show override.
-        const u = reduce(t, { type: 'updateCue', stackId: 'stack-1', cueId: 'cue-1', scope: { scores: true, show: null } }, ctx)
+        const u = reduce(t, { type: 'updateCue', stackId: 'stack-1', cueId: 'cue-1', scope: { scores: true, players: null } }, ctx)
         expect(u.stacks[0].cues[0].scope).toEqual({ scores: true }); expect(u.draft.players[0].name).toBe('SAM')
         expect(u.presets[0].scope.scores).toBe(false)
         const cleared = reduce(u, { type: 'updateCue', stackId: 'stack-1', cueId: 'cue-1', scope: { scores: null } }, ctx)

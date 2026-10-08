@@ -113,7 +113,7 @@ export type SceneView =
   | { kind: 'title'; title: TitleView }
   | { kind: 'lineup'; players: PlayerView[] }
   | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; single: boolean; cupTracks: { name: string; thumb: string; current: boolean }[] }
-  | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[]; footer: string }
+  | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[] }
   | { kind: 'winner'; player: PlayerView; total: number }
   | RaceWinView | CupWinView | BracketView | MatchesView
 export interface ViewModel {
@@ -122,11 +122,14 @@ export interface ViewModel {
   background: { id: Exclude<BackgroundId, 'none'>; watermark: string; title: TitleView } | null
   scene: SceneView | null; trackCard: TrackCardView | null; lowerThirds: PlayerView[]
 }
-export interface ProgramFrame { view: ViewModel; mode: TakeMode; speed: TransitionSpeed; takenAt: number }
+/** layers/draft: what was taken (so "save from PGM" can snapshot it). Absent on frames that predate this. */
+export interface ProgramFrame { view: ViewModel; mode: TakeMode; speed: TransitionSpeed; takenAt: number; layers?: Layers; draft?: ShowData }
+/** Where a preset snapshot is read from: PVW = the draft being built, PGM = what is on air. */
+export type PresetSource = 'pvw' | 'pgm'
 /** What a recall applies. A preset always captures everything; scope picks which parts it restores.
- *  style = event text and typography (show-wide). match = players and race. scores = results and adjustments (off by default: recalling would overwrite live scores).
- *  While a tournament is active, `match` and `scores` are never recalled whatever the scope says. */
-export interface PresetScope { layers: boolean; armed: boolean; style: boolean; match: boolean; scores: boolean; transition: boolean; mattify: boolean }
+ *  style = event text and typography (show-wide). match = the race (cup, track, race number). players = the four players (name, character, colour). scores = results and adjustments (off by default: recalling would overwrite live scores).
+ *  While a tournament is active, `match`, `players` and `scores` are never recalled whatever the scope says. */
+export interface PresetScope { layers: boolean; armed: boolean; style: boolean; match: boolean; players: boolean; scores: boolean; transition: boolean; mattify: boolean }
 /** A saved snapshot of the show: every output's layers, arming, show data, scores, transition speed and Mattify. */
 export interface Preset {
   id: string; name: string; scope: PresetScope
@@ -169,8 +172,8 @@ export type Command =
   | { type: 'setEventText'; patch: Partial<EventText> }
   | { type: 'setTypography'; role: 'eventTitle' | 'headings' | 'names' | 'labels'; patch: { font?: string; style?: 'chrome' | 'classic'; look?: 'chrome' | 'classic' | 'plain' } }
   | { type: 'setLayers'; outputId: string; patch: Partial<Layers> }
-  | { type: 'savePreset'; name: string; scope?: Partial<PresetScope> }
-  | { type: 'updatePreset'; id: string; name?: string; capture?: boolean; scope?: Partial<PresetScope> }
+  | { type: 'savePreset'; name: string; from?: PresetSource; scope?: Partial<PresetScope> }
+  | { type: 'updatePreset'; id: string; name?: string; from?: PresetSource; scope?: Partial<PresetScope> }
   | { type: 'deletePreset'; id: string }
   | { type: 'recallPreset'; id: string; take?: TakeMode }
   | { type: 'createStack'; name: string }

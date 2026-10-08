@@ -5,12 +5,13 @@
   const SCOPES: { key: keyof PresetScope; label: string; hint: string }[] = [
     { key: 'layers', label: 'Layers', hint: 'Background, scene, overlays per output' },
     { key: 'armed', label: 'Arming', hint: 'Which outputs are armed' },
-    { key: 'show', label: 'Show data', hint: 'Event text, fonts, players, race' },
+    { key: 'show', label: 'Show data', hint: 'Event text, fonts, race' },
+    { key: 'players', label: 'Players', hint: 'Names, characters and colours' },
     { key: 'scores', label: 'Scores', hint: 'Results and adjustments. Recalling overwrites the current scores' },
     { key: 'transition', label: 'Transition speed', hint: 'Fast / normal / slow' },
     { key: 'mattify', label: 'Mattify', hint: 'The matte icon background switch' },
   ]
-  const DEFAULT_SCOPE: PresetScope = { layers: true, armed: true, show: true, scores: false, transition: true, mattify: true }
+  const DEFAULT_SCOPE: PresetScope = { layers: true, armed: true, show: true, players: true, scores: false, transition: true, mattify: true }
   let scope = $state<PresetScope>({ ...DEFAULT_SCOPE })
 
   const st = $derived($control.payload?.state)
@@ -19,10 +20,10 @@
   let editing = $state<string | null>(null)
   let editName = $state('')
 
-  function save() {
+  function save(from: 'pvw' | 'pgm') {
     const n = name.trim()
     if (!n) return
-    send({ type: 'savePreset', name: n, scope: { ...scope } })
+    send({ type: 'savePreset', name: n, from, scope: { ...scope } })
     name = ''
   }
   function startRename(id: string, current: string) {
@@ -51,9 +52,10 @@
       <label class="pchk" title={sc.hint}><input type="checkbox" name="scope-{sc.key}" bind:checked={scope[sc.key]} />{sc.label}</label>
     {/each}
   </div>
-  <form class="row" onsubmit={(e) => { e.preventDefault(); save() }}>
+  <form class="row" onsubmit={(e) => { e.preventDefault(); save('pvw') }}>
     <input type="text" name="presetName" placeholder="Preset name" bind:value={name} maxlength="100" />
-    <button type="submit" disabled={!name.trim()}>Save preset</button>
+    <button type="submit" disabled={!name.trim()} title="Save what is in Preview">Save from PVW</button>
+    <button type="button" data-save-pgm disabled={!name.trim()} onclick={() => save('pgm')} title="Save what is on air">Save from PGM</button>
   </form>
 </div>
 
@@ -82,8 +84,10 @@
         <button type="button" data-recall onclick={() => send({ type: 'recallPreset', id: p.id })}>Recall</button>
         <button type="button" data-recall-cut onclick={() => send({ type: 'recallPreset', id: p.id, take: 'cut' })}>Cut</button>
         <button type="button" data-recall-auto onclick={() => send({ type: 'recallPreset', id: p.id, take: 'auto' })}>Auto</button>
-        <button type="button" title="Overwrite with everything as it is now"
-          onclick={() => confirm(`Overwrite "${p.name}" with the current design?`) && send({ type: 'updatePreset', id: p.id, capture: true })}>Update</button>
+        <button type="button" data-overwrite-pvw title="Overwrite this preset with what is in Preview"
+          onclick={() => confirm(`Overwrite "${p.name}" with Preview?`) && send({ type: 'updatePreset', id: p.id, from: 'pvw' })}>Overwrite ← PVW</button>
+        <button type="button" data-overwrite-pgm title="Overwrite this preset with what is on air"
+          onclick={() => confirm(`Overwrite "${p.name}" with Program?`) && send({ type: 'updatePreset', id: p.id, from: 'pgm' })}>Overwrite ← PGM</button>
         <button type="button" onclick={() => startRename(p.id, p.name)}>Rename</button>
         <button type="button" class="danger" onclick={() => remove(p.id, p.name)}>Delete</button>
       </span>
