@@ -4,6 +4,7 @@
  */
 
 import { LOGO_PATH } from '../logo'
+import { MATTIFY_IMAGE } from '../../../../shared/mattify'
 
 /** Symbols (own drawings, currentColor): wheel, tire, tire2, speedo, sign, shield, box, mush, star, flag, crest. */
 export const ICON_SYMBOLS = `<symbol id="i-wheel" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="12"/><path fill="currentColor" d="M12 44 Q50 33 88 44 L88 56 Q64 54 58 64 L58 90 L42 90 L42 64 Q36 54 12 56 Z"/><circle cx="50" cy="52" r="11" fill="currentColor"/></symbol>
@@ -29,6 +30,21 @@ export const PATTERN_TILE = `<g id="pattern-tile"><!-- 1250×280, two offset row
       <use href="#i-tire2" x="815" y="10" width="120" height="120"/><use href="#i-star" x="1065" y="10" width="120" height="120"/>
       <use href="#i-speedo" x="-60" y="150" width="120" height="120"/><use href="#i-speedo" x="1190" y="150" width="120" height="120"/><use href="#i-logo" x="190" y="150" width="120" height="120"/>
       <use href="#i-mush" x="440" y="150" width="120" height="120"/><use href="#i-box" x="690" y="150" width="120" height="120"/><use href="#i-flag" x="940" y="150" width="120" height="120"/></g>`
+
+/**
+ * The pattern icons are flat #03458f on a #0553a6 background. The image is black, and black at this opacity over that
+ * background lands on the icon colour (best fit over R, G, B), so it sits in the pattern like the other icons.
+ */
+export const MATTIFY_OPACITY = 0.145
+
+const MUSH_USE = '<use href="#i-mush" x="440" y="150" width="120" height="120"/>'
+
+/** The pattern tile; with Mattify on, the mushroom is replaced by the custom image (same box, drawn in its own colours). */
+export function patternTile(mattify: boolean): string {
+  return mattify
+    ? PATTERN_TILE.replace(MUSH_USE, `<image data-mattify href="${MATTIFY_IMAGE}" x="440" y="150" width="120" height="120" preserveAspectRatio="xMidYMid meet" opacity="${MATTIFY_OPACITY}"/>`)
+    : PATTERN_TILE
+}
 
 /** Pattern fill used by Background B. */
 export const PATTERN_DEF = `<pattern id="pat-b" patternUnits="userSpaceOnUse" width="1250" height="280" style="color:var(--pattern-icon)"><use href="#pattern-tile"/></pattern>`

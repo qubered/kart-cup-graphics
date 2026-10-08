@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { ICON_SYMBOLS, PATTERN_DEF, PATTERN_H, PATTERN_TILE, PATTERN_W } from './icons'
-  let { w, h }: { w: number; h: number } = $props()
+  import { ICON_SYMBOLS, PATTERN_DEF, PATTERN_H, PATTERN_W, patternTile } from './icons'
+  let { w, h, mattify = false }: { w: number; h: number; mattify?: boolean } = $props()
 </script>
 
 <!-- Oversized by one tile; translating exactly one tile diagonally loops seamlessly (38 s). -->
 <div class="bg-pattern" style:width="{w}px" style:height="{h}px">
   <svg class="pat" width={w + PATTERN_W} height={h + PATTERN_H} aria-hidden="true">
-    <defs>{@html ICON_SYMBOLS}{@html PATTERN_TILE}{@html PATTERN_DEF}</defs>
+    <defs>{@html ICON_SYMBOLS}{@html patternTile(mattify)}{@html PATTERN_DEF}</defs>
     <rect width="100%" height="100%" fill="url(#pat-b)" />
   </svg>
   <div class="vignette"></div>

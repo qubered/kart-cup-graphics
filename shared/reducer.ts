@@ -179,10 +179,12 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       return withDraft(state, { scores: { races: [], adjustments: [0, 0, 0, 0] } })
     case 'resetShow': {
       const fresh = createDefaultState(ctx.catalog, ctx.now)
-      return { ...fresh, uploadedFonts: state.uploadedFonts }
+      return { ...fresh, uploadedFonts: state.uploadedFonts, settings: state.settings }
     }
     case 'resetOnAirClock':
       return { ...state, clocks: { onAirSince: state.clocks.onAirSince === null ? null : ctx.now } }
+    case 'setMattify':
+      return state.settings.mattify === cmd.on ? state : { ...state, settings: { ...state.settings, mattify: cmd.on } }
     case 'registerFont': {
       if (state.uploadedFonts.some((f) => f.family === cmd.family)) return state
       return { ...state, uploadedFonts: [...state.uploadedFonts, { family: cmd.family, file: cmd.file }] }

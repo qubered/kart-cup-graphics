@@ -2,6 +2,7 @@ import { tick } from 'svelte'
 import { connect } from '../lib/socket'
 import { whenReady } from '../lib/ready'
 import type { OutputPayload, Subscription } from '../../../shared/protocol'
+import { MATTIFY_IMAGE } from '../../../shared/mattify'
 import { createOutState, type OutState } from './state'
 
 /** Every image URL referenced anywhere in the payload (view, hold). */
@@ -13,6 +14,7 @@ function imageUrls(p: OutputPayload): string[] {
     else if (v && typeof v === 'object') Object.values(v).forEach(walk)
   }
   walk(p.view); walk(p.hold)
+  if (p.mattify) urls.add(MATTIFY_IMAGE)   // decode before the first frame so it never pops in
   return [...urls]
 }
 
