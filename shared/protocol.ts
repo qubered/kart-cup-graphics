@@ -2,7 +2,7 @@
 import type { Command, FontStacks, ShowState, TakeMode, TitleView, TransitionSpeed, ViewModel } from './types'
 export type Subscription = { role: 'control' } | { role: 'multiview' } | { role: 'output'; outputId: string; view: 'program' | 'preview' }
 export type ClientMessage = { type: 'subscribe'; sub: Subscription } | { type: 'command'; command: Command } | { type: 'ping' }
-export interface HoldView { message: string; title: TitleView; fonts: FontStacks; titleStyle: 'chrome' | 'classic' }
+export interface HoldView { message: string; title: TitleView; fonts: FontStacks; titleStyle: 'chrome' | 'classic'; watermark?: string }
 export interface OutputPayload {
   type: 'output'; outputId: string; view: ViewModel | null
   frame: { mode: TakeMode; speed: TransitionSpeed; takenAt: number }
@@ -45,6 +45,7 @@ function holdView(state: ShowState): HoldView | null {
       names: fontStack(ty.names.font), labels: fontStack(ty.labels.font),
     },
     titleStyle: ty.eventTitle.style,
+    watermark: ev.watermark,
   }
 }
 

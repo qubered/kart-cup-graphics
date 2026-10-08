@@ -18,7 +18,7 @@
 <div data-overlay="hold" class="hold" style="width:{w}px;height:{h}px">
   {#each halves as i (i)}
     <div class="hold-half" style="left:{i * 960}px;width:{hw}px;height:{h}px">
-      <SkyBackground watermark={hold.title.title} font={hold.fonts.eventTitle} lowfx={true} w={hw} {h} />
+      <SkyBackground watermark={hold.watermark ?? hold.title.title} font={hold.fonts.eventTitle} lowfx={true} w={hw} {h} />
       <TitleLockup title={hold.title} style={hold.titleStyle} {format} font={hold.fonts.eventTitle} labelFont={hold.fonts.labels} top={cfg.holdTop} />
       <div class="hold-msg" style:--ms="{cfg.ms}px" style:font-family={hold.fonts.headings}>{hold.message}</div>
     </div>
