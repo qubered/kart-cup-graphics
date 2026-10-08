@@ -7,7 +7,7 @@ describe('scoring', () => {
   })
   it('totals with missing positions and adjustments', () => {
     const s = { races: [{ positions: [1, 4, 3, 2] }, { positions: [2, 3, 0, 1] }], adjustments: [0, 0, 5, 0] }
-    expect(totals(s)).toEqual([27, 19, 15, 24])
+    expect(totals(s)).toEqual([27, 19, 15, 27]) // plan said 24 for P4 (arithmetic typo: 12+15)
   })
   it('orders by total', () => {
     const t = { races: [{ positions: [1, 2, 3, 4] }, { positions: [4, 3, 1, 2] }], adjustments: [0, 0, 0, 0] }
