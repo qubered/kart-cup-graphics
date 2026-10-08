@@ -4,6 +4,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { basename, extname, join, normalize, resolve, sep } from 'node:path'
 import type { ViteDevServer } from 'vite'
 import { showFileSchema } from '../shared/schema'
+import { activeTournament, matchWinnerSlot } from '../shared/tournament'
 import type { ShowFile } from '../shared/types'
 import type { StateStore } from './store'
 import { lanUrls } from './lan'
@@ -90,7 +91,15 @@ export function createHttpHandler(opts: HttpOpts): (req: IncomingMessage, res: S
     // Remote-control API (Companion etc.): list presets, and run any command through the same validation as the websocket.
     if (path === '/api/presets' && method === 'GET') {
       const s = store.state
+      const t = activeTournament(s)
       return json(res, 200, {
+        tournament: t && {
+          id: t.id, name: t.name, activeMatchId: t.activeMatchId,
+          matches: t.matches.map((m) => {
+            const w = matchWinnerSlot(m.winnerOverride, m.data)
+            return { id: m.id, label: m.label, round: m.round, status: m.status, winner: w === null ? '' : m.data.players[w]?.name ?? '' }
+          }),
+        },
         presets: s.presets.map((p) => ({ id: p.id, name: p.name })), lastPreset: s.lastPreset, armed: s.armed,
         stacks: s.stacks.map((k) => ({ id: k.id, name: k.name, current: k.current, selected: k.selected, cues: k.cues.map((c) => ({ id: c.id, presetId: c.presetId, take: c.take, scope: c.scope })) })),
         outputs: s.outputs.map((o) => ({ id: o.id, name: o.name })), hold: s.overlay.hold.on, ftb: s.overlay.ftb,
@@ -106,7 +115,7 @@ export function createHttpHandler(opts: HttpOpts): (req: IncomingMessage, res: S
     }
     if (path === '/api/export' && method === 'GET') {
       const s = store.state
-      const file: ShowFile = { draft: s.draft, outputs: s.outputs, layers: s.layers, transition: s.transition, presets: s.presets, stacks: s.stacks }
+      const file: ShowFile = { draft: s.draft, outputs: s.outputs, layers: s.layers, transition: s.transition, presets: s.presets, stacks: s.stacks, tournaments: s.tournaments }
       return json(res, 200, file, { 'Content-Disposition': 'attachment; filename="show.json"' })
     }
     if (path === '/api/import' && method === 'POST') {

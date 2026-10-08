@@ -24,6 +24,7 @@ import { countPendingChanges } from './diff'
 import { fontStack } from './fonts'
 import { commandSchema } from './schema'
 import { deriveView } from './view'
+import { activeTournament } from './tournament'
 import { emptyLayers } from './defaults'
 
 const subscriptionSchema: z.ZodType<Subscription> = z.union([
@@ -65,7 +66,7 @@ export function buildOutputPayload(state: ShowState, outputId: string, view: 'pr
   }
   return {
     ...base,
-    view: deriveView(state.draft, state.layers[outputId] ?? emptyLayers(), output, catalog),
+    view: deriveView(state.draft, state.layers[outputId] ?? emptyLayers(), output, catalog, activeTournament(state)),
     frame: { mode: 'cut', speed: state.transition, takenAt: 0 },
   }
 }
@@ -73,7 +74,7 @@ export function buildOutputPayload(state: ShowState, outputId: string, view: 'pr
 export function buildControlPayload(state: ShowState, presence: Presence, catalog: CatalogIndex): ControlPayload {
   const pending: Record<string, number> = {}
   for (const o of state.outputs) {
-    const draft = deriveView(state.draft, state.layers[o.id] ?? emptyLayers(), o, catalog)
+    const draft = deriveView(state.draft, state.layers[o.id] ?? emptyLayers(), o, catalog, activeTournament(state))
     pending[o.id] = countPendingChanges(draft, state.program[o.id]?.view)
   }
   return { type: 'state', state, presence, pending }

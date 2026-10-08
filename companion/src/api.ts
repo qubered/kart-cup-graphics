@@ -12,6 +12,44 @@ export interface ServerState {
   outputs: { id: string; name: string }[]
   hold: boolean
   ftb: boolean
+  /** Active tournament, summarised. Absent when none is active (or the server does not expose it). */
+  tournament?: TournamentInfo | null
+}
+
+// ---- tournaments ----
+export interface MatchInfo { id: string; label: string; round: number; status: string; winner: string }
+export interface TournamentInfo { id: string; name: string; activeMatchId: string; matches: MatchInfo[] }
+/** Minimal shape of the server's Tournament (only what the module reads). */
+export interface RawTournament {
+  id: string; name: string; activeMatchId: string
+  matches: { id: string; label: string; round: number; status: string; winnerOverride: number | null
+    data: { players: { name: string }[]; scores: { races: { positions: number[] }[]; adjustments: number[] } } }[]
+}
+
+const POINTS = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+const pts = (pos: number): number => (Number.isInteger(pos) && pos >= 1 && pos <= POINTS.length ? POINTS[pos - 1] : 0)
+
+/** Mirrors shared matchWinnerSlot: override, else top of standings (tie: better last-race position), null while there are no results. */
+export function winnerSlot(m: RawTournament['matches'][number]): number | null {
+  const { players, scores } = m.data
+  const n = players.length
+  if (m.winnerOverride !== null && m.winnerOverride >= 0 && m.winnerOverride < n) return m.winnerOverride
+  if (!scores.races.length && !scores.adjustments.some((a) => a !== 0)) return null
+  const tot = Array.from({ length: n }, (_, i) => scores.races.reduce((s, r) => s + pts(r.positions[i] ?? 0), 0) + (scores.adjustments[i] ?? 0))
+  const last = scores.races[scores.races.length - 1]
+  const rank = (i: number) => { const p = last?.positions[i] ?? 0; return p >= 1 ? p : Number.MAX_SAFE_INTEGER }
+  return Array.from({ length: n }, (_, i) => i).sort((a, b) => tot[b] - tot[a] || rank(a) - rank(b) || a - b)[0] ?? null
+}
+
+export function summarizeTournament(t: RawTournament | null | undefined): TournamentInfo | null {
+  if (!t) return null
+  return {
+    id: t.id, name: t.name, activeMatchId: t.activeMatchId,
+    matches: t.matches.map((m) => {
+      const w = winnerSlot(m)
+      return { id: m.id, label: m.label, round: m.round, status: m.status, winner: w === null ? '' : m.data.players[w]?.name ?? '' }
+    }),
+  }
 }
 export type OnOffToggle = 'on' | 'off' | 'toggle'
 
@@ -22,6 +60,14 @@ export class KartCupApi {
     const r = await this.doFetch(`${this.base()}/api/presets`, { signal: AbortSignal.timeout(3000) })
     if (!r.ok) throw new Error(`Server replied ${r.status}`)
     return (await r.json()) as ServerState
+  }
+
+  /** Tournament data from /api/export (older servers do not put it in /api/presets). Picks the first tournament. */
+  async exportedTournament(): Promise<TournamentInfo | null> {
+    const r = await this.doFetch(`${this.base()}/api/export`, { signal: AbortSignal.timeout(3000) })
+    if (!r.ok) return null
+    const f = (await r.json()) as { tournaments?: RawTournament[] }
+    return summarizeTournament(f.tournaments?.[0])
   }
 
   async command(cmd: Record<string, unknown>): Promise<void> {
@@ -98,4 +144,57 @@ export function savePresetCommand(name: unknown, source: unknown): Record<string
 
 export function overwritePresetCommand(id: string, source: unknown): Record<string, unknown> {
   return { type: 'updatePreset', id, from: sourceOf(source) }
+}
+
+// ---- tournament commands ----
+export const setActiveMatchCommand = (matchId: unknown): Record<string, unknown> | null => (matchId ? { type: 'setActiveMatch', matchId: String(matchId) } : null)
+
+export type TournamentScene = 'raceWin' | 'cupWin' | 'bracket' | 'matches'
+
+/** 'active' | 'previous' | a match id. */
+export function matchRefOf(v: unknown): 'active' | 'previous' | { matchId: string } {
+  return v === 'previous' ? 'previous' : !v || v === 'active' ? 'active' : { matchId: String(v) }
+}
+
+/** Matches selection: 'all' or 'round:<n>', plus an optional 1-based "from-to" range (e.g. "1-2"). */
+export function matchSetOf(v: unknown, range?: unknown): { rounds?: number[]; range?: [number, number] } {
+  const r = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(range ?? ''))
+  const sel = String(v ?? 'all')
+  const out: { rounds?: number[]; range?: [number, number] } = {}
+  if (sel.startsWith('round:') && Number.isInteger(Number(sel.slice(6)))) out.rounds = [Number(sel.slice(6))]
+  if (r) out.range = [Math.max(0, Number(r[1]) - 1), Math.max(0, Number(r[2]) - 1)]
+  return out
+}
+
+export interface ShowSceneOpts { part?: unknown; matchRef?: unknown; matches?: unknown; range?: unknown }
+
+/** setLayers for a tournament scene on one output, with the right part / matchRef / matchSet for that scene. */
+export function showSceneCommand(outputId: string, scene: TournamentScene, o: ShowSceneOpts = {}): Record<string, unknown> {
+  const patch: Record<string, unknown> = { scene }
+  if (scene === 'raceWin' || scene === 'cupWin') {
+    patch.part = o.part === 'hero' || o.part === 'board' ? o.part : 'full'
+    patch.matchRef = matchRefOf(o.matchRef)
+  } else if (scene === 'matches') patch.matchSet = matchSetOf(o.matches, o.range)
+  return { type: 'setLayers', outputId, patch }
+}
+
+/** Hero on one output, scoreboard on another. */
+export function splitWinCommands(scene: 'raceWin' | 'cupWin', heroOutput: string, boardOutput: string, matchRef: unknown): Record<string, unknown>[] {
+  return [
+    showSceneCommand(heroOutput, scene, { part: 'hero', matchRef }),
+    showSceneCommand(boardOutput, scene, { part: 'board', matchRef }),
+  ]
+}
+
+/** Run a cue action on its own (what a cue does after it fires). */
+export function cueActionStandalone(action: unknown, stackId: unknown): Record<string, unknown> | null {
+  if (action === 'nextRace') return { type: 'stepRace', delta: 1 }
+  if (action === 'nextMatch') return { type: 'nextMatch' }
+  if (action === 'resetStack' && stackId) return { type: 'resetStack', id: String(stackId) }
+  return null
+}
+
+export function tournamentVars(t: TournamentInfo | null | undefined): Record<string, string> {
+  const m = t?.matches.find((x) => x.id === t.activeMatchId)
+  return { tournament_name: t?.name ?? '', active_match_label: m?.label ?? '', active_match_status: m?.status ?? '', active_match_winner: m?.winner ?? '' }
 }

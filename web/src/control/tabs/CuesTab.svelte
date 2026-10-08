@@ -1,9 +1,9 @@
 <script lang="ts">
   import { control, send } from '../store'
-  import type { PresetScope, TakeMode } from '../../../../shared/types'
+  import type { CueAction, PresetScope, TakeMode } from '../../../../shared/types'
 
   const SCOPES: { key: keyof PresetScope; label: string }[] = [
-    { key: 'layers', label: 'Layers' }, { key: 'armed', label: 'Arming' }, { key: 'show', label: 'Show data' }, { key: 'players', label: 'Players' },
+    { key: 'layers', label: 'Layers' }, { key: 'armed', label: 'Arming' }, { key: 'style', label: 'Style' }, { key: 'match', label: 'Race' }, { key: 'players', label: 'Players' },
     { key: 'scores', label: 'Scores' }, { key: 'transition', label: 'Speed' }, { key: 'mattify', label: 'Mattify' },
   ]
   /** Click cycles: inherit the preset's setting, force on, force off. */
@@ -18,12 +18,14 @@
   let newName = $state('')
   let addPreset = $state('')
   let addTake = $state<'cut' | 'auto' | 'none'>('cut')
+  let addAction = $state('')
   let renaming = $state(false)
   let renameTo = $state('')
 
   const presetOf = (id: string) => presets.find((p) => p.id === id)
   const nameOf = (id: string) => presets.find((p) => p.id === id)?.name ?? '?'
   const takeVal = (t: TakeMode | null) => t ?? 'none'
+  const actionArg = (v: string): CueAction | null => (v === 'nextRace' || v === 'nextMatch' || v === 'resetStack' ? v : null)
   const takeArg = (v: string): TakeMode | null => (v === 'cut' || v === 'auto' ? v : null)
   const currentIdx = $derived(stack ? stack.cues.findIndex((c) => c.id === stack.current) : -1)
   // Standby = selected cue, else the one after the one on air (what GO would fire).
@@ -42,7 +44,7 @@
   }
   function add() {
     const presetId = addPreset || presets[0]?.id
-    if (stack && presetId) send({ type: 'addCue', stackId: stack.id, presetId, take: takeArg(addTake) })
+    if (stack && presetId) send({ type: 'addCue', stackId: stack.id, presetId, take: takeArg(addTake), ...(actionArg(addAction) ? { action: actionArg(addAction)! } : {}) })
   }
   function commitRename() {
     const n = renameTo.trim()
@@ -99,6 +101,10 @@
         <select name="cueTake" value={takeVal(c.take)} onchange={(e) => send({ type: 'updateCue', stackId: stack.id, cueId: c.id, take: takeArg(e.currentTarget.value) })}>
           <option value="cut">Cut</option><option value="auto">Auto</option><option value="none">Recall only</option>
         </select>
+        <select name="cueAction" aria-label="After this cue" title="Runs after the cue fires" value={c.action ?? ''}
+          onchange={(e) => send({ type: 'updateCue', stackId: stack.id, cueId: c.id, action: actionArg(e.currentTarget.value) })}>
+          <option value="">No action</option><option value="nextRace">Then next race</option><option value="nextMatch">Then next match</option><option value="resetStack">Then reset stack</option>
+        </select>
         <span class="row" style="margin-left:auto">
           <button type="button" data-select onclick={() => send({ type: 'selectCue', stackId: stack.id, cueId: c.id })}>Select</button>
           <button type="button" data-fire onclick={() => send({ type: 'fireCue', stackId: stack.id, cueId: c.id })}>Fire</button>
@@ -129,6 +135,9 @@
       </select>
       <select name="addTake" bind:value={addTake}>
         <option value="cut">Cut</option><option value="auto">Auto</option><option value="none">Recall only</option>
+      </select>
+      <select name="addAction" bind:value={addAction} aria-label="After the cue">
+        <option value="">No action</option><option value="nextRace">Then next race</option><option value="nextMatch">Then next match</option><option value="resetStack">Then reset stack</option>
       </select>
       <button type="button" data-add-cue onclick={add} disabled={!presets.length}>Add cue</button>
       {#if !presets.length}<span class="dim">Save a preset first.</span>{/if}

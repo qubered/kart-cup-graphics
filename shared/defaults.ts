@@ -4,7 +4,9 @@ import { DEFAULT_QR } from './qr-default'
 import type { Layers, PresetScope, OutputConfig, ProgramFrame, ShowData, ShowState } from './types'
 
 /** New presets restore everything except scores, which would overwrite live results. */
-export const DEFAULT_PRESET_SCOPE: PresetScope = { layers: true, armed: true, show: true, players: true, scores: false, transition: true, mattify: true }
+export const DEFAULT_PRESET_SCOPE: PresetScope = { layers: true, armed: true, style: true, match: true, players: true, scores: false, transition: true, mattify: true }
+/** Default for presets saved while a tournament is active: layout only, the match supplies players, race and scores. */
+export const LAYOUT_ONLY_PRESET_SCOPE: PresetScope = { layers: true, armed: true, style: true, match: false, players: false, scores: false, transition: true, mattify: true }
 
 export const EMPTY_LAYERS: Layers = {
   background: 'none', scene: 'none', trackCard: false, lowerThirds: { on: false, players: [0, 1, 2, 3] },
@@ -68,6 +70,6 @@ export function createDefaultState(catalog: CatalogIndex, now: number): ShowStat
     program: emptyProgram(draft, outputs, catalog, now),
     overlay: { hold: { on: false, message: 'BACK SHORTLY' }, ftb: false },
     transition: 'normal', armed: [],
-    clocks: { onAirSince: null }, uploadedFonts: [], settings: { mattify: false }, presets: [], lastPreset: null, stacks: [],
+    clocks: { onAirSince: null }, uploadedFonts: [], settings: { mattify: false }, presets: [], lastPreset: null, stacks: [], tournaments: [], activeTournamentId: null,
   }
 }
