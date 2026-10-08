@@ -51,7 +51,7 @@ describe('deriveView', () => {
   it('standings, winner, nextRace', () => {
     const d = { ...st.draft, scores: { races: [{ raceNo: 1, trackId: 'mario-kart-stadium', positions: [2, 1, 3, 4] }], adjustments: [0, 0, 0, 0] } }
     const s = deriveView(d, { ...EMPTY_LAYERS, scene: 'standings' }, hd, idx).scene
-    expect(s).toMatchObject({ kind: 'standings', footer: 'AFTER RACE 1 · MUSHROOM CUP' })
+    expect(s).toMatchObject({ kind: 'standings' })
     if (s?.kind === 'standings') expect(s.rows[0].player.slot).toBe(1)
     const w = deriveView(d, { ...EMPTY_LAYERS, scene: 'winner' }, hd, idx).scene
     expect(w).toMatchObject({ kind: 'winner', total: 15 })

@@ -60,9 +60,6 @@
       </div>
     {/each}
   </div>
-  <Swap key={scene.footer} dur={enter}>
-    <div class="standings-footer" style:font-family={view.fonts.labels}>{scene.footer}</div>
-  </Swap>
 </div>
 
 <style>
@@ -89,6 +86,4 @@
   .pts small { font-size: 40px; margin-left: 16px; letter-spacing: 4px; }
   .first .pos, .first .name, .first .pts { color: var(--row-leader-ink); }
   .first .char { color: var(--row-leader-sub); }
-  .standings-footer { position: absolute; right: 120px; bottom: 60px; font-size: 40px; font-weight: 800; line-height: 1; color: rgba(255, 255, 255, 0.7); letter-spacing: 8px; }
-  .hd .standings-footer { right: 60px; top: 62px; bottom: auto; font-size: 28px; letter-spacing: 6px; }
 </style>

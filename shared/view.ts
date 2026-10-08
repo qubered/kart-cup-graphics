@@ -67,7 +67,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
         const rows = standings(data.scores, data.players.length).map((r) => ({
           position: r.position, player: pv(r.playerIndex), total: r.total, lastRacePoints: r.lastRacePoints,
         }))
-        scene = { kind: 'standings', rows, footer: `AFTER RACE ${data.scores.races.length} · ${info.cupName.toUpperCase()}` }
+        scene = { kind: 'standings', rows }
         break
       }
       case 'winner': {
