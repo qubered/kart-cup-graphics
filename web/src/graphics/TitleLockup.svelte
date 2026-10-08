@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { OutputFormat, TitleView } from '../../../shared/types'
+  import { fade } from 'svelte/transition'
+  import { cubicIn } from 'svelte/easing'
   import { fitText } from '../lib/fit-text'
   import { TITLE_LAYOUT, breakTitle } from './title-layout'
 
@@ -13,8 +15,10 @@
     labelFont: string
     /** Vertical centre; defaults to the format's title-scene value. */
     top?: string
+    /** AUTO enter ms (0 = instant); text changes crossfade over this. */
+    dur?: number
   }
-  let { title, style, format, font, labelFont, top }: Props = $props()
+  let { title, style, format, font, labelFont, top, dur = 0 }: Props = $props()
 
   const cfg = $derived(TITLE_LAYOUT[format])
   let fontsTick = $state(0)
@@ -44,8 +48,11 @@
   const px = $derived(cfg.layout === 'line' ? cfg.ts : Math.floor(broken.size))
 
   // Every line is fitted without a floor, then all lines take the smallest fitted size.
-  let box: HTMLElement | undefined = $state()
   const natural: (number | undefined)[] = []
+  const sig = $derived(`${title.preTitle}\u0001${title.title}\u0001${title.accent}`)
+  // A new lockup instance fits itself from scratch: drop the previous instance's fitted sizes.
+  $effect.pre(() => { void sig; natural.length = 0 })
+  let box: HTMLElement | undefined = $state()
   const equalise = (i: number, fs: number) => {
     natural[i] = fs
     if (!box) return
@@ -57,7 +64,8 @@
   }
 </script>
 
-<div class="title-lockup" data-style={style} data-layout={cfg.layout} style:--ts="{cfg.ts}px" style:--ps="{cfg.ps}px" style:top={top ?? cfg.top}>
+{#key sig}
+<div class="title-lockup" in:fade={{ duration: dur }} out:fade={{ duration: Math.round(dur * 0.6), easing: cubicIn }} data-style={style} data-layout={cfg.layout} style:--ts="{cfg.ts}px" style:--ps="{cfg.ps}px" style:top={top ?? cfg.top}>
   {#if title.preTitle}
     <div class="pre" style:font-family={labelFont}>{title.preTitle}</div>
   {/if}
@@ -73,6 +81,7 @@
     {/each}
   </div>
 </div>
+{/key}
 
 <style>
   .title-lockup { position: absolute; left: 50%; transform: translate(-50%, -50%); text-align: center; white-space: nowrap; z-index: 5; }

@@ -50,7 +50,7 @@
           {#if keyMode}
             <div class="key-solid"></div>
           {:else if view.background.id === 'A'}
-            <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} />
+            <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} dur={enter} />
           {:else if view.background.id === 'B'}
             <IconPattern w={view.canvas.w} h={view.canvas.h} />
           {:else if view.background.id === 'C'}

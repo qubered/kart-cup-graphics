@@ -13,12 +13,12 @@
   {#if halves}
     {#each [0, 1] as h (h)}
       <div class="half" style:left="{h * 960}px" in:pop|global={{ duration: enter, delay: h * st }}>
-        <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} />
+        <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} dur={enter} />
       </div>
     {/each}
   {:else}
     <div class="center" in:pop|global={{ duration: enter }}>
-      <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} />
+      <TitleLockup {title} style={view.eventTitleStyle} format={view.format} font={view.fonts.eventTitle} labelFont={view.fonts.labels} dur={enter} />
     </div>
   {/if}
 </div>

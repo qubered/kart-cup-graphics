@@ -1,17 +1,18 @@
 <script lang="ts">
-  let { text, accent = '', look, font, upright, size }: {
-    text: string; accent?: string; look: 'chrome' | 'classic' | 'plain'; font: string; upright: boolean; size: number
+  import Swap from './Swap.svelte'
+  let { text, accent = '', look, font, upright, size, dur = 0 }: {
+    text: string; accent?: string; look: 'chrome' | 'classic' | 'plain'; font: string; upright: boolean; size: number; dur?: number
   } = $props()
 </script>
 
-<span
+<Swap key={`${text}|${accent}`} {dur} class="hswap"><span
   class="heading"
   class:upright
   data-look={look}
   data-t={accent ? `${text} ${accent}` : text}
   style:font-family={font}
   style:--hs="{size}px"
-><span class="m">{text}</span>{#if accent} <span class="a">{accent}</span>{/if}</span>
+><span class="m">{text}</span>{#if accent} <span class="a">{accent}</span>{/if}</span></Swap>
 
 <style>
   .heading { position: relative; display: inline-block; font-style: italic; font-weight: 900; font-size: var(--hs, 120px); line-height: 1.1; white-space: nowrap; z-index: 1; }
