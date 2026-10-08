@@ -1,62 +1,42 @@
-import { mount, tick } from 'svelte'
+import { mount } from 'svelte'
 import '../lib/fonts.css'
 import '../graphics/tokens.css'
 import Output from '../graphics/Output.svelte'
-import { connect } from '../lib/socket'
-import { whenReady } from '../lib/ready'
-import type { OutputPayload } from '../../../shared/protocol'
-import { out } from './state'
+import Superwide from '../graphics/Superwide.svelte'
+import { openChannel } from './channel'
 
 const params = new URLSearchParams(location.search)
-const m = location.pathname.match(/\/out\/([^/]+)/)
+const m = location.pathname.match(/\/out\/([^/]+)(?:\/(left|right))?\/?$/)
 const outputId = m ? decodeURIComponent(m[1]) : ''
+const part = m?.[2] === 'left' || m?.[2] === 'right' ? m[2] : undefined
 const lowfx = params.get('lowfx') === '1'
 const debug = params.get('debug') === '1'
 const viewKind = params.get('view') === 'preview' ? 'preview' : 'program'
+const target = document.getElementById('app')!
 
-/** Every image URL referenced anywhere in the payload (view, hold). */
-function imageUrls(p: OutputPayload): string[] {
-  const urls = new Set<string>()
-  const walk = (v: unknown): void => {
-    if (typeof v === 'string') { if (/^\/(assets|uploads)\/.+\.(png|jpe?g|webp|svg|gif)$/i.test(v)) urls.add(v) }
-    else if (Array.isArray(v)) v.forEach(walk)
-    else if (v && typeof v === 'object') Object.values(v).forEach(walk)
-  }
-  walk(p.view); walk(p.hold)
-  return [...urls]
-}
-
-mount(Output, {
-  target: document.getElementById('app')!,
-  props: {
-    get payload() { return out.payload },
-    get firstPaint() { return out.firstPaint },
-    get connected() { return out.connected },
-    lowfx, debug,
-  },
-})
-
-// Payloads are applied strictly in order, after their images are decoded.
-let chain: Promise<void> = Promise.resolve()
-let first = true
-
-function apply(p: OutputPayload): Promise<void> {
-  const isFirst = first
-  first = false
-  return whenReady(imageUrls(p), isFirst ? 3000 : 1500).catch(() => undefined).then(async () => {
-    out.firstPaint = isFirst
-    out.payload = p
-    await tick()
-    if (isFirst) {
-      // Let the CUT frame paint, then allow transitions for later updates.
-      await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
-      out.firstPaint = false
-      document.body.setAttribute('data-ready', '')
-    }
+if (outputId === 'superwide') {
+  // Composite 5760x1152: left half of the twin output | wide output | right half of the twin output.
+  // Output ids default to `wide` and `twins`; override with ?wide=<id>&twins=<id>.
+  const wideId = params.get('wide') || 'wide'
+  const twinsId = params.get('twins') || 'twins'
+  let ready = 0
+  const onReady = () => { if (++ready === 3) document.body.setAttribute('data-ready', '') }
+  const left = openChannel({ role: 'output', outputId: twinsId, view: viewKind, part: 'left' }, onReady)
+  const wide = openChannel({ role: 'output', outputId: wideId, view: viewKind }, onReady)
+  const right = openChannel({ role: 'output', outputId: twinsId, view: viewKind, part: 'right' }, onReady)
+  mount(Superwide, { target, props: { left, wide, right, lowfx, debug } })
+} else {
+  const state = openChannel(
+    { role: 'output', outputId, view: viewKind, ...(part ? { part } : {}) },
+    () => document.body.setAttribute('data-ready', ''),
+  )
+  mount(Output, {
+    target,
+    props: {
+      get payload() { return state.payload },
+      get firstPaint() { return state.firstPaint },
+      get connected() { return state.connected },
+      part, lowfx, debug,
+    },
   })
 }
-
-connect({ role: 'output', outputId, view: viewKind }, {
-  onMessage(msg) { if (msg.type === 'output') chain = chain.then(() => apply(msg)) },
-  onStatus(up) { out.connected = up },
-})

@@ -12,11 +12,12 @@ export function attachSockets(server: http.Server, store: StateStore, catalog: C
 
   const presence = (): Presence => {
     const p: Presence = {}
-    for (const o of store.state.outputs) p[o.id] = { program: 0, preview: 0 }
+    for (const o of store.state.outputs) p[o.id] = { program: 0, preview: 0, left: 0, right: 0 }
     for (const c of clients) {
       if (c.sub?.role !== 'output') continue
-      const e = (p[c.sub.outputId] ??= { program: 0, preview: 0 })
+      const e = (p[c.sub.outputId] ??= { program: 0, preview: 0, left: 0, right: 0 })
       e[c.sub.view]++
+      if (c.sub.part && c.sub.view === 'program') e[c.sub.part]++
     }
     return p
   }

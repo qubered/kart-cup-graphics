@@ -135,7 +135,7 @@ export function createHttpHandler(opts: HttpOpts): (req: IncomingMessage, res: S
       if (path === '/') return send(res, 302, '', 'text/plain', { Location: '/control' })
       if (path === '/control') return page(res, req, 'control')
       if (path === '/multiview') return page(res, req, 'multiview')
-      if (/^\/out\/[^/]+\/?$/.test(path)) return page(res, req, 'out')
+      if (/^\/out\/[^/]+(\/(left|right))?\/?$/.test(path)) return page(res, req, 'out')
       if (path.startsWith('/assets/')) {
         if (serveFile(res, assetsDir, path.slice('/assets/'.length), method)) return
         if (!vite && serveFile(res, distDir, path.slice(1), method)) return

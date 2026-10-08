@@ -19,6 +19,9 @@ const pages: [string, boolean][] = [
   ['/out/wide', true],
   ['/out/twins?view=preview', true],
   ['/out/stream', true],
+  ['/out/twins/left', true],
+  ['/out/twins/right', true],
+  ['/out/superwide', true],
 ]
 
 async function open(path: string, w = 1920, h = 1080) {
