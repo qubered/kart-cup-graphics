@@ -6,7 +6,7 @@ test.beforeEach(resetShow)
 for (const [scene, text] of [['lineup', 'THE RACERS'], ['nextRace', 'NEXT RACE'], ['standings', 'STANDINGS'], ['winner', 'WINNER']] as const)
   test(`wide ${scene}`, async ({ page }) => {
     await page.setViewportSize({ width: 3840, height: 1152 }); await command({ type: 'setLayers', outputId: 'wide', patch: { background: 'B', scene } }); await command({ type: 'take', mode: 'cut', outputIds: ['wide'] }); await page.goto('/out/wide'); await expect(page.locator('[data-layer=scene]')).toContainText(text)
-    await page.waitForSelector('body[data-ready]'); await page.waitForTimeout(300); await page.locator('#canvas').screenshot({ path: `/tmp/claude-0/shots/scene-wide-${scene}.png` })
+    await page.waitForSelector('body[data-ready]')
   })
 
 test('standings re-sort keeps rows', async ({ page }) => {
@@ -22,7 +22,6 @@ test('hd scenes stay inside 1920×1080', async ({ page }) => {
   for (const scene of ['lineup', 'nextRace', 'standings', 'winner'] as const) {
     await command({ type: 'setLayers', outputId: 'stream', patch: { background: 'B', scene } }); await command({ type: 'take', mode: 'cut', outputIds: ['stream'] })
     await page.goto('/out/stream'); await page.waitForSelector('body[data-ready]'); await page.waitForTimeout(200)
-    await page.locator('#canvas').screenshot({ path: `/tmp/claude-0/shots/scene-hd-${scene}.png` })
     if (scene === 'winner') continue // confetti falls past the canvas edge by design
     const out = await page.locator('[data-layer=scene] *').evaluateAll(els => els.filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > 1920 + 1 || r.bottom > 1080 + 1) }).length); expect(out, scene).toBe(0)
   }
