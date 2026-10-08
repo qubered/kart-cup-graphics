@@ -7,6 +7,8 @@ export interface OutputPayload {
   type: 'output'; outputId: string; view: ViewModel | null
   frame: { mode: TakeMode; speed: TransitionSpeed; takenAt: number }
   hold: HoldView | null; ftb: boolean
+  /** Replace the mushroom in the icon-pattern background with the custom image. Live setting, no Take. */
+  mattify: boolean
 }
 /** left/right count the clients that render only that half of the output (a subset of program/preview). */
 export type Presence = Record<string, { program: number; preview: number; left: number; right: number }>
@@ -52,7 +54,7 @@ function holdView(state: ShowState): HoldView | null {
 
 export function buildOutputPayload(state: ShowState, outputId: string, view: 'program' | 'preview', catalog: CatalogIndex): OutputPayload {
   const output = state.outputs.find((o) => o.id === outputId)
-  const base = { type: 'output' as const, outputId, hold: holdView(state), ftb: state.overlay.ftb }
+  const base = { type: 'output' as const, outputId, hold: holdView(state), ftb: state.overlay.ftb, mattify: state.settings.mattify }
   if (!output) return { ...base, view: null, frame: { mode: 'cut', speed: state.transition, takenAt: 0 } }
   if (view === 'program') {
     const f = state.program[outputId]

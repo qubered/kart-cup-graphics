@@ -47,6 +47,8 @@ export interface ShowState {
   transition: TransitionSpeed; armed: string[]
   clocks: { onAirSince: number | null }
   uploadedFonts: { family: string; file: string }[]
+  /** App-wide switches (not part of an exported show). Applied instantly, with no Take. */
+  settings: { mattify: boolean }
 }
 export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed }
 
@@ -72,5 +74,6 @@ export type Command =
   | { type: 'importShow'; file: ShowFile }
   | { type: 'resetScores' } | { type: 'resetShow' } | { type: 'resetOnAirClock' }
   | { type: 'registerFont'; family: string; file: string }
+  | { type: 'setMattify'; on: boolean }
 
 export type { Catalog }

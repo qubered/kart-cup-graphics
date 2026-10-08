@@ -62,7 +62,8 @@ export const programFrameSchema = z.object({
   takenAt: z.number(),
 })
 
-export const showStateSchema: z.ZodType<ShowState> = z.object({
+// `settings` is optional on input so state files saved before it existed still load (Mattify off).
+export const showStateSchema: z.ZodType<ShowState, z.ZodTypeDef, unknown> = z.object({
   draft: showDataSchema,
   outputs: z.array(outputConfigSchema),
   layers: z.record(layersSchema),
@@ -72,6 +73,7 @@ export const showStateSchema: z.ZodType<ShowState> = z.object({
   armed: z.array(z.string()),
   clocks: z.object({ onAirSince: z.number().nullable() }),
   uploadedFonts: z.array(z.object({ family: z.string(), file: z.string() })),
+  settings: z.object({ mattify: z.boolean() }).default({ mattify: false }),
 })
 
 export const showFileSchema: z.ZodType<ShowFile> = z.object({
@@ -129,5 +131,6 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('resetScores') }),
   z.object({ type: z.literal('resetShow') }),
   z.object({ type: z.literal('resetOnAirClock') }),
+  z.object({ type: z.literal('setMattify'), on: z.boolean() }),
   z.object({ type: z.literal('registerFont'), family: z.string().min(1).max(100), file: z.string().min(1).max(300) }),
 ]) as unknown as z.ZodType<Command>

@@ -62,6 +62,6 @@ export function createDefaultState(catalog: CatalogIndex, now: number): ShowStat
     program: emptyProgram(draft, outputs, catalog, now),
     overlay: { hold: { on: false, message: 'BACK SHORTLY' }, ftb: false },
     transition: 'normal', armed: [],
-    clocks: { onAirSince: null }, uploadedFonts: [],
+    clocks: { onAirSince: null }, uploadedFonts: [], settings: { mattify: false },
   }
 }
