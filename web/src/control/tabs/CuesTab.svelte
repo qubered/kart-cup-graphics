@@ -3,7 +3,7 @@
   import type { PresetScope, TakeMode } from '../../../../shared/types'
 
   const SCOPES: { key: keyof PresetScope; label: string }[] = [
-    { key: 'layers', label: 'Layers' }, { key: 'armed', label: 'Arming' }, { key: 'show', label: 'Show data' },
+    { key: 'layers', label: 'Layers' }, { key: 'armed', label: 'Arming' }, { key: 'show', label: 'Show data' }, { key: 'players', label: 'Players' },
     { key: 'scores', label: 'Scores' }, { key: 'transition', label: 'Speed' }, { key: 'mattify', label: 'Mattify' },
   ]
   /** Click cycles: inherit the preset's setting, force on, force off. */
@@ -102,8 +102,10 @@
         <span class="row" style="margin-left:auto">
           <button type="button" data-select onclick={() => send({ type: 'selectCue', stackId: stack.id, cueId: c.id })}>Select</button>
           <button type="button" data-fire onclick={() => send({ type: 'fireCue', stackId: stack.id, cueId: c.id })}>Fire</button>
-          <button type="button" data-save-to-preset title="Overwrite this cue's preset with everything as it is now (affects every cue using it)"
-            onclick={() => confirm(`Overwrite preset "${nameOf(c.presetId)}" with the current state?`) && send({ type: 'updatePreset', id: c.presetId, capture: true })}>Save to preset</button>
+          <button type="button" data-overwrite-pvw title="Overwrite this cue's preset with Preview (affects every cue using it)"
+            onclick={() => confirm(`Overwrite preset "${nameOf(c.presetId)}" with Preview?`) && send({ type: 'updatePreset', id: c.presetId, from: 'pvw' })}>Overwrite ← PVW</button>
+          <button type="button" data-overwrite-pgm title="Overwrite this cue's preset with what is on air (affects every cue using it)"
+            onclick={() => confirm(`Overwrite preset "${nameOf(c.presetId)}" with Program?`) && send({ type: 'updatePreset', id: c.presetId, from: 'pgm' })}>Overwrite ← PGM</button>
           <button type="button" aria-label="Move up" onclick={() => send({ type: 'moveCue', stackId: stack.id, cueId: c.id, delta: -1 })} disabled={i === 0}>↑</button>
           <button type="button" aria-label="Move down" onclick={() => send({ type: 'moveCue', stackId: stack.id, cueId: c.id, delta: 1 })} disabled={i === stack.cues.length - 1}>↓</button>
           <button type="button" class="danger" aria-label="Remove cue" onclick={() => send({ type: 'removeCue', stackId: stack.id, cueId: c.id })}>✕</button>

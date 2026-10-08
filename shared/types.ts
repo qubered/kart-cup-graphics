@@ -41,10 +41,13 @@ export interface ViewModel {
   background: { id: Exclude<BackgroundId, 'none'>; watermark: string; title: TitleView } | null
   scene: SceneView | null; trackCard: TrackCardView | null; lowerThirds: PlayerView[]
 }
-export interface ProgramFrame { view: ViewModel; mode: TakeMode; speed: TransitionSpeed; takenAt: number }
+/** layers/draft: what was taken (so "save from PGM" can snapshot it). Absent on frames that predate this. */
+export interface ProgramFrame { view: ViewModel; mode: TakeMode; speed: TransitionSpeed; takenAt: number; layers?: Layers; draft?: ShowData }
+/** Where a preset snapshot is read from: PVW = the draft being built, PGM = what is on air. */
+export type PresetSource = 'pvw' | 'pgm'
 /** What a recall applies. A preset always captures everything; scope picks which parts it restores.
- *  show = event text, typography, players and race. scores = results and adjustments (off by default: recalling would overwrite live scores). */
-export interface PresetScope { layers: boolean; armed: boolean; show: boolean; scores: boolean; transition: boolean; mattify: boolean }
+ *  show = event text, typography and race. players = the four players (name, character, colour). scores = results and adjustments (off by default: recalling would overwrite live scores). */
+export interface PresetScope { layers: boolean; armed: boolean; show: boolean; players: boolean; scores: boolean; transition: boolean; mattify: boolean }
 /** A saved snapshot of the show: every output's layers, arming, show data, scores, transition speed and Mattify. */
 export interface Preset {
   id: string; name: string; scope: PresetScope
@@ -80,8 +83,8 @@ export type Command =
   | { type: 'setEventText'; patch: Partial<EventText> }
   | { type: 'setTypography'; role: 'eventTitle' | 'headings' | 'names' | 'labels'; patch: { font?: string; style?: 'chrome' | 'classic'; look?: 'chrome' | 'classic' | 'plain' } }
   | { type: 'setLayers'; outputId: string; patch: Partial<Layers> }
-  | { type: 'savePreset'; name: string; scope?: Partial<PresetScope> }
-  | { type: 'updatePreset'; id: string; name?: string; capture?: boolean; scope?: Partial<PresetScope> }
+  | { type: 'savePreset'; name: string; from?: PresetSource; scope?: Partial<PresetScope> }
+  | { type: 'updatePreset'; id: string; name?: string; from?: PresetSource; scope?: Partial<PresetScope> }
   | { type: 'deletePreset'; id: string }
   | { type: 'recallPreset'; id: string; take?: TakeMode }
   | { type: 'createStack'; name: string }
