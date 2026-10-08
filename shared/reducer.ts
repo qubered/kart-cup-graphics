@@ -413,6 +413,10 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       return { ...state, clocks: { onAirSince: state.clocks.onAirSince === null ? null : ctx.now } }
     case 'setMattify':
       return state.settings.mattify === cmd.on ? state : { ...state, settings: { ...state.settings, mattify: cmd.on } }
+    case 'setLogo': {
+      const settings = { mattify: state.settings.mattify, ...(cmd.url ? { logo: cmd.url } : {}) }
+      return { ...state, settings }
+    }
     case 'registerFont': {
       if (state.uploadedFonts.some((f) => f.family === cmd.family)) return state
       return { ...state, uploadedFonts: [...state.uploadedFonts, { family: cmd.family, file: cmd.file }] }

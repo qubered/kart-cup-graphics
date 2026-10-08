@@ -9,13 +9,13 @@
   import WinnerScene from './scenes/WinnerScene.svelte'
   import NoticeScene from './scenes/NoticeScene.svelte'
 
-  let { scene, view, enter, exit, lowfx = false }: { scene: SceneView; view: ViewModel; enter: number; exit: number; lowfx?: boolean } = $props()
+  let { scene, view, enter, exit, lowfx = false, logoSrc = null }: { scene: SceneView; view: ViewModel; enter: number; exit: number; lowfx?: boolean; logoSrc?: string | null } = $props()
 </script>
 
 {#key scene.kind}
   <div class="scene-wrap" in:fade|global={{ duration: enter }} out:fade|global={{ duration: exit, easing: cubicIn }}>
     {#if scene.kind === 'title'}
-      <TitleScene title={scene.title} {view} {enter} />
+      <TitleScene title={scene.title} logo={scene.logo} {logoSrc} {view} {enter} />
     {:else if scene.kind === 'lineup'}
       <LineupScene {scene} {view} {enter} />
     {:else if scene.kind === 'nextRace'}

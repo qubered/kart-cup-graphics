@@ -12,6 +12,50 @@
 
   let msg = $state<{ ok: boolean; text: string } | null>(null)
 
+  const LOGO_PX = 512
+  let logoMsg = $state<{ ok: boolean; text: string } | null>(null)
+  const logoUrl = $derived($control.payload?.state.settings?.logo)
+
+  /** Fit the image inside a transparent LOGO_PX square (aspect kept, centred) and return it as a PNG. */
+  async function normaliseLogo(file: File): Promise<Blob> {
+    const src = URL.createObjectURL(file)
+    try {
+      const img = new Image()
+      img.src = src
+      await img.decode()
+      const w = img.naturalWidth || LOGO_PX, h = img.naturalHeight || LOGO_PX
+      const k = Math.min(LOGO_PX / w, LOGO_PX / h)
+      const c = document.createElement('canvas')
+      c.width = c.height = LOGO_PX
+      const g = c.getContext('2d')!
+      g.imageSmoothingQuality = 'high'
+      g.drawImage(img, (LOGO_PX - w * k) / 2, (LOGO_PX - h * k) / 2, w * k, h * k)
+      return await new Promise<Blob>((ok, fail) => c.toBlob((b) => (b ? ok(b) : fail(new Error('Could not convert image'))), 'image/png'))
+    } finally {
+      URL.revokeObjectURL(src)
+    }
+  }
+  async function uploadLogo(e: Event) {
+    const input = e.currentTarget as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+    logoMsg = null
+    try {
+      const res = await fetch('/api/logo', { method: 'PUT', headers: { 'content-type': 'image/png' }, body: await normaliseLogo(file) })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error ?? `Upload failed (${res.status})`)
+      logoMsg = { ok: true, text: 'Logo updated.' }
+    } catch (err) {
+      logoMsg = { ok: false, text: err instanceof Error ? err.message : 'Not a readable image' }
+    } finally {
+      input.value = ''
+    }
+  }
+  async function removeLogo() {
+    logoMsg = null
+    await fetch('/api/logo', { method: 'DELETE' }).catch(() => {})
+  }
+
   function resetScores() {
     if (confirm('Reset all scores and saved races?')) send({ type: 'resetScores' })
   }
@@ -46,6 +90,19 @@
     </label>
   </div>
   {#if msg}<div class="msg" class:ok={msg.ok} class:err={!msg.ok} role="status">{msg.text}</div>{/if}
+</div>
+
+<div class="card">
+  <h2>Logo</h2>
+  <div class="row" style="gap:12px">
+    <div style="width:64px; height:64px; background:#0b2a5b; border-radius:6px; display:grid; place-items:center">
+      {#if logoUrl}<img src={logoUrl} alt="Current logo" width="56" height="56" />{:else}<span class="dim" style="font-size:11px">Default</span>{/if}
+    </div>
+    <input type="file" name="logoFile" accept="image/*" onchange={uploadLogo} />
+    {#if logoUrl}<button type="button" onclick={removeLogo}>Use default</button>{/if}
+  </div>
+  {#if logoMsg}<div class="msg" class:ok={logoMsg.ok} class:err={!logoMsg.ok} role="status">{logoMsg.text}</div>{/if}
+  <div class="dim" style="margin-top:6px">Scaled to fit a square and shown on the title scene and HOLD. Turn it on or off per output with the Logo switch in the layer controls (Title scene).</div>
 </div>
 
 <div class="card">

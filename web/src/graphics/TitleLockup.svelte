@@ -4,6 +4,7 @@
   import { cubicIn } from 'svelte/easing'
   import { fitText } from '../lib/fit-text'
   import { TITLE_LAYOUT, breakTitle } from './title-layout'
+  import Logo from './Logo.svelte'
 
   interface Props {
     title: TitleView
@@ -17,8 +18,11 @@
     top?: string
     /** AUTO enter ms (0 = instant); text changes crossfade over this. */
     dur?: number
+    /** Draw the logo as part of the block, above the pre-title. */
+    logo?: boolean
+    logoSrc?: string | null
   }
-  let { title, style, format, font, labelFont, top, dur = 0 }: Props = $props()
+  let { title, style, format, font, labelFont, top, dur = 0, logo = false, logoSrc = null }: Props = $props()
 
   const cfg = $derived(TITLE_LAYOUT[format])
   let fontsTick = $state(0)
@@ -66,6 +70,9 @@
 
 {#key sig}
 <div class="title-lockup" in:fade={{ duration: dur }} out:fade={{ duration: Math.round(dur * 0.6), easing: cubicIn }} data-style={style} data-layout={cfg.layout} style:--ts="{cfg.ts}px" style:--ps="{cfg.ps}px" style:top={top ?? cfg.top}>
+  {#if logo}
+    <div class="blk-logo"><Logo size={cfg.logo} src={logoSrc} /></div>
+  {/if}
   {#if title.preTitle}
     <div class="pre" style:font-family={labelFont}>{title.preTitle}</div>
   {/if}
@@ -85,6 +92,7 @@
 
 <style>
   .title-lockup { position: absolute; left: 50%; transform: translate(-50%, -50%); text-align: center; white-space: nowrap; z-index: 5; }
+  .blk-logo { display: flex; justify-content: center; margin-bottom: calc(var(--ts) * .12); color: #fff; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .25)); }
   .pre {
     display: inline-block; background: var(--mk-pill); color: var(--mk-navy); font-style: italic; font-weight: 800; font-size: var(--ps); line-height: 1;
     padding: calc(var(--ps) * .28) calc(var(--ps) * .97); transform: skewX(-14deg); border-radius: calc(var(--ps) * .2);
