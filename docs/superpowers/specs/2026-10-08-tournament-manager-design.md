@@ -102,13 +102,26 @@ New **Tournament** tab:
 
 Companion actions: next match, set active match, show race win, show cup win, show bracket, show matches.
 
-## 7. Persistence and compatibility
+## 7. Presets and cue stacks
+
+Today a preset snapshots the whole draft, and `recall` restores the parts in its scope. The default scope has `show: true` (event text, typography, players, race) and `scores: false`. With matches, a recalled preset would overwrite the active match's players and race with a stale snapshot. So:
+
+- **Split the `show` scope** into `style` (event text, typography) and `match` (players, race). Old presets and state files migrate `show` to `style` + `match` with the same value.
+- **Match data is never recalled while a tournament is active.** In `recall`, `match` and `scores` are forced off whatever the preset or cue scope says. Players, cup, race and scores always come from the active match. This is enforced in the reducer, so it does not depend on how a preset was saved.
+- **New presets default to layout-only** when a tournament is active: `layers`, `armed`, `transition`, `mattify` and `style` on, `match` and `scores` off. Match data is not stored in the snapshot at all in that case.
+- **One stack, repeated per match.** A tournament-driven stack (for example Line-up, Next race, Standings, Race win, Cup win) holds only layout presets. Each scene reads the active match, so the same cues work for every semi and the final.
+- **Per-match progression.** Cues get an optional `action`: `nextRace`, `nextMatch` or `resetStack`. `nextMatch` switches the active match and resets the stack to its first cue, so the next semi starts from the top. Race-specific cues are not needed: scenes show the active match's current race.
+- **Scene references are relative by default.** `raceWin`, `cupWin` and `matches` use `active` (the active match), `previous`, or an explicit match id or set (for example "all semis"). Presets store the reference, not the data, so a cue showing "all semis" stays correct as scores change.
+- **Preview.** Selecting a cue loads only its layout into Preview and never touches the active match. Switching match while a cue is selected re-renders Preview from the new match.
+- **No tournament active:** presets and cues behave exactly as today.
+
+## 8. Persistence and compatibility
 
 - `tournaments` and `activeTournamentId` default to `[]` / `null` in the zod state schema, so older state files still load.
 - Tournaments are included in show export/import.
-- Presets keep snapshotting the draft. A new scope flag `tournament` is optional, and is off by default so recalling a preset never switches match.
+- Presets keep snapshotting the draft outside tournaments. Recalling a preset never switches the active match.
 
-## 8. Phasing
+## 9. Phasing
 
 1. Data model, schema, reducer commands, match switching, per-match scores, persistence, tests.
 2. Tournament tab UI (setup, results editing, overrides).
@@ -116,8 +129,8 @@ Companion actions: next match, set active match, show race win, show cup win, sh
 4. `matches` and `bracket` scenes.
 5. Companion buttons, preset scope and e2e snapshots.
 
-## 9. Testing
+## 10. Testing
 
-- Unit: reducer commands, match switching round-trips, winner and tie logic, slot auto-fill and override, schema back-compat.
+- Unit: preset and cue recall with a tournament active never changes players, race or scores; `nextMatch` resets the stack; scope migration; reducer commands, match switching round-trips, winner and tie logic, slot auto-fill and override, schema back-compat.
 - View: `deriveView` for each new scene and part, per output format.
 - E2E: Playwright snapshots for each new scene on wide, twin and HD, plus a switch-match flow.
