@@ -5,13 +5,14 @@
   const SCOPES: { key: keyof PresetScope; label: string; hint: string }[] = [
     { key: 'layers', label: 'Layers', hint: 'Background, scene, overlays per output' },
     { key: 'armed', label: 'Arming', hint: 'Which outputs are armed' },
-    { key: 'show', label: 'Show data', hint: 'Event text, fonts, race' },
-    { key: 'players', label: 'Players', hint: 'Names, characters and colours' },
+    { key: 'style', label: 'Event style', hint: 'Event text and fonts' },
+    { key: 'match', label: 'Race', hint: 'Cup, track and race number. Ignored while a tournament is active (the active match supplies it)' },
+    { key: 'players', label: 'Players', hint: 'Names, characters and colours. Ignored while a tournament is active' },
     { key: 'scores', label: 'Scores', hint: 'Results and adjustments. Recalling overwrites the current scores' },
     { key: 'transition', label: 'Transition speed', hint: 'Fast / normal / slow' },
     { key: 'mattify', label: 'Mattify', hint: 'The matte icon background switch' },
   ]
-  const DEFAULT_SCOPE: PresetScope = { layers: true, armed: true, show: true, players: true, scores: false, transition: true, mattify: true }
+  const DEFAULT_SCOPE: PresetScope = { layers: true, armed: true, style: true, match: true, players: true, scores: false, transition: true, mattify: true }
   let scope = $state<PresetScope>({ ...DEFAULT_SCOPE })
 
   const st = $derived($control.payload?.state)

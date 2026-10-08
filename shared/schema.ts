@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN } from './tournament'
 import type { BracketConfig, Command, Cue, CueStack, Layers, Match, MatchesSceneConfig, OutputConfig, Preset, PresetScope, ShowData, ShowFile, ShowState, Tournament, ViewModel, WinScreenConfig } from './types'
 
 export const colourIdSchema = z.enum(['red', 'blue', 'green', 'yellow', 'pink', 'orange', 'purple', 'cyan'])
@@ -128,19 +129,15 @@ export const matchSchema: z.ZodType<Match, z.ZodTypeDef, unknown> = z.object({
   winnerOverride: slotSchema.nullable().default(null),
   slotSources: z.array(slotSourceSchema.nullable()).max(4).optional(),
 })
-const defaultWin: WinScreenConfig = { layout: 'heroLeft', blocks: { hero: true, board: true, cupEmblem: true, trackName: true, racePoints: true } }
-const defaultMatches: MatchesSceneConfig = { layout: 'grid', detail: { wide: 'full', twin: 'compact', hd: 'compact' }, pendingScores: 'zeros', liveMarker: true }
 export const tournamentSchema: z.ZodType<Tournament, z.ZodTypeDef, unknown> = z.object({
   id: idStr,
   name: z.string().max(100),
   matches: z.array(matchSchema).max(64),
   activeMatchId: idStr,
-  winScreen: winScreenConfigSchema.default(defaultWin),
-  matchesScene: matchesSceneConfigSchema.default(defaultMatches),
-  bracket: bracketConfigSchema.default({ showScores: true, showStatus: true }),
+  winScreen: winScreenConfigSchema.default(DEFAULT_WIN_SCREEN),
+  matchesScene: matchesSceneConfigSchema.default(DEFAULT_MATCHES_SCENE),
+  bracket: bracketConfigSchema.default(DEFAULT_BRACKET),
 })
-export const DEFAULT_WIN_SCREEN: WinScreenConfig = defaultWin
-export const DEFAULT_MATCHES_SCENE: MatchesSceneConfig = defaultMatches
 
 export const programFrameSchema = z.object({
   view: z.custom<ViewModel>((v) => typeof v === 'object' && v !== null),

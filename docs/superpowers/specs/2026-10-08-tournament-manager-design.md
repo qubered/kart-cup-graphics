@@ -134,3 +134,13 @@ Today a preset snapshots the whole draft, and `recall` restores the parts in its
 - Unit: preset and cue recall with a tournament active never changes players, race or scores; `nextMatch` resets the stack; scope migration; reducer commands, match switching round-trips, winner and tie logic, slot auto-fill and override, schema back-compat.
 - View: `deriveView` for each new scene and part, per output format.
 - E2E: Playwright snapshots for each new scene on wide, twin and HD, plus a switch-match flow.
+
+## 11. Phase 1 implementation notes (deviations and contracts)
+
+- **Scope keys:** after merging #17 (separate `players` scope) the preset scope is `layers, armed, style, match, players, scores, transition, mattify`. `match` = the race (cup, track, race number); `players` stays its own part. Old `show` migrates to `style` + `match`, and `players` follows `show` if absent. While a tournament is active, recall forces `match`, `players` and `scores` off. New presets saved during a tournament default to layout-only and store blank defaults for match data.
+- **Scene references live in `Layers`**, not in the tournament: `part`, `matchRef` (`'active' | 'previous' | {matchId}`, raceWin/cupWin) and `matchSet` (`{rounds?, ids?, range?}`, matches scene). On-air tournament scenes are pinned to the resolved match ids at derive time, so switching match does not change what is on air until the next Take.
+- **`Tournament.bracket: BracketConfig`** (`showScores`, `showStatus`) was added for the bracket scene. `MatchesSceneConfig.detail` is per output format.
+- **Mirroring:** after every command the live draft is mirrored into the active `Match.data` (and the final auto-fills), so `Match.data` is always current for exports and views.
+- **Win screens work without a tournament** (the draft is treated as a single match); `matches` and `bracket` need one and derive `null` otherwise.
+- `deriveView(data, layers, output, catalog, tournament?)` takes the active tournament as an optional 5th argument.
+- Cue `action` runs after the cue fires. `nextMatch` resets every in-use stack and stands by on its first cue (also as a command). Statuses: active = `live`; others `done` once they have results and are complete, overridden, or were left via `nextMatch`.

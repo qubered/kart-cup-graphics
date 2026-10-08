@@ -98,7 +98,7 @@ describe('reducer', () => {
   })
   it('importShow, resets', () => {
     const s = taken()
-    const imp = reduce(s, { type: 'importShow', file: { draft: base.draft, outputs: base.outputs, layers: base.layers, transition: 'slow', presets: [], stacks: [] } }, ctx)
+    const imp = reduce(s, { type: 'importShow', file: { draft: base.draft, outputs: base.outputs, layers: base.layers, transition: 'slow', presets: [], stacks: [], tournaments: [] } }, ctx)
     expect(imp.transition).toBe('slow'); expect(imp.armed).toEqual([]); expect(imp.program.wide.view.background).toBeNull()
     expect(imp.overlay.hold.on).toBe(false)
     const scored = reduce(base, { type: 'setAdjustment', index: 1, value: 4 }, ctx)
@@ -166,13 +166,13 @@ describe('reducer', () => {
       it('scores are off by default and only restored when in scope', () => {
         let s = setup()
         s = reduce(s, { type: 'savePreset', name: 'Look' }, ctx)
-        expect(s.presets[1].scope).toEqual({ layers: true, armed: true, show: true, players: true, scores: false, transition: true, mattify: true })
+        expect(s.presets[1].scope).toEqual({ layers: true, armed: true, style: true, match: true, players: true, scores: false, transition: true, mattify: true })
         const t = reduce(scrambled(s), { type: 'recallPreset', id: 'preset-2' }, ctx)
         expect(t.draft.scores.races).toEqual([]); expect(t.draft.players[0].name).toBe('SAM')
       })
       it('scope toggles limit what a recall touches', () => {
         let s = setup()
-        s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { show: false, players: false, scores: false, transition: false, mattify: false, armed: false } }, ctx)
+        s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { style: false, match: false, players: false, scores: false, transition: false, mattify: false, armed: false } }, ctx)
         const t = scrambled(s)
         const back = reduce(t, { type: 'recallPreset', id: 'preset-1' }, ctx)
         expect(back.layers).toEqual(s.layers); expect(back.armed).toEqual(t.armed)
@@ -184,13 +184,13 @@ describe('reducer', () => {
         const t = scrambled(s)
         const back = reduce(t, { type: 'recallPreset', id: 'preset-1' }, ctx)
         expect(back.draft.players).toEqual(t.draft.players); expect(back.draft.event.title).toBe('FINALS')
-        const only = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { players: true, show: false } }, ctx)
+        const only = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { players: true, style: false, match: false } }, ctx)
         const b2 = reduce(scrambled(only), { type: 'recallPreset', id: 'preset-1' }, ctx)
         expect(b2.draft.players[0].name).toBe('SAM'); expect(b2.draft.event.title).toBe('X')
       })
       it('scopes saved before players existed load with players following show', () => {
         const old = { layers: true, armed: true, show: false, scores: false, transition: true, mattify: true }
-        expect(presetScopeSchema.parse(old)).toMatchObject({ players: false, show: false })
+        expect(presetScopeSchema.parse(old)).toMatchObject({ players: false, style: false, match: false })
         expect(presetScopeSchema.parse({ ...old, show: true })).toMatchObject({ players: true })
       })
       it('recalled scores refresh an on-air standings scene, and take uses the preset transition speed', () => {

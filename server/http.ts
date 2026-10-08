@@ -104,7 +104,7 @@ export function createHttpHandler(opts: HttpOpts): (req: IncomingMessage, res: S
     }
     if (path === '/api/export' && method === 'GET') {
       const s = store.state
-      const file: ShowFile = { draft: s.draft, outputs: s.outputs, layers: s.layers, transition: s.transition, presets: s.presets, stacks: s.stacks }
+      const file: ShowFile = { draft: s.draft, outputs: s.outputs, layers: s.layers, transition: s.transition, presets: s.presets, stacks: s.stacks, tournaments: s.tournaments }
       return json(res, 200, file, { 'Content-Disposition': 'attachment; filename="show.json"' })
     }
     if (path === '/api/import' && method === 'POST') {

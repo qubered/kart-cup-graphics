@@ -3,7 +3,7 @@
   import type { PresetScope, TakeMode } from '../../../../shared/types'
 
   const SCOPES: { key: keyof PresetScope; label: string }[] = [
-    { key: 'layers', label: 'Layers' }, { key: 'armed', label: 'Arming' }, { key: 'show', label: 'Show data' }, { key: 'players', label: 'Players' },
+    { key: 'layers', label: 'Layers' }, { key: 'armed', label: 'Arming' }, { key: 'style', label: 'Style' }, { key: 'match', label: 'Race' }, { key: 'players', label: 'Players' },
     { key: 'scores', label: 'Scores' }, { key: 'transition', label: 'Speed' }, { key: 'mattify', label: 'Mattify' },
   ]
   /** Click cycles: inherit the preset's setting, force on, force off. */

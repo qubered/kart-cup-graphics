@@ -81,4 +81,16 @@ describe('StateStore', () => {
     expect(store.state.draft.players[0].name).toBe('Player 1')
     await store.flush()
   })
+  it('persists tournaments and repairs a dangling active match', async () => {
+    const a = mk(); await a.load()
+    a.dispatch({ type: 'createTournament', name: 'T' }); a.dispatch({ type: 'setActiveMatch', matchId: 'match-3' })
+    await a.flush()
+    const b = mk(); await b.load()
+    expect(b.state.activeTournamentId).toBe('tournament-1'); expect(b.state.tournaments[0].activeMatchId).toBe('match-3')
+    const raw = JSON.parse(readFileSync(join(dir, 'state.json'), 'utf8'))
+    raw.tournaments[0].activeMatchId = 'gone'; raw.activeTournamentId = 'nope'
+    writeFileSync(join(dir, 'state.json'), JSON.stringify(raw))
+    const c = mk(); await c.load()
+    expect(c.state.tournaments[0].activeMatchId).toBe('match-1'); expect(c.state.activeTournamentId).toBeNull()
+  })
 })

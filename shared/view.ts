@@ -1,9 +1,10 @@
 import type { CatalogIndex } from './catalog'
 import { fontStack, isUpright } from './fonts'
 import { colourHex, textOn } from './palette'
-import { standings } from './scoring'
+import { pointsFor, standings } from './scoring'
+import { DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN, hasResults, liveMatches, matchWinnerSlot, resolveMatchRef, resolveMatchSet } from './tournament'
 import type {
-  Layers, OutputConfig, OutputFormat, Player, PlayerView, SceneId, SceneView, ShowData, TitleView, TrackCardView, ViewModel,
+  BoardRace, BoardRow, BracketView, CupWinView, Layers, Match, MatchCardView, MatchesView, RaceWinView, ScenePart, Tournament, OutputConfig, OutputFormat, Player, PlayerView, SceneId, SceneView, ShowData, TitleView, TrackCardView, ViewModel,
 } from './types'
 
 export const FORMAT_CANVAS: Record<OutputFormat, { w: number; h: number }> = {
@@ -13,9 +14,16 @@ export const FORMAT_CANVAS: Record<OutputFormat, { w: number; h: number }> = {
 }
 
 export const SUPPORTED_SCENES: Record<OutputFormat, SceneId[]> = {
-  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner'],
-  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner'],
-  twin: ['none', 'title'],
+  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  // twin: win screens only as a hero or board half (not both in one 1920 wide canvas)
+  twin: ['none', 'title', 'raceWin', 'cupWin', 'bracket', 'matches'],
+}
+
+/** Can this format show the scene (with this part, for the win screens)? */
+export function isSceneSupported(format: OutputFormat, scene: SceneId, part: ScenePart = 'full'): boolean {
+  if (!SUPPORTED_SCENES[format].includes(scene)) return false
+  return !(format === 'twin' && (scene === 'raceWin' || scene === 'cupWin') && part === 'full')
 }
 
 function playerView(p: Player | undefined, slot: number, catalog: CatalogIndex): PlayerView {
@@ -45,14 +53,115 @@ function raceInfo(data: ShowData, catalog: CatalogIndex): RaceInfo {
   }
 }
 
-export function deriveView(data: ShowData, layers: Layers, output: OutputConfig, catalog: CatalogIndex): ViewModel {
+function boardRaces(data: ShowData, catalog: CatalogIndex, upTo = data.scores.races.length): BoardRace[] {
+  return data.scores.races.slice(0, upTo).map((r) => ({ raceNo: r.raceNo, trackName: catalog.track(r.trackId)?.name ?? '?' }))
+}
+
+/** Scoreboard rows ordered by standings() over the first `upTo` races. `winnerSlot` flags the row that won. */
+function boardRows(data: ShowData, pv: (i: number) => PlayerView, winnerSlot: number | null, upTo = data.scores.races.length): BoardRow[] {
+  const races = data.scores.races.slice(0, upTo)
+  const scores = { races, adjustments: data.scores.adjustments }
+  return standings(scores, data.players.length).map((r) => ({
+    position: r.position, player: pv(r.playerIndex), total: r.total,
+    racePoints: races.map((x) => pointsFor(x.positions[r.playerIndex] ?? 0)),
+    lastRacePoints: r.lastRacePoints, adjustment: data.scores.adjustments[r.playerIndex] ?? 0, winner: r.playerIndex === winnerSlot,
+  }))
+}
+
+/** The match a win screen reads. Without a tournament the draft itself is the (only) match, so the win screens still work. */
+function winMatch(t: Tournament | null, draft: ShowData, layers: Layers): { id: string; label: string; data: ShowData; winnerOverride: number | null } {
+  if (t) {
+    const m = resolveMatchRef({ ...t, matches: liveMatches(t, draft) }, layers.matchRef) ?? liveMatches(t, draft)[0]
+    if (m) return m
+  }
+  return { id: '', label: '', data: draft, winnerOverride: null }
+}
+
+function raceWinView(m: ReturnType<typeof winMatch>, layers: Layers, t: Tournament | null, catalog: CatalogIndex): RaceWinView {
+  const d = m.data
+  const pv = (i: number) => playerView(d.players[i], i, catalog)
+  const info = raceInfo(d, catalog)
+  const last = d.scores.races[d.scores.races.length - 1]
+  let slot = 0
+  if (last) {
+    let best = Number.MAX_SAFE_INTEGER
+    last.positions.forEach((p, i) => { if (p >= 1 && p < best) { best = p; slot = i } })
+  } else slot = standings(d.scores, d.players.length)[0].playerIndex
+  const rows = boardRows(d, pv, last ? slot : null)
+  const lastRow = rows.find((r) => r.player.slot === slot)
+  return {
+    kind: 'raceWin', matchId: m.id, matchLabel: m.label, part: layers.part ?? 'full', config: t?.winScreen ?? DEFAULT_WIN_SCREEN,
+    winner: pv(slot), rows, races: boardRaces(d, catalog), cupName: info.cupName, cupEmblem: info.cupEmblem, empty: !last,
+    raceNo: last?.raceNo ?? null, raceLabel: last ? `RACE ${last.raceNo} / ${d.race.raceTotal}` : '',
+    trackName: last ? (catalog.track(last.trackId)?.name ?? '?') : '', racePoints: lastRow?.lastRacePoints ?? 0,
+  }
+}
+
+function cupWinView(m: ReturnType<typeof winMatch>, layers: Layers, t: Tournament | null, catalog: CatalogIndex): CupWinView {
+  const d = m.data
+  const pv = (i: number) => playerView(d.players[i], i, catalog)
+  const info = raceInfo(d, catalog)
+  const slot = matchWinnerSlot(m.winnerOverride, d) ?? standings(d.scores, d.players.length)[0].playerIndex
+  const rows = boardRows(d, pv, slot)
+  return {
+    kind: 'cupWin', matchId: m.id, matchLabel: m.label, part: layers.part ?? 'full', config: t?.winScreen ?? DEFAULT_WIN_SCREEN,
+    winner: pv(slot), rows, races: boardRaces(d, catalog), cupName: info.cupName, cupEmblem: info.cupEmblem, empty: !hasResults(d),
+    total: rows.find((r) => r.winner)?.total ?? 0, overridden: m.winnerOverride !== null,
+  }
+}
+
+function matchCard(m: Match, t: Tournament, catalog: CatalogIndex): MatchCardView {
+  const d = m.data
+  const pv = (i: number) => playerView(d.players[i], i, catalog)
+  const info = raceInfo(d, catalog)
+  const slot = matchWinnerSlot(m.winnerOverride, d)
+  return {
+    id: m.id, label: m.label, round: m.round, status: m.status, live: m.id === t.activeMatchId,
+    cupName: info.cupName, cupEmblem: info.cupEmblem, hasResults: hasResults(d),
+    rows: boardRows(d, pv, slot), races: boardRaces(d, catalog), winner: slot === null ? null : pv(slot),
+  }
+}
+
+function matchesView(t: Tournament, draft: ShowData, layers: Layers, format: OutputFormat, catalog: CatalogIndex): MatchesView {
+  const config = t.matchesScene ?? DEFAULT_MATCHES_SCENE
+  const picked = resolveMatchSet(liveMatches(t, draft), layers.matchSet)
+  const cards = picked.map((m) => matchCard(m, t, catalog))
+  return {
+    kind: 'matches', config, detail: config.detail[format], layout: config.layout, matchIds: picked.map((m) => m.id), cards,
+    focusId: cards.find((c) => c.live)?.id ?? cards[0]?.id ?? null,
+  }
+}
+
+function bracketView(t: Tournament, draft: ShowData, catalog: CatalogIndex): BracketView {
+  const rounds = [...new Set(t.matches.map((m) => m.round))].sort((a, b) => a - b)
+  return {
+    kind: 'bracket', config: t.bracket ?? DEFAULT_BRACKET, tournamentName: t.name,
+    rounds: rounds.map((round) => ({
+      round,
+      nodes: liveMatches(t, draft).filter((m) => m.round === round).map((m) => {
+        const d = m.data
+        const pv = (i: number) => playerView(d.players[i], i, catalog)
+        const slot = matchWinnerSlot(m.winnerOverride, d)
+        const tot = standings(d.scores, d.players.length)
+        return {
+          matchId: m.id, label: m.label, status: m.status, live: m.id === t.activeMatchId, hasResults: hasResults(d),
+          slots: d.players.map((_, i) => ({ player: pv(i), total: tot.find((r) => r.playerIndex === i)?.total ?? 0, winner: i === slot, fromMatchId: m.slotSources?.[i]?.matchId ?? null })),
+          winner: slot === null ? null : pv(slot), overridden: m.winnerOverride !== null,
+        }
+      }),
+    })),
+  }
+}
+
+/** `tournament`: the active tournament, if any. `data` is always the draft (= the active match's live data). */
+export function deriveView(data: ShowData, layers: Layers, output: OutputConfig, catalog: CatalogIndex, tournament: Tournament | null = null): ViewModel {
   const ty = data.typography
   const title: TitleView = { preTitle: data.event.preTitle, title: data.event.title, accent: data.event.titleAccent }
   const pv = (i: number) => playerView(data.players[i], i, catalog)
   const info = raceInfo(data, catalog)
 
   let scene: SceneView | null = null
-  if (SUPPORTED_SCENES[output.format].includes(layers.scene)) {
+  if (isSceneSupported(output.format, layers.scene, layers.part)) {
     switch (layers.scene) {
       case 'title': scene = { kind: 'title', title }; break
       case 'lineup': scene = { kind: 'lineup', players: data.players.slice(0, Math.min(4, Math.max(1, layers.lineupShown ?? 4))).map((_, i) => pv(i)) }; break
@@ -75,6 +184,10 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
         scene = { kind: 'winner', player: pv(top.playerIndex), total: top.total }
         break
       }
+      case 'raceWin': scene = raceWinView(winMatch(tournament, data, layers), layers, tournament, catalog); break
+      case 'cupWin': scene = cupWinView(winMatch(tournament, data, layers), layers, tournament, catalog); break
+      case 'matches': scene = tournament ? matchesView(tournament, data, layers, output.format, catalog) : null; break
+      case 'bracket': scene = tournament ? bracketView(tournament, data, catalog) : null; break
       default: scene = null
     }
   }

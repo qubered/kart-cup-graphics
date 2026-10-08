@@ -6,6 +6,7 @@ import { createDefaultState, emptyLayers } from '../shared/defaults'
 import { CommandError, reduce } from '../shared/reducer'
 import { commandSchema, showStateSchema } from '../shared/schema'
 import type { ShowState } from '../shared/types'
+import { activeTournament } from '../shared/tournament'
 import { deriveView } from '../shared/view'
 
 export interface StoreOptions { dataDir: string; catalog: CatalogIndex; now?: () => number; random?: () => number }
@@ -46,11 +47,14 @@ export class StateStore {
 
   /** Make a hand-edited but schema-valid state self-consistent (every output has layers and a program frame). */
   private normalise(s: ShowState): ShowState {
+    // tournaments: drop empty ones, repair a dangling active match / active tournament
+    const tournaments = s.tournaments.filter((t) => t.matches.length > 0).map((t) => (t.matches.some((m) => m.id === t.activeMatchId) ? t : { ...t, activeMatchId: t.matches[0].id }))
+    s = { ...s, tournaments, activeTournamentId: tournaments.some((t) => t.id === s.activeTournamentId) ? s.activeTournamentId : null }
     const layers = { ...s.layers }
     const program = { ...s.program }
     for (const o of s.outputs) {
       layers[o.id] ??= emptyLayers()
-      program[o.id] ??= { view: deriveView(s.draft, emptyLayers(), o, this.opts.catalog), mode: 'cut', speed: s.transition, takenAt: this.now() }
+      program[o.id] ??= { view: deriveView(s.draft, emptyLayers(), o, this.opts.catalog, activeTournament(s)), mode: 'cut', speed: s.transition, takenAt: this.now() }
     }
     for (const id of Object.keys(layers)) if (!s.outputs.some((o) => o.id === id)) delete layers[id]
     for (const id of Object.keys(program)) if (!s.outputs.some((o) => o.id === id)) delete program[id]
