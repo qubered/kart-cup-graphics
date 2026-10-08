@@ -1,7 +1,8 @@
 <script lang="ts">
+  import Swap from '../Swap.svelte'
   import { ICON_SYMBOLS } from './icons'
-  interface Props { watermark: string; font: string; lowfx: boolean; w: number; h: number }
-  let { watermark, font, lowfx, w, h }: Props = $props()
+  interface Props { watermark: string; font: string; lowfx: boolean; w: number; h: number; dur?: number }
+  let { watermark, font, lowfx, w, h, dur = 0 }: Props = $props()
 
   // Deterministic pseudo-random so sparkles don't jump on re-render.
   function rng(seed: number) { let s = seed; return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296 } }
@@ -35,7 +36,7 @@
       <u style="left:{b.x}px;top:{b.y}px;width:{b.size}px;height:{b.size}px;opacity:{b.o};animation-duration:{b.dur}s;animation-delay:{b.delay}s"></u>
     {/each}
   </div>
-  <div class="wm w1">{text}</div><div class="wm w2">{text}</div>
+  <div class="wm w1"><Swap key={text} {dur} block>{text}</Swap></div><div class="wm w2"><Swap key={text} {dur} block>{text}</Swap></div>
   <svg class="crest c1" viewBox="0 0 400 400" aria-hidden="true"><use href="#i-crest" /></svg>
   <svg class="crest c2" viewBox="0 0 400 400" aria-hidden="true"><use href="#i-crest" /></svg>
   <div class="sweep-track"><div class="sweep"></div></div>

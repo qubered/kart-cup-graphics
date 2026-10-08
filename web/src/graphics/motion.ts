@@ -56,3 +56,23 @@ export function slideIn(
     css: (t, u) => `transform: translateX(${dx * u}px); opacity: ${Math.min(1, t * 2)}`,
   }
 }
+
+/** Damped spring 0 -> 1 with overshoot (peaks ~1.2), used for the headshot bounce. */
+export function spring(t: number): number {
+  if (t <= 0) return 0
+  if (t >= 1) return 1
+  return 1 - Math.exp(-5.5 * t) * Math.cos(9 * t) * (1 - t * 0.2)
+}
+
+/** Headshot bounce-in: pops up from small, overshoots and settles, with a little hop (transform + opacity only). */
+export function bounceIn(_node: Element, p: { duration: number; delay?: number }): TransitionConfig {
+  return {
+    duration: p.duration,
+    delay: p.delay ?? 0,
+    css: (t) => {
+      const s = 0.45 + 0.55 * spring(t)
+      const hop = -16 * Math.sin(Math.PI * t) * (1 - t)
+      return `transform: translateY(${hop}px) scale(${s}); opacity: ${Math.min(1, t * 6)}`
+    },
+  }
+}

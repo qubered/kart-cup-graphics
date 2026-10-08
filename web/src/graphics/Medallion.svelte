@@ -1,18 +1,32 @@
 <script lang="ts">
-  import { flipIn, flipOut } from './flip'
+  import { onMount } from 'svelte'
+  import { fade } from 'svelte/transition'
+  import { cubicIn } from 'svelte/easing'
+  import { bounceIn } from './motion'
 
   let { image, size, stars = false, emblem = false, dur = 0 }: { image: string; size: number; stars?: boolean; emblem?: boolean; dur?: number } = $props()
   let failedFor = $state('')
   const showImg = $derived(!!image && failedFor !== image)
+  // The first image of a medallion arrives with its parent (which has its own entrance): no bounce/fade then.
+  // Only later image changes animate.
+  let settled = $state(false)
+  onMount(() => { settled = true })
 </script>
 
 <div class="medallion" class:emblem style:--s="{size}px">
   <div class="in">
     {#key image}
       {#if showImg}
-        <div class="flip" in:flipIn={{ duration: dur }} out:flipOut={{ duration: dur }}>
-          <img src={image} alt="" draggable="false" onerror={() => (failedFor = image)} />
-        </div>
+        <!-- Headshots bounce in when the character changes; emblems (cups) simply crossfade. -->
+        {#if emblem}
+          <div class="flip" in:fade|global={{ duration: settled ? dur : 0 }} out:fade|global={{ duration: Math.round(dur * 0.6), easing: cubicIn }}>
+            <img src={image} alt="" draggable="false" onerror={() => (failedFor = image)} />
+          </div>
+        {:else}
+          <div class="flip" in:bounceIn|global={{ duration: settled ? Math.round(dur * 1.5) : 0 }} out:fade|global={{ duration: Math.round(dur * 0.6), easing: cubicIn }}>
+            <img src={image} alt="" draggable="false" onerror={() => (failedFor = image)} />
+          </div>
+        {/if}
       {/if}
     {/key}
     {#if stars}<div class="stars">★★★</div>{/if}
