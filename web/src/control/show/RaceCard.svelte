@@ -34,6 +34,15 @@
     {/if}
   </div>
 
+  <div class="rrow count">
+    <span>Race</span>
+    <input type="number" min="1" max="99" aria-label="Race number" value={race.raceNo} disabled={!connected}
+      onchange={(e) => send({ type: 'setRace', patch: { raceNo: Math.max(1, Math.min(99, Math.round(+e.currentTarget.value) || 1)) } })} />
+    <span>of</span>
+    <input type="number" min="1" max="99" aria-label="Total races" value={race.raceTotal} disabled={!connected}
+      onchange={(e) => send({ type: 'setRace', patch: { raceTotal: Math.max(1, Math.min(99, Math.round(+e.currentTarget.value) || 1)) } })} />
+  </div>
+
   {#if race.mode === 'cup'}
     <div class="races">
       <button type="button" class="arrow" aria-label="Race back" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: -1 })}>◀</button>
@@ -50,6 +59,8 @@
 </section>
 
 <style>
+  .count { align-items: center; gap: 8px; color: var(--ui-muted); }
+  .count input { width: 56px; background: var(--ui-bg); border: 1px solid var(--ui-field); border-radius: 6px; padding: 6px; color: #fff; font-size: 14px; }
   .cupf { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: var(--ui-bg); border: 1px solid var(--ui-field); border-radius: 6px; padding: 0 9px; }
   .cupf :global(.cur) { border: 0; padding-left: 0; padding-right: 0; }
   .cupf img { width: 24px; height: 24px; object-fit: contain; flex: none; }

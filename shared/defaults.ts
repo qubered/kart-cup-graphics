@@ -33,7 +33,7 @@ export function createDefaultShowData(catalog: CatalogIndex): ShowData {
       { name: 'Player 3', characterId: 'peach', colour: 'green' },
       { name: 'Player 4', characterId: 'yoshi', colour: 'yellow' },
     ],
-    race: { mode: 'cup', cupId: 'mushroom', raceIndex: 0, trackId: catalog.cup('mushroom')?.tracks[0] ?? '' },
+    race: { mode: 'cup', cupId: 'mushroom', raceIndex: 0, trackId: catalog.cup('mushroom')?.tracks[0] ?? '', raceNo: 1, raceTotal: 4 },
     scores: { races: [], adjustments: [0, 0, 0, 0] },
   }
 }

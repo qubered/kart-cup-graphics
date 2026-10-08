@@ -9,7 +9,7 @@ export type TakeMode = 'cut' | 'auto'
 export interface SafeArea { top: number; right: number; bottom: number; left: number }
 export interface OutputConfig { id: string; name: string; format: OutputFormat; safeArea: SafeArea; graphicsScale: number }
 export interface Player { name: string; characterId: string; colour: ColourId }
-export interface RaceState { mode: 'cup' | 'track'; cupId: string; raceIndex: 0 | 1 | 2 | 3; trackId: string }
+export interface RaceState { mode: 'cup' | 'track'; cupId: string; raceIndex: 0 | 1 | 2 | 3; trackId: string; raceNo: number; raceTotal: number }
 export interface RaceResult { raceNo: number; trackId: string; positions: number[] }
 export interface EventText { preTitle: string; title: string; titleAccent: string; watermark: string; holdMessage: string }
 export interface Typography {
@@ -32,7 +32,7 @@ export interface TrackCardView { raceLabel: string; cupName: string; cupEmblem: 
 export type SceneView =
   | { kind: 'title'; title: TitleView }
   | { kind: 'lineup'; players: PlayerView[] }
-  | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; cupTracks: { name: string; thumb: string; current: boolean }[] }
+  | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; single: boolean; cupTracks: { name: string; thumb: string; current: boolean }[] }
   | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[]; footer: string }
   | { kind: 'winner'; player: PlayerView; total: number }
 export interface ViewModel {

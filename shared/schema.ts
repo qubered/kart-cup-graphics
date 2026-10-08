@@ -23,6 +23,7 @@ export const outputConfigSchema: z.ZodType<OutputConfig> = z.object({
 export const playerSchema = z.object({ name: z.string().max(200), characterId: z.string(), colour: colourIdSchema })
 export const raceStateSchema = z.object({
   mode: z.enum(['cup', 'track']), cupId: z.string(), raceIndex: slotSchema, trackId: z.string(),
+  raceNo: z.number().int().min(1).max(99).default(1), raceTotal: z.number().int().min(1).max(99).default(4),
 })
 export const raceResultSchema = z.object({
   raceNo: z.number().int().min(1),
@@ -38,7 +39,7 @@ export const typographySchema = z.object({
   names: z.object({ font: z.string() }),
   labels: z.object({ font: z.string() }),
 })
-export const showDataSchema: z.ZodType<ShowData> = z.object({
+export const showDataSchema: z.ZodType<ShowData, z.ZodTypeDef, unknown> = z.object({
   event: eventTextSchema,
   typography: typographySchema,
   players: z.array(playerSchema).length(4),
@@ -77,7 +78,7 @@ export const showStateSchema: z.ZodType<ShowState, z.ZodTypeDef, unknown> = z.ob
   settings: z.object({ mattify: z.boolean() }).default({ mattify: false }),
 })
 
-export const showFileSchema: z.ZodType<ShowFile> = z.object({
+export const showFileSchema: z.ZodType<ShowFile, z.ZodTypeDef, unknown> = z.object({
   draft: showDataSchema,
   outputs: z.array(outputConfigSchema),
   layers: z.record(layersSchema),
