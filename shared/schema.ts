@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Command, Layers, OutputConfig, ShowData, ShowFile, ShowState, ViewModel } from './types'
+import type { Command, Layers, OutputConfig, Preset, ShowData, ShowFile, ShowState, ViewModel } from './types'
 
 export const colourIdSchema = z.enum(['red', 'blue', 'green', 'yellow', 'pink', 'orange', 'purple', 'cyan'])
 export const outputFormatSchema = z.enum(['wide', 'twin', 'hd'])
@@ -55,6 +55,13 @@ export const layersSchema: z.ZodType<Layers> = z.object({
   lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }),
 })
 
+export const presetSchema: z.ZodType<Preset> = z.object({
+  id: z.string().min(1).max(64),
+  name: z.string().max(100),
+  layers: z.record(layersSchema),
+  armed: z.array(z.string()),
+})
+
 export const programFrameSchema = z.object({
   view: z.custom<ViewModel>((v) => typeof v === 'object' && v !== null),
   mode: takeModeSchema,
@@ -62,7 +69,8 @@ export const programFrameSchema = z.object({
   takenAt: z.number(),
 })
 
-export const showStateSchema: z.ZodType<ShowState> = z.object({
+// presets/cue default so state.json files saved before presets existed still load.
+export const showStateSchema: z.ZodType<ShowState, z.ZodTypeDef, unknown> = z.object({
   draft: showDataSchema,
   outputs: z.array(outputConfigSchema),
   layers: z.record(layersSchema),
@@ -72,15 +80,17 @@ export const showStateSchema: z.ZodType<ShowState> = z.object({
   armed: z.array(z.string()),
   clocks: z.object({ onAirSince: z.number().nullable() }),
   uploadedFonts: z.array(z.object({ family: z.string(), file: z.string() })),
+  presets: z.array(presetSchema).default([]),
+  cue: z.string().nullable().default(null),
 })
 
-export const showFileSchema: z.ZodType<ShowFile> = z.object({
+export const showFileSchema: z.ZodType<ShowFile, z.ZodTypeDef, unknown> = z.object({
   draft: showDataSchema,
   outputs: z.array(outputConfigSchema),
   layers: z.record(layersSchema),
   transition: transitionSpeedSchema,
+  presets: z.array(presetSchema).default([]),
 })
-
 
 export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setPlayer'), index: slotSchema, patch: playerSchema.partial() }),
@@ -108,6 +118,12 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     trackCard: z.boolean().optional(),
     lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }).optional(),
   }) }),
+  z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100) }),
+  z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), capture: z.boolean().optional() }),
+  z.object({ type: z.literal('deletePreset'), id: z.string() }),
+  z.object({ type: z.literal('movePreset'), id: z.string(), delta: z.union([z.literal(1), z.literal(-1)]) }),
+  z.object({ type: z.literal('recallPreset'), id: z.string(), take: takeModeSchema.optional() }),
+  z.object({ type: z.literal('stepCue'), delta: z.union([z.literal(1), z.literal(-1)]), take: takeModeSchema.optional() }),
   z.object({ type: z.literal('arm'), outputIds: z.array(z.string()) }),
   z.object({ type: z.literal('take'), mode: takeModeSchema, outputIds: z.array(z.string()).optional() }),
   z.object({ type: z.literal('setTransition'), speed: transitionSpeedSchema }),

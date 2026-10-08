@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Recall Preset</title>
+  <script src="sdpi-components.js"></script>
+</head>
+<body>
+  <sdpi-item label="Preset">
+    <sdpi-select setting="presetId" datasource="presets" loading="Loading presets…" placeholder="Choose a preset"></sdpi-select>
+  </sdpi-item>
+  <sdpi-item label="Take">
+    <sdpi-select setting="take" default="none">
+      <option value="none">Recall only (don't take)</option>
+      <option value="cut">Cut</option>
+      <option value="auto">Auto</option>
+    </sdpi-select>
+  </sdpi-item>
+  <sdpi-item label="Server">
+    <sdpi-textfield setting="serverUrl" global placeholder="http://localhost:8080"></sdpi-textfield>
+  </sdpi-item>
+</body>
+</html>

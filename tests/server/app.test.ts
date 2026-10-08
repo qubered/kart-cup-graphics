@@ -92,6 +92,26 @@ describe('websocket hub', () => {
   })
 })
 
+describe('remote-control api', () => {
+  const post = (body: unknown) => fetch(`${base}/api/command`, { method: 'POST', body: JSON.stringify(body) })
+  it('saves, lists and recalls presets over http', async () => {
+    expect((await post({ type: 'setLayers', outputId: 'pillars', patch: { background: 'C' } })).status).toBe(200)
+    await post({ type: 'arm', outputIds: ['pillars'] })
+    expect((await post({ type: 'savePreset', name: 'Pillars C' })).status).toBe(200)
+    const list = await (await fetch(`${base}/api/presets`)).json()
+    expect(list.presets.at(-1).name).toBe('Pillars C')
+    const id = list.presets.at(-1).id
+    await post({ type: 'setLayers', outputId: 'pillars', patch: { background: 'none' } })
+    expect((await post({ type: 'recallPreset', id, take: 'cut' })).status).toBe(200)
+    expect(srv.store.state.program.pillars.view.background?.id).toBe('C')
+  })
+  it('rejects bad commands', async () => {
+    expect((await post({ type: 'recallPreset', id: 'nope' })).status).toBe(400)
+    expect((await post({ type: 'nonsense' })).status).toBe(400)
+    expect((await fetch(`${base}/api/command`, { method: 'POST', body: 'x' })).status).toBe(400)
+  })
+})
+
 describe('fonts and import/export', () => {
   const put = (name: string, body: BodyInit = 'FONTDATA') => fetch(`${base}/api/fonts/${name}`, { method: 'PUT', body })
   it('rejects bad font names', async () => {

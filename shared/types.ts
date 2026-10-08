@@ -41,14 +41,17 @@ export interface ViewModel {
   scene: SceneView | null; trackCard: TrackCardView | null; lowerThirds: PlayerView[]
 }
 export interface ProgramFrame { view: ViewModel; mode: TakeMode; speed: TransitionSpeed; takenAt: number }
+/** A saved screen design: every output's layers plus which outputs are armed. The preset list doubles as the cue stack (list order). */
+export interface Preset { id: string; name: string; layers: Record<string, Layers>; armed: string[] }
 export interface ShowState {
   draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; program: Record<string, ProgramFrame>
   overlay: { hold: { on: boolean; message: string }; ftb: boolean }
   transition: TransitionSpeed; armed: string[]
   clocks: { onAirSince: number | null }
   uploadedFonts: { family: string; file: string }[]
+  presets: Preset[]; cue: string | null
 }
-export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed }
+export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed; presets: Preset[] }
 
 export type Command =
   | { type: 'setPlayer'; index: 0 | 1 | 2 | 3; patch: Partial<Player> }
@@ -60,6 +63,12 @@ export type Command =
   | { type: 'setEventText'; patch: Partial<EventText> }
   | { type: 'setTypography'; role: 'eventTitle' | 'headings' | 'names' | 'labels'; patch: { font?: string; style?: 'chrome' | 'classic'; look?: 'chrome' | 'classic' | 'plain' } }
   | { type: 'setLayers'; outputId: string; patch: Partial<Layers> }
+  | { type: 'savePreset'; name: string }
+  | { type: 'updatePreset'; id: string; name?: string; capture?: boolean }
+  | { type: 'deletePreset'; id: string }
+  | { type: 'movePreset'; id: string; delta: 1 | -1 }
+  | { type: 'recallPreset'; id: string; take?: TakeMode }
+  | { type: 'stepCue'; delta: 1 | -1; take?: TakeMode }
   | { type: 'arm'; outputIds: string[] }
   | { type: 'take'; mode: TakeMode; outputIds?: string[] }
   | { type: 'setTransition'; speed: TransitionSpeed }

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "SDKVersion": 2,
+  "UUID": "com.qubered.kartcup",
+  "Name": "Kart Cup Graphics",
+  "Version": "1.0.0.0",
+  "Author": "Qubered",
+  "Description": "Recall presets, step through cues and take Kart Cup graphics to air.",
+  "Category": "Kart Cup Graphics",
+  "CategoryIcon": "imgs/category",
+  "Icon": "imgs/plugin",
+  "CodePath": "bin/plugin.js",
+  "Nodejs": { "Version": "20" },
+  "OS": [{ "Platform": "mac", "MinimumVersion": "12" }, { "Platform": "windows", "MinimumVersion": "10" }],
+  "Software": { "MinimumVersion": "6.9" },
+  "Actions": [
+    {
+      "UUID": "com.qubered.kartcup.recall",
+      "Name": "Recall Preset",
+      "Tooltip": "Restore a saved design and arming, optionally taking it to air.",
+      "Icon": "imgs/recall",
+      "PropertyInspectorPath": "ui/recall.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        { "Image": "imgs/recall", "TitleAlignment": "bottom", "FontSize": 11 },
+        { "Image": "imgs/recall-active", "TitleAlignment": "bottom", "FontSize": 11 }
+      ]
+    },
+    {
+      "UUID": "com.qubered.kartcup.step",
+      "Name": "Next / Previous Cue",
+      "Tooltip": "Step through the cue stack (the preset list order).",
+      "Icon": "imgs/step",
+      "PropertyInspectorPath": "ui/step.html",
+      "Controllers": ["Keypad"],
+      "States": [{ "Image": "imgs/step", "Title": "CUE" }]
+    },
+    {
+      "UUID": "com.qubered.kartcup.take",
+      "Name": "Take",
+      "Tooltip": "Take the armed outputs to air with a cut or an animated transition.",
+      "Icon": "imgs/take",
+      "PropertyInspectorPath": "ui/take.html",
+      "Controllers": ["Keypad"],
+      "States": [{ "Image": "imgs/take", "Title": "TAKE" }]
+    }
+  ]
+}

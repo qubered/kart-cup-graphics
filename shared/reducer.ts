@@ -1,7 +1,7 @@
 import type { CatalogIndex } from './catalog'
 import { createDefaultState, emptyLayers, emptyProgram } from './defaults'
 import { FORMAT_CANVAS, SUPPORTED_SCENES, deriveView } from './view'
-import type { Command, Layers, OutputConfig, ProgramFrame, RaceState, ShowState, Typography } from './types'
+import type { Command, Layers, OutputConfig, Preset, ProgramFrame, RaceState, ShowState, Typography } from './types'
 
 export class CommandError extends Error {
   constructor(message: string) {
@@ -40,6 +40,25 @@ function applyRace(state: ShowState, patch: Partial<RaceState>, ctx: ReduceConte
     if (t) race = { ...race, trackId: t }
   }
   return withDraft(state, { race })
+}
+
+function requirePreset(state: ShowState, id: string): Preset {
+  const p = state.presets.find((x) => x.id === id)
+  if (!p) throw new CommandError(`Unknown preset: ${id}`)
+  return p
+}
+
+function snapshot(state: ShowState): Pick<Preset, 'layers' | 'armed'> {
+  return { layers: structuredClone(state.layers), armed: [...state.armed] }
+}
+
+/** Apply a preset to the draft: outputs that no longer exist are skipped, outputs added since keep their layers. */
+function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | undefined, ctx: ReduceContext): ShowState {
+  const layers = { ...state.layers }
+  for (const o of state.outputs) if (preset.layers[o.id]) layers[o.id] = structuredClone(preset.layers[o.id])
+  const armed = preset.armed.filter((id) => state.outputs.some((o) => o.id === id))
+  const next: ShowState = { ...state, layers, armed, cue: preset.id }
+  return take ? reduce(next, { type: 'take', mode: take }, ctx) : next
 }
 
 export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): ShowState {
@@ -99,6 +118,38 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       const patch: Partial<Layers> = {}
       for (const [k, v] of Object.entries(cmd.patch)) if (v !== undefined) (patch as Record<string, unknown>)[k] = v
       return { ...state, layers: { ...state.layers, [cmd.outputId]: { ...cur, ...patch } } }
+    }
+    case 'savePreset': {
+      const n = state.presets.reduce((m, p) => Math.max(m, Number(/^preset-(\d+)$/.exec(p.id)?.[1] ?? 0)), 0) + 1
+      const preset: Preset = { id: `preset-${n}`, name: cmd.name, ...snapshot(state) }
+      return { ...state, presets: [...state.presets, preset], cue: preset.id }
+    }
+    case 'updatePreset': {
+      requirePreset(state, cmd.id)
+      const presets = state.presets.map((p) => (p.id === cmd.id ? { ...p, ...(cmd.name ? { name: cmd.name } : {}), ...(cmd.capture ? snapshot(state) : {}) } : p))
+      return { ...state, presets }
+    }
+    case 'deletePreset': {
+      requirePreset(state, cmd.id)
+      return { ...state, presets: state.presets.filter((p) => p.id !== cmd.id), cue: state.cue === cmd.id ? null : state.cue }
+    }
+    case 'movePreset': {
+      requirePreset(state, cmd.id)
+      const i = state.presets.findIndex((p) => p.id === cmd.id)
+      const j = i + cmd.delta
+      if (j < 0 || j >= state.presets.length) return state
+      const presets = [...state.presets]
+      ;[presets[i], presets[j]] = [presets[j], presets[i]]
+      return { ...state, presets }
+    }
+    case 'recallPreset':
+      return recall(state, requirePreset(state, cmd.id), cmd.take, ctx)
+    case 'stepCue': {
+      const cur = state.presets.findIndex((p) => p.id === state.cue)
+      // No current cue yet: Next starts at the top of the stack, Previous at the bottom.
+      const i = cur === -1 ? (cmd.delta === 1 ? 0 : state.presets.length - 1) : cur + cmd.delta
+      const target = state.presets[i]
+      return target ? recall(state, target, cmd.take, ctx) : state
     }
     case 'arm': {
       for (const id of cmd.outputIds) requireOutput(state, id)
@@ -169,7 +220,7 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       const f = structuredClone(cmd.file)
       return {
         ...state,
-        draft: f.draft, outputs: f.outputs, layers: f.layers, transition: f.transition,
+        draft: f.draft, outputs: f.outputs, layers: f.layers, transition: f.transition, presets: f.presets, cue: null,
         program: emptyProgram(f.draft, f.outputs, ctx.catalog, ctx.now, f.transition),
         overlay: { hold: { on: false, message: f.draft.event.holdMessage }, ftb: false },
         armed: [], clocks: { onAirSince: null },
@@ -179,7 +230,7 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       return withDraft(state, { scores: { races: [], adjustments: [0, 0, 0, 0] } })
     case 'resetShow': {
       const fresh = createDefaultState(ctx.catalog, ctx.now)
-      return { ...fresh, uploadedFonts: state.uploadedFonts }
+      return { ...fresh, uploadedFonts: state.uploadedFonts, presets: state.presets }
     }
     case 'resetOnAirClock':
       return { ...state, clocks: { onAirSince: state.clocks.onAirSince === null ? null : ctx.now } }
