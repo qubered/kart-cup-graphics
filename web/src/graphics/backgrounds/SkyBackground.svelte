@@ -1,8 +1,14 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import Swap from '../Swap.svelte'
+  import { syncAnimations } from './sync'
   import { ICON_SYMBOLS } from './icons'
-  interface Props { watermark: string; font: string; lowfx: boolean; w: number; h: number; dur?: number }
-  let { watermark, font, lowfx, w, h, dur = 0 }: Props = $props()
+  /** stageW/stageX: render as a slice of a wider stage (superwide) so the art is continuous across outputs. */
+  interface Props { watermark: string; font: string; lowfx: boolean; w: number; h: number; dur?: number; stageW?: number; stageX?: number }
+  let { watermark, font, lowfx, w: canvasW, h, dur = 0, stageW, stageX = 0 }: Props = $props()
+  const w = $derived(stageW ?? canvasW)
+  let root: HTMLElement
+  onMount(() => syncAnimations(root))
 
   // Deterministic pseudo-random so sparkles don't jump on re-render.
   function rng(seed: number) { let s = seed; return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296 } }
@@ -29,7 +35,7 @@
 </script>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>{@html ICON_SYMBOLS}</defs></svg>
-<div class="bg-sky" style:width="{w}px" style:height="{h}px" style:--h="{h}px" style:font-family={font}>
+<div class="bg-sky" bind:this={root} style:left="{-stageX}px" style:width="{w}px" style:height="{h}px" style:--h="{h}px" style:font-family={font}>
   <div class="checker"><div class="checker-move"></div></div>
   <div class="bokeh">
     {#each bokeh as b, i (i)}
