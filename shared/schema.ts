@@ -94,6 +94,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('saveResults'), raceNo: z.number().int().min(1), trackId: z.string(),
     positions: z.array(z.number().int().min(0).max(12)).length(4),
+    adjustments: z.array(z.number().finite()).length(4).optional(),
   }),
   z.object({ type: z.literal('setAdjustment'), index: slotSchema, value: z.number().finite() }),
   z.object({ type: z.literal('setEventText'), patch: eventTextSchema.partial() }),

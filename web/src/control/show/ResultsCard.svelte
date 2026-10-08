@@ -24,11 +24,14 @@
 
   let pos: number[] = $state([0, 0, 0, 0])
   let key = ''
+  // typed totals, staged until Save
+  let edited: (number | null)[] = $state([null, null, null, null])
   $effect(() => {
     const k = `${raceNo}|${JSON.stringify(existing?.positions ?? null)}`
     if (k !== key) {
       key = k
       pos = existing ? [...existing.positions] : [0, 0, 0, 0]
+      edited = [null, null, null, null]
     }
   })
 
@@ -38,12 +41,12 @@
     adjustments: scores.adjustments,
   })
   const tot = $derived(totals(withEdit))
-  const saved = $derived(totals(scores))
-  const baseTotals = $derived(totals({ races: scores.races, adjustments: [0, 0, 0, 0] }))
-  const pending = $derived(JSON.stringify(tot) !== JSON.stringify(saved))
+  const baseTotals = $derived(totals({ races: withEdit.races, adjustments: [0, 0, 0, 0] }))
 
   function save() {
-    send({ type: 'saveResults', raceNo, trackId, positions: [...pos] })
+    const adjustments = edited.map((v, i) => (v === null ? (scores.adjustments[i] ?? 0) : v - baseTotals[i]))
+    send({ type: 'saveResults', raceNo, trackId, positions: [...pos], adjustments })
+    edited = [null, null, null, null]
     picked = null
   }
   const ordinal = (n: number) => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`
@@ -79,9 +82,8 @@
           </td>
           <td class="num plus">+{pointsFor(pos[i])}</td>
           <td class="num">
-            <input class="total" type="number" step="1" value={saved[i]} disabled={!connected} aria-label="Total {p.name}"
-              onchange={(e) => send({ type: 'setAdjustment', index: i as 0 | 1 | 2 | 3, value: (Number(e.currentTarget.value) || 0) - baseTotals[i] })} />
-            {#if pending && tot[i] !== saved[i]}<span class="dim">→ {tot[i]}</span>{/if}
+            <input class="total" type="number" step="1" value={edited[i] ?? tot[i]} disabled={!connected} aria-label="Total {p.name}"
+              onchange={(e) => { edited[i] = e.currentTarget.value === '' ? null : Number(e.currentTarget.value) }} />
           </td>
         </tr>
       {/each}
@@ -91,7 +93,7 @@
   {#each dups as d (d)}<div class="warn">Duplicate position: {d}</div>{/each}
 
 
-  <p class="foot">Positions 1st–12th score 15, 12, 10, 9 … 1. Type in a total to edit it live; the scoreboard updates instantly.</p>
+  <p class="foot">Positions 1st–12th score 15, 12, 10, 9 … 1. Type in a total to override it. Nothing goes to the scoreboard until you press Save results.</p>
 </section>
 
 <style>

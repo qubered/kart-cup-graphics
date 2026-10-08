@@ -58,7 +58,7 @@ export type Command =
   | { type: 'setRace'; patch: Partial<RaceState> }
   | { type: 'stepRace'; delta: 1 | -1 }
   | { type: 'randomRace' }
-  | { type: 'saveResults'; raceNo: number; trackId: string; positions: number[] }
+  | { type: 'saveResults'; raceNo: number; trackId: string; positions: number[]; adjustments?: number[] }
   | { type: 'setAdjustment'; index: 0 | 1 | 2 | 3; value: number }
   | { type: 'setEventText'; patch: Partial<EventText> }
   | { type: 'setTypography'; role: 'eventTitle' | 'headings' | 'names' | 'labels'; patch: { font?: string; style?: 'chrome' | 'classic'; look?: 'chrome' | 'classic' | 'plain' } }

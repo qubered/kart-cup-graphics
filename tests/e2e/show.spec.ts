@@ -28,5 +28,6 @@ test('step race and edit totals', async ({ page }) => {
   await expect.poll(async () => (await state()).draft.race.raceIndex).toBe(1)
   await page.getByLabel(/^Total /).nth(1).fill('5')
   await page.getByLabel(/^Total /).nth(1).blur()
+  await page.getByRole('button', { name: 'Save results' }).click()
   await expect.poll(async () => (await state()).draft.scores.adjustments[1]).toBe(5)
 })
