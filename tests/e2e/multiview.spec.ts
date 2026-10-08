@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { command } from './helpers'
+import { command, state } from './helpers'
 
 test('multiview shows tiles and amber hold state', async ({ page }) => {
   await command({ type: 'resetShow' })
@@ -10,8 +10,37 @@ test('multiview shows tiles and amber hold state', async ({ page }) => {
   await command({ type: 'hold', on: true })
   const tiles = page.locator('[data-tile]')
   const n = await tiles.count()
-  expect(n).toBeGreaterThanOrEqual(7)
+  expect(n).toBeGreaterThanOrEqual(11)
+  for (const name of ['WIDE', 'TWINS', 'STREAM', 'PILLARS']) {
+    await expect(page.getByText(`${name} · PROGRAM`)).toBeVisible()
+    await expect(page.getByText(`${name} · PREVIEW`)).toBeVisible()
+  }
   await expect(page.locator('[data-tile].hold')).toHaveCount(n)
   await command({ type: 'hold', on: false })
   await expect(page.locator('[data-tile].hold')).toHaveCount(0)
+})
+
+test('multiview cue list shows what is on air and what is in preview', async ({ page }) => {
+  await command({ type: 'resetShow' })
+  const s0 = await state()
+  for (const k of s0.stacks) await command({ type: 'deleteStack', id: k.id })
+  for (const p of s0.presets) await command({ type: 'deletePreset', id: p.id })
+  await command({ type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } })
+  await command({ type: 'savePreset', name: 'Lineup' })
+  await command({ type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } })
+  await command({ type: 'savePreset', name: 'Standings' })
+  await command({ type: 'createStack', name: 'Show' })
+  await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: 'cut' })
+  await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-2', take: 'auto' })
+  await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: 'cut' })
+  await page.goto('/multiview')
+  const list = page.locator('[data-cuelist]')
+  await expect(list.locator('[data-cue-row]')).toHaveCount(3)
+  await command({ type: 'goStack', stackId: 'stack-1' })
+  await expect(list.locator('[data-cue-row=cue-1]')).toHaveClass(/pgm/)
+  await expect(list.locator('[data-cue-row=cue-2]')).toHaveClass(/pvw/)
+  await command({ type: 'goStack', stackId: 'stack-1' })
+  await expect(list.locator('[data-cue-row=cue-2]')).toHaveClass(/pgm/)
+  await expect(list.locator('[data-cue-row=cue-3]')).toHaveClass(/pvw/)
+  await page.screenshot({ path: 'test-results/multiview.png' })
 })

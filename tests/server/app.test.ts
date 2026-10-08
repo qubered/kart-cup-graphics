@@ -100,10 +100,17 @@ describe('remote-control api', () => {
     expect((await post({ type: 'savePreset', name: 'Pillars C' })).status).toBe(200)
     const list = await (await fetch(`${base}/api/presets`)).json()
     expect(list.presets.at(-1).name).toBe('Pillars C')
+    expect(list.outputs.map((o: { id: string }) => o.id)).toContain('pillars')
+    expect(list).toMatchObject({ hold: false, ftb: false })
     const id = list.presets.at(-1).id
     await post({ type: 'setLayers', outputId: 'pillars', patch: { background: 'none' } })
     expect((await post({ type: 'recallPreset', id, take: 'cut' })).status).toBe(200)
     expect(srv.store.state.program.pillars.view.background?.id).toBe('C')
+    await post({ type: 'createStack', name: 'Run' })
+    await post({ type: 'addCue', stackId: 'stack-1', presetId: id, take: 'auto' })
+    const again = await (await fetch(`${base}/api/presets`)).json()
+    expect(again.stacks[0]).toMatchObject({ name: 'Run', current: null, selected: null, cues: [{ presetId: id, take: 'auto' }] })
+    expect((await post({ type: 'goStack', stackId: 'stack-1' })).status).toBe(200)
   })
   it('rejects bad commands', async () => {
     expect((await post({ type: 'recallPreset', id: 'nope' })).status).toBe(400)

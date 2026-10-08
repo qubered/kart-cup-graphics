@@ -1,7 +1,13 @@
 import { test, expect } from '@playwright/test'
 import { command, state, resetShow } from './helpers'
 
-test.beforeEach(resetShow)
+test.beforeEach(async () => {
+  await resetShow()
+  // Reset keeps the preset library; start each test from an empty one.
+  const s = await state()
+  for (const k of s.stacks) await command({ type: 'deleteStack', id: k.id })
+  for (const p of s.presets) await command({ type: 'deletePreset', id: p.id })
+})
 
 test('save a design, change it, recall it from the Presets tab', async ({ page }) => {
   await command({ type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } })
@@ -19,4 +25,34 @@ test('save a design, change it, recall it from the Presets tab', async ({ page }
   const s = await state()
   expect(s.armed).toEqual(['wide', 'twins'])
   expect(s.program.wide.view.scene?.kind).toBe('lineup')
+})
+
+test('build a stack with a reused preset and GO through it', async ({ page }) => {
+  await command({ type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } })
+  await command({ type: 'arm', outputIds: ['wide'] })
+  await command({ type: 'savePreset', name: 'Lineup' })
+  await command({ type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } })
+  await command({ type: 'savePreset', name: 'Standings' })
+  await page.goto('/control')
+  await page.getByRole('tab', { name: 'Cues' }).click()
+  await page.locator('input[name=stackName]').fill('Run')
+  await page.getByRole('button', { name: 'Create stack' }).click()
+  await page.locator('select[name=addPreset]').selectOption('preset-1')
+  await page.locator('select[name=addTake]').selectOption('cut')
+  await page.locator('[data-add-cue]').click()
+  await page.locator('select[name=addPreset]').selectOption('preset-2')
+  await page.locator('select[name=addTake]').selectOption('auto')
+  await page.locator('[data-add-cue]').click()
+  await page.locator('select[name=addPreset]').selectOption('preset-1')
+  await page.locator('[data-add-cue]').click()
+  await expect(page.locator('[data-cue]')).toHaveCount(3)
+  await page.locator('[data-cue=cue-1] [data-select]').click()
+  await expect.poll(async () => (await state()).layers.wide.scene).toBe('lineup')
+  expect((await state()).program.wide.view.scene).toBeNull()
+  await page.locator('[data-stack-go]').click()
+  await expect.poll(async () => (await state()).program.wide.view.scene?.kind).toBe('lineup')
+  await expect.poll(async () => (await state()).layers.wide.scene).toBe('standings')
+  await page.locator('[data-stack-go]').click()
+  await expect.poll(async () => (await state()).program.wide.view.scene?.kind).toBe('standings')
+  expect((await state()).program.wide.mode).toBe('auto')
 })

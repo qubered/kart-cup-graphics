@@ -10,9 +10,10 @@
   import TextFontsTab from './tabs/TextFontsTab.svelte'
   import OutputsTab from './tabs/OutputsTab.svelte'
   import PresetsTab from './tabs/PresetsTab.svelte'
+  import CuesTab from './tabs/CuesTab.svelte'
   import SettingsTab from './tabs/SettingsTab.svelte'
 
-  const TABS = ['Show', 'Presets', 'Text & Fonts', 'Outputs', 'Settings'] as const
+  const TABS = ['Show', 'Presets', 'Cues', 'Text & Fonts', 'Outputs', 'Settings'] as const
   let tab = $state<(typeof TABS)[number]>('Show')
 
   const st = $derived($control.payload?.state)
@@ -59,6 +60,8 @@
           <ShowTab />
         {:else if tab === 'Presets'}
           <PresetsTab />
+        {:else if tab === 'Cues'}
+          <CuesTab />
         {:else if tab === 'Text & Fonts'}
           <TextFontsTab />
         {:else if tab === 'Outputs'}

@@ -41,17 +41,22 @@ export interface ViewModel {
   scene: SceneView | null; trackCard: TrackCardView | null; lowerThirds: PlayerView[]
 }
 export interface ProgramFrame { view: ViewModel; mode: TakeMode; speed: TransitionSpeed; takenAt: number }
-/** A saved screen design: every output's layers plus which outputs are armed. The preset list doubles as the cue stack (list order). */
+/** A saved screen design: every output's layers plus which outputs are armed. */
 export interface Preset { id: string; name: string; layers: Record<string, Layers>; armed: string[] }
+/** One step in a stack: recall a preset, then cut/auto it to air (take: null = recall only, take by hand). The same preset may appear in many cues. */
+export interface Cue { id: string; presetId: string; take: TakeMode | null }
+/** An ordered, user-built list of cues. current = on air (last fired). selected = standby: its design is loaded into Preview and GO fires it.
+ *  With nothing selected, GO fires the cue after current (or the first). */
+export interface CueStack { id: string; name: string; cues: Cue[]; current: string | null; selected: string | null }
 export interface ShowState {
   draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; program: Record<string, ProgramFrame>
   overlay: { hold: { on: boolean; message: string }; ftb: boolean }
   transition: TransitionSpeed; armed: string[]
   clocks: { onAirSince: number | null }
   uploadedFonts: { family: string; file: string }[]
-  presets: Preset[]; cue: string | null
+  presets: Preset[]; lastPreset: string | null; stacks: CueStack[]
 }
-export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed; presets: Preset[] }
+export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed; presets: Preset[]; stacks: CueStack[] }
 
 export type Command =
   | { type: 'setPlayer'; index: 0 | 1 | 2 | 3; patch: Partial<Player> }
@@ -66,9 +71,19 @@ export type Command =
   | { type: 'savePreset'; name: string }
   | { type: 'updatePreset'; id: string; name?: string; capture?: boolean }
   | { type: 'deletePreset'; id: string }
-  | { type: 'movePreset'; id: string; delta: 1 | -1 }
   | { type: 'recallPreset'; id: string; take?: TakeMode }
-  | { type: 'stepCue'; delta: 1 | -1; take?: TakeMode }
+  | { type: 'createStack'; name: string }
+  | { type: 'renameStack'; id: string; name: string }
+  | { type: 'deleteStack'; id: string }
+  | { type: 'resetStack'; id: string }
+  | { type: 'addCue'; stackId: string; presetId: string; take: TakeMode | null; index?: number }
+  | { type: 'updateCue'; stackId: string; cueId: string; presetId?: string; take?: TakeMode | null }
+  | { type: 'removeCue'; stackId: string; cueId: string }
+  | { type: 'moveCue'; stackId: string; cueId: string; delta: 1 | -1 }
+  | { type: 'selectCue'; stackId: string; cueId: string }
+  | { type: 'stepSelection'; stackId: string; delta: 1 | -1 }
+  | { type: 'goStack'; stackId: string }
+  | { type: 'fireCue'; stackId: string; cueId: string }
   | { type: 'arm'; outputIds: string[] }
   | { type: 'take'; mode: TakeMode; outputIds?: string[] }
   | { type: 'setTransition'; speed: TransitionSpeed }

@@ -84,7 +84,7 @@ describe('reducer', () => {
   })
   it('importShow, resets', () => {
     const s = taken()
-    const imp = reduce(s, { type: 'importShow', file: { draft: base.draft, outputs: base.outputs, layers: base.layers, transition: 'slow', presets: [] } }, ctx)
+    const imp = reduce(s, { type: 'importShow', file: { draft: base.draft, outputs: base.outputs, layers: base.layers, transition: 'slow', presets: [], stacks: [] } }, ctx)
     expect(imp.transition).toBe('slow'); expect(imp.armed).toEqual([]); expect(imp.program.wide.view.background).toBeNull()
     expect(imp.overlay.hold.on).toBe(false)
     const scored = reduce(base, { type: 'setAdjustment', index: 1, value: 4 }, ctx)
@@ -113,7 +113,7 @@ describe('reducer', () => {
     }
     it('saves layers and arming, then restores both', () => {
       const s = designed()
-      expect(s.presets).toHaveLength(1); expect(s.cue).toBe('preset-1')
+      expect(s.presets).toHaveLength(1); expect(s.lastPreset).toBe('preset-1')
       expect(s.presets[0]).toMatchObject({ name: 'Lineup', armed: ['wide', 'twins'] })
       let moved = reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'none' } }, ctx)
       moved = reduce(moved, { type: 'arm', outputIds: [] }, ctx)
@@ -139,37 +139,98 @@ describe('reducer', () => {
       const back = reduce(s, { type: 'recallPreset', id: 'preset-1' }, ctx)
       expect(back.armed).toEqual(['wide']); expect(back.layers.lobby.background).toBe('C'); expect(back.layers.twins).toBeUndefined()
     })
-    it('update, rename, move, delete', () => {
+    it('update, rename, delete', () => {
       let s = designed()
       s = reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'winner' } }, ctx)
       s = reduce(s, { type: 'updatePreset', id: 'preset-1', name: 'Renamed', capture: true }, ctx)
       expect(s.presets[0]).toMatchObject({ name: 'Renamed' }); expect(s.presets[0].layers.wide.scene).toBe('winner')
       s = reduce(s, { type: 'savePreset', name: 'Two' }, ctx)
-      expect(reduce(s, { type: 'movePreset', id: 'preset-2', delta: -1 }, ctx).presets.map((p) => p.id)).toEqual(['preset-2', 'preset-1'])
-      expect(reduce(s, { type: 'movePreset', id: 'preset-1', delta: -1 }, ctx)).toBe(s)
       const del = reduce(s, { type: 'deletePreset', id: 'preset-2' }, ctx)
-      expect(del.presets.map((p) => p.id)).toEqual(['preset-1']); expect(del.cue).toBeNull()
+      expect(del.presets.map((p) => p.id)).toEqual(['preset-1']); expect(del.lastPreset).toBeNull()
       expect(reduce(del, { type: 'savePreset', name: 'Three' }, ctx).presets[1].id).toBe('preset-2')
       expect(() => reduce(s, { type: 'recallPreset', id: 'nope' }, ctx)).toThrow(CommandError)
     })
-    it('stepCue walks the stack and stops at the ends', () => {
-      let s = designed()
-      s = reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'winner' } }, ctx)
-      s = reduce(s, { type: 'savePreset', name: 'Winner' }, ctx)
-      s = { ...s, cue: null }
-      s = reduce(s, { type: 'stepCue', delta: 1 }, ctx)
-      expect(s.cue).toBe('preset-1'); expect(s.layers.wide.scene).toBe('lineup')
-      s = reduce(s, { type: 'stepCue', delta: 1, take: 'cut' }, ctx)
-      expect(s.cue).toBe('preset-2'); expect(s.program.wide.view.scene?.kind).toBe('winner')
-      expect(reduce(s, { type: 'stepCue', delta: 1 }, ctx)).toBe(s)
-      expect(reduce(s, { type: 'stepCue', delta: -1 }, ctx).cue).toBe('preset-1')
-      expect(reduce({ ...s, cue: null }, { type: 'stepCue', delta: -1 }, ctx).cue).toBe('preset-2')
+    describe('cue stacks', () => {
+      // preset-1 = lineup, preset-2 = winner; stack-1 = [lineup/cut, winner/auto, lineup/none] (lineup reused)
+      const built = () => {
+        let s = designed()
+        s = reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'winner' } }, ctx)
+        s = reduce(s, { type: 'savePreset', name: 'Winner' }, ctx)
+        s = reduce(s, { type: 'createStack', name: 'Show' }, ctx)
+        s = reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: 'cut' }, ctx)
+        s = reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'preset-2', take: 'auto' }, ctx)
+        return reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: null }, ctx)
+      }
+      it('allows reuse and any order, with a take mode per cue', () => {
+        const s = built()
+        expect(s.stacks[0].cues.map((c) => [c.presetId, c.take])).toEqual([['preset-1', 'cut'], ['preset-2', 'auto'], ['preset-1', null]])
+        expect(new Set(s.stacks[0].cues.map((c) => c.id)).size).toBe(3)
+        const ins = reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'preset-2', take: 'cut', index: 0 }, ctx)
+        expect(ins.stacks[0].cues[0]).toMatchObject({ presetId: 'preset-2', take: 'cut' })
+        const moved = reduce(s, { type: 'moveCue', stackId: 'stack-1', cueId: 'cue-3', delta: -1 }, ctx)
+        expect(moved.stacks[0].cues.map((c) => c.id)).toEqual(['cue-1', 'cue-3', 'cue-2'])
+        expect(reduce(s, { type: 'moveCue', stackId: 'stack-1', cueId: 'cue-1', delta: -1 }, ctx)).toBe(s)
+        const upd = reduce(s, { type: 'updateCue', stackId: 'stack-1', cueId: 'cue-3', presetId: 'preset-2', take: 'auto' }, ctx)
+        expect(upd.stacks[0].cues[2]).toMatchObject({ presetId: 'preset-2', take: 'auto' })
+      })
+      it('GO fires the standby cue to air and the next cue goes to preview', () => {
+        let s = { ...built(), armed: [] as string[] }
+        // Select cue 1: its design is in Preview, nothing on air yet.
+        s = reduce(s, { type: 'selectCue', stackId: 'stack-1', cueId: 'cue-1' }, ctx)
+        expect(s.stacks[0]).toMatchObject({ selected: 'cue-1', current: null })
+        expect(s.layers.wide.scene).toBe('lineup'); expect(s.armed).toEqual(['wide', 'twins']); expect(s.program.wide.view.scene).toBeNull()
+        // GO: cue-1 to PGM (cut), cue-2 now standing by in PVW.
+        s = reduce(s, { type: 'goStack', stackId: 'stack-1' }, ctx)
+        expect(s.stacks[0]).toMatchObject({ current: 'cue-1', selected: 'cue-2' })
+        expect(s.program.wide.view.scene?.kind).toBe('lineup'); expect(s.program.wide.mode).toBe('cut')
+        expect(s.layers.wide.scene).toBe('winner')
+        // GO again: cue-2 (auto) to PGM, cue-3 in PVW.
+        s = reduce(s, { type: 'goStack', stackId: 'stack-1' }, ctx)
+        expect(s.program.wide.view.scene?.kind).toBe('winner'); expect(s.program.wide.mode).toBe('auto')
+        expect(s.stacks[0]).toMatchObject({ current: 'cue-2', selected: 'cue-3' }); expect(s.layers.wide.scene).toBe('lineup')
+        // Last cue is recall-only: it previews, GO loads it without taking, then nothing is left.
+        const before = s.program.wide
+        s = reduce(s, { type: 'goStack', stackId: 'stack-1' }, ctx)
+        expect(s.stacks[0]).toMatchObject({ current: 'cue-3', selected: null }); expect(s.program.wide).toBe(before)
+        expect(reduce(s, { type: 'goStack', stackId: 'stack-1' }, ctx)).toBe(s)
+      })
+      it('with nothing selected GO starts at the top; stepSelection moves standby', () => {
+        let s = reduce(built(), { type: 'goStack', stackId: 'stack-1' }, ctx)
+        expect(s.stacks[0]).toMatchObject({ current: 'cue-1', selected: 'cue-2' })
+        s = reduce(s, { type: 'stepSelection', stackId: 'stack-1', delta: 1 }, ctx)
+        expect(s.stacks[0].selected).toBe('cue-3'); expect(s.layers.wide.scene).toBe('lineup')
+        expect(reduce(s, { type: 'stepSelection', stackId: 'stack-1', delta: 1 }, ctx)).toBe(s)
+        s = reduce(s, { type: 'stepSelection', stackId: 'stack-1', delta: -1 }, ctx)
+        expect(s.stacks[0].selected).toBe('cue-2')
+        // Jump back and refire an earlier cue (skipping ahead is allowed).
+        s = reduce(s, { type: 'selectCue', stackId: 'stack-1', cueId: 'cue-1' }, ctx)
+        s = reduce(s, { type: 'goStack', stackId: 'stack-1' }, ctx)
+        expect(s.stacks[0]).toMatchObject({ current: 'cue-1', selected: 'cue-2' })
+        expect(reduce(s, { type: 'resetStack', id: 'stack-1' }, ctx).stacks[0]).toMatchObject({ current: null, selected: null })
+      })
+      it('fireCue jumps anywhere; stacks track position independently', () => {
+        let s = reduce(built(), { type: 'createStack', name: 'Other' }, ctx)
+        s = reduce(s, { type: 'addCue', stackId: 'stack-2', presetId: 'preset-2', take: 'cut' }, ctx)
+        s = reduce(s, { type: 'fireCue', stackId: 'stack-1', cueId: 'cue-2' }, ctx)
+        expect(s.stacks.map((k) => k.current)).toEqual(['cue-2', null]); expect(s.stacks[0].selected).toBe('cue-3')
+        expect(() => reduce(s, { type: 'fireCue', stackId: 'stack-1', cueId: 'cue-4' }, ctx)).toThrow(CommandError)
+        expect(() => reduce(s, { type: 'addCue', stackId: 'stack-1', presetId: 'nope', take: null }, ctx)).toThrow(CommandError)
+      })
+      it('removing a cue or preset keeps stacks consistent', () => {
+        let s = reduce(built(), { type: 'fireCue', stackId: 'stack-1', cueId: 'cue-2' }, ctx)
+        const r = reduce(s, { type: 'removeCue', stackId: 'stack-1', cueId: 'cue-2' }, ctx)
+        expect(r.stacks[0].current).toBe('cue-1')
+        expect(reduce(s, { type: 'removeCue', stackId: 'stack-1', cueId: 'cue-3' }, ctx).stacks[0].selected).toBeNull()
+        s = reduce(s, { type: 'deletePreset', id: 'preset-2' }, ctx)
+        expect(s.stacks[0].cues.map((c) => c.id)).toEqual(['cue-1', 'cue-3']); expect(s.stacks[0].current).toBe('cue-1')
+        expect(reduce(s, { type: 'deleteStack', id: 'stack-1' }, ctx).stacks).toEqual([])
+      })
     })
     it('old state files without presets still parse', async () => {
       const { showStateSchema } = await import('../../shared/schema')
-      const { presets: _p, cue: _c, ...old } = base
+      const { presets: _p, lastPreset: _c, stacks: _k, ...old } = base
       const r = showStateSchema.safeParse(old)
-      expect(r.success && r.data.presets).toEqual([])
+      expect(r.success && r.data.presets).toEqual([]); expect(r.success && r.data.stacks).toEqual([])
     })
   })
 })

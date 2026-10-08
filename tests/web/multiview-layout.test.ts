@@ -14,12 +14,16 @@ function check(outputs: OutputConfig[]) {
 }
 
 describe('multiviewLayout', () => {
-  it('default outputs', () => {
+  it('default outputs: PGM and PVW for every canvas plus info, cue list, standings', () => {
     const t = check(DEFAULT_OUTPUTS)
-    expect(t.find((x) => x.kind === 'output' && x.outputId === 'wide' && x.view === 'program')).toMatchObject({ x: 10, y: 10, w: 1900, h: 570 })
-    expect(t.find((x) => x.kind === 'output' && x.outputId === 'wide' && x.view === 'preview')).toMatchObject({ w: 620 })
-    expect(t.find((x) => x.kind === 'standings')).toMatchObject({ w: 410, x: 1500 })
-    expect(t.filter((x) => x.kind === 'output' && x.view === 'program')).toHaveLength(4)
+    for (const o of DEFAULT_OUTPUTS) {
+      for (const view of ['program', 'preview']) expect(t.filter((x) => x.kind === 'output' && x.outputId === o.id && x.view === view)).toHaveLength(1)
+    }
+    const pgm = t.find((x) => x.kind === 'output' && x.outputId === 'wide' && x.view === 'program')!
+    const pvw = t.find((x) => x.kind === 'output' && x.outputId === 'wide' && x.view === 'preview')!
+    expect(pvw).toMatchObject({ y: pgm.y, w: pgm.w, h: pgm.h })
+    for (const k of ['info', 'cues', 'standings']) expect(t.filter((x) => x.kind === k)).toHaveLength(1)
+    expect(t.find((x) => x.kind === 'cues')!.h).toBeGreaterThan(250)
   })
   it('no wide output, and many outputs', () => {
     const hd = (id: string): OutputConfig => ({ id, name: id, format: 'hd', safeArea: { top: 0, right: 0, bottom: 0, left: 0 }, graphicsScale: 1 })
