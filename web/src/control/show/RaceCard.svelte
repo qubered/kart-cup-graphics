@@ -28,8 +28,8 @@
       <select aria-label="Cup" value={race.cupId} disabled={!connected} onchange={(e) => send({ type: 'setRace', patch: { cupId: e.currentTarget.value, raceIndex: 0 } })}>
         {#each catalog.cups as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
       </select>
-      <button type="button" aria-label="Previous race" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: -1 })}>◀</button>
-      <button type="button" aria-label="Next race" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: 1 })}>▶</button>
+      <button type="button" aria-label="Race back" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: -1 })}>◀</button>
+      <button type="button" aria-label="Race forward" disabled={!connected} onclick={() => send({ type: 'stepRace', delta: 1 })}>▶</button>
     </div>
     <div class="tiles">
       {#each tracks as t, i (t.id)}
