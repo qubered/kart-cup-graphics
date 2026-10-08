@@ -19,7 +19,7 @@ describe('deriveView', () => {
     expect(deriveView(st.draft, { ...EMPTY_LAYERS, scene: 'title' }, twin, idx).scene?.kind).toBe('title')
   })
   it('track card cup mode', () => {
-    const d2 = { ...st.draft, race: { ...st.draft.race, raceIndex: 1 as const } }
+    const d2 = { ...st.draft, race: { ...st.draft.race, raceIndex: 1 as const, raceNo: 2 } }
     expect(deriveView(d2, { ...EMPTY_LAYERS, trackCard: true }, twin, idx).trackCard).toMatchObject({
       raceLabel: 'RACE 2 / 4', trackName: 'Water Park', cupName: 'Mushroom Cup', cupEmblem: '/assets/cups/mushroom.png',
     })
@@ -30,7 +30,7 @@ describe('deriveView', () => {
       scores: { races: [{ raceNo: 1, trackId: 'water-park', positions: [1, 2, 3, 4] }, { raceNo: 2, trackId: 'water-park', positions: [1, 2, 3, 4] }], adjustments: [0, 0, 0, 0] },
     }
     expect(deriveView(d3, { ...EMPTY_LAYERS, trackCard: true }, hd, idx).trackCard).toMatchObject({
-      raceLabel: 'RACE 3', trackName: 'Tour Singapore Speedway', cupName: 'Boomerang Cup',
+      raceLabel: 'RACE 1 / 4', trackName: 'Tour Singapore Speedway', cupName: 'Boomerang Cup',
     })
   })
   it('player view and fonts', () => {

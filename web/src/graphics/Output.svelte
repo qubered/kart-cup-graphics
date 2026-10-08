@@ -52,7 +52,7 @@
           {:else if view.background.id === 'A'}
             <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} dur={enter} />
           {:else if view.background.id === 'B'}
-            <IconPattern w={view.canvas.w} h={view.canvas.h} />
+            <IconPattern w={view.canvas.w} h={view.canvas.h} mattify={payload?.mattify ?? false} />
           {:else if view.background.id === 'C'}
             <StickerWall watermark={view.background.watermark} title={view.background.title} titleFont={view.fonts.eventTitle} labelFont={view.fonts.labels} {lowfx} w={view.canvas.w} h={view.canvas.h} />
           {/if}

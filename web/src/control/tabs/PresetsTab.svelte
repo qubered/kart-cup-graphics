@@ -1,5 +1,17 @@
 <script lang="ts">
   import { control, send } from '../store'
+  import type { PresetScope } from '../../../../shared/types'
+
+  const SCOPES: { key: keyof PresetScope; label: string; hint: string }[] = [
+    { key: 'layers', label: 'Layers', hint: 'Background, scene, overlays per output' },
+    { key: 'armed', label: 'Arming', hint: 'Which outputs are armed' },
+    { key: 'show', label: 'Show data', hint: 'Event text, fonts, players, race' },
+    { key: 'scores', label: 'Scores', hint: 'Results and adjustments. Recalling overwrites the current scores' },
+    { key: 'transition', label: 'Transition speed', hint: 'Fast / normal / slow' },
+    { key: 'mattify', label: 'Mattify', hint: 'The matte icon background switch' },
+  ]
+  const DEFAULT_SCOPE: PresetScope = { layers: true, armed: true, show: true, scores: false, transition: true, mattify: true }
+  let scope = $state<PresetScope>({ ...DEFAULT_SCOPE })
 
   const st = $derived($control.payload?.state)
   const presets = $derived(st?.presets ?? [])
@@ -10,7 +22,7 @@
   function save() {
     const n = name.trim()
     if (!n) return
-    send({ type: 'savePreset', name: n })
+    send({ type: 'savePreset', name: n, scope: { ...scope } })
     name = ''
   }
   function startRename(id: string, current: string) {
@@ -33,7 +45,12 @@
 
 <div class="card">
   <h2>Save current design</h2>
-  <p class="dim" style="margin:0 0 8px">Saves every output's background, scene and overlays, plus which outputs are armed.</p>
+  <p class="dim" style="margin:0 0 8px">Captures everything. Tick what a recall should restore (you can change this later per preset).</p>
+  <div class="row" style="margin-bottom:8px">
+    {#each SCOPES as sc (sc.key)}
+      <label class="pchk" title={sc.hint}><input type="checkbox" name="scope-{sc.key}" bind:checked={scope[sc.key]} />{sc.label}</label>
+    {/each}
+  </div>
   <form class="row" onsubmit={(e) => { e.preventDefault(); save() }}>
     <input type="text" name="presetName" placeholder="Preset name" bind:value={name} maxlength="100" />
     <button type="submit" disabled={!name.trim()}>Save preset</button>
@@ -55,11 +72,17 @@
         <b style="min-width:140px">{st?.lastPreset === p.id ? '● ' : ''}{p.name}</b>
         <span class="dim">{outputNames(p.armed)}</span>
       {/if}
+      <span class="row" style="gap:4px">
+        {#each SCOPES as sc (sc.key)}
+          <button type="button" class="chip" class:on={p.scope[sc.key]} aria-pressed={p.scope[sc.key]} title="{sc.hint}. Click to toggle." data-scope={sc.key}
+            onclick={() => send({ type: 'updatePreset', id: p.id, scope: { [sc.key]: !p.scope[sc.key] } })}>{sc.label}</button>
+        {/each}
+      </span>
       <span class="row" style="margin-left:auto">
         <button type="button" data-recall onclick={() => send({ type: 'recallPreset', id: p.id })}>Recall</button>
         <button type="button" data-recall-cut onclick={() => send({ type: 'recallPreset', id: p.id, take: 'cut' })}>Cut</button>
         <button type="button" data-recall-auto onclick={() => send({ type: 'recallPreset', id: p.id, take: 'auto' })}>Auto</button>
-        <button type="button" title="Overwrite with the current layers and arming"
+        <button type="button" title="Overwrite with everything as it is now"
           onclick={() => confirm(`Overwrite "${p.name}" with the current design?`) && send({ type: 'updatePreset', id: p.id, capture: true })}>Update</button>
         <button type="button" onclick={() => startRename(p.id, p.name)}>Rename</button>
         <button type="button" class="danger" onclick={() => remove(p.id, p.name)}>Delete</button>
@@ -69,5 +92,7 @@
 </div>
 
 <style>
+  .chip { font-size: 11px; padding: 2px 6px; opacity: .5; }
+  .chip.on { opacity: 1; outline: 1px solid var(--ui-preview, #4ade80); }
   .preset.current b { color: var(--ui-program, #f87171); }
 </style>

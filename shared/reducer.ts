@@ -1,7 +1,7 @@
 import type { CatalogIndex } from './catalog'
-import { createDefaultState, emptyLayers, emptyProgram } from './defaults'
+import { createDefaultState, DEFAULT_PRESET_SCOPE, emptyLayers, emptyProgram } from './defaults'
 import { FORMAT_CANVAS, SUPPORTED_SCENES, deriveView } from './view'
-import type { Command, CueStack, Layers, OutputConfig, Preset, ProgramFrame, RaceState, ShowState, Typography } from './types'
+import type { Command, CueStack, Layers, OutputConfig, Preset, PresetScope, ProgramFrame, RaceState, ShowState, Typography } from './types'
 
 export class CommandError extends Error {
   constructor(message: string) {
@@ -31,6 +31,19 @@ function programFor(state: ShowState, id: string, layers: Layers, mode: ProgramF
 
 function withDraft(state: ShowState, draft: Partial<ShowState['draft']>): ShowState {
   return { ...state, draft: { ...state.draft, ...draft } }
+}
+
+/** Scores are live: refresh any on-air standings/winner scene in place (no Take, no re-transition). */
+function liveScores(state: ShowState, ctx: ReduceContext): ShowState {
+  let program = state.program
+  for (const o of state.outputs) {
+    const frame = program[o.id]
+    const kind = frame?.view.scene?.kind
+    if (kind !== 'standings' && kind !== 'winner') continue
+    const fresh = deriveView(state.draft, { ...emptyLayers(), scene: kind }, o, ctx.catalog)
+    program = { ...program, [o.id]: { ...frame, view: { ...frame.view, scene: fresh.scene } } }
+  }
+  return program === state.program ? state : { ...state, program }
 }
 
 function applyRace(state: ShowState, patch: Partial<RaceState>, ctx: ReduceContext): ShowState {
@@ -89,16 +102,33 @@ function fireAt(state: ShowState, stackId: string, index: number, ctx: ReduceCon
   return selectAt(after, stackId, index + 1, ctx)
 }
 
-function snapshot(state: ShowState): Pick<Preset, 'layers' | 'armed'> {
-  return { layers: structuredClone(state.layers), armed: [...state.armed] }
+type Snapshot = Pick<Preset, 'layers' | 'armed' | 'draft' | 'transition' | 'mattify'>
+function snapshot(state: ShowState): Snapshot {
+  return {
+    layers: structuredClone(state.layers), armed: [...state.armed], draft: structuredClone(state.draft),
+    transition: state.transition, mattify: state.settings.mattify,
+  }
 }
+const mergeScope = (base: PresetScope, patch: Partial<PresetScope> | undefined): PresetScope => ({ ...base, ...patch })
 
-/** Apply a preset to the draft: outputs that no longer exist are skipped, outputs added since keep their layers. */
+/** Apply the in-scope parts of a preset to the draft (Preview). Outputs that no longer exist are skipped; outputs added since keep their layers.
+ *  Optionally take to air afterwards, using the preset's transition speed. */
 function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | undefined, ctx: ReduceContext): ShowState {
-  const layers = { ...state.layers }
-  for (const o of state.outputs) if (preset.layers[o.id]) layers[o.id] = structuredClone(preset.layers[o.id])
-  const armed = preset.armed.filter((id) => state.outputs.some((o) => o.id === id))
-  const next: ShowState = { ...state, layers, armed, lastPreset: preset.id }
+  const sc = preset.scope
+  let next: ShowState = { ...state, lastPreset: preset.id }
+  if (sc.layers) {
+    const layers = { ...state.layers }
+    for (const o of state.outputs) if (preset.layers[o.id]) layers[o.id] = structuredClone(preset.layers[o.id])
+    next = { ...next, layers }
+  }
+  if (sc.armed) next = { ...next, armed: preset.armed.filter((id) => state.outputs.some((o) => o.id === id)) }
+  if (sc.show) {
+    const { event, typography, players, race } = structuredClone(preset.draft)
+    next = withDraft(next, { event, typography, players, race })
+  }
+  if (sc.scores) next = liveScores(withDraft(next, { scores: structuredClone(preset.draft.scores) }), ctx)
+  if (sc.transition) next = { ...next, transition: preset.transition }
+  if (sc.mattify) next = { ...next, settings: { ...next.settings, mattify: preset.mattify } }
   return take ? reduce(next, { type: 'take', mode: take }, ctx) : next
 }
 
@@ -133,11 +163,11 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
     case 'saveResults': {
       const entry = { raceNo: cmd.raceNo, trackId: cmd.trackId, positions: [...cmd.positions] }
       const races = [...state.draft.scores.races.filter((r) => r.raceNo !== cmd.raceNo), entry].sort((a, b) => a.raceNo - b.raceNo)
-      return withDraft(state, { scores: { ...state.draft.scores, races } })
+      return liveScores(withDraft(state, { scores: { ...state.draft.scores, races } }), ctx)
     }
     case 'setAdjustment': {
       const adjustments = state.draft.scores.adjustments.map((v, i) => (i === cmd.index ? cmd.value : v))
-      return withDraft(state, { scores: { ...state.draft.scores, adjustments } })
+      return liveScores(withDraft(state, { scores: { ...state.draft.scores, adjustments } }), ctx)
     }
     case 'setEventText':
       return withDraft(state, { event: { ...state.draft.event, ...cmd.patch } })
@@ -161,12 +191,12 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       return { ...state, layers: { ...state.layers, [cmd.outputId]: { ...cur, ...patch } } }
     }
     case 'savePreset': {
-      const preset: Preset = { id: nextId('preset', state.presets.map((p) => p.id)), name: cmd.name, ...snapshot(state) }
+      const preset: Preset = { id: nextId('preset', state.presets.map((p) => p.id)), name: cmd.name, scope: mergeScope(DEFAULT_PRESET_SCOPE, cmd.scope), ...snapshot(state) }
       return { ...state, presets: [...state.presets, preset], lastPreset: preset.id }
     }
     case 'updatePreset': {
       requirePreset(state, cmd.id)
-      const presets = state.presets.map((p) => (p.id === cmd.id ? { ...p, ...(cmd.name ? { name: cmd.name } : {}), ...(cmd.capture ? snapshot(state) : {}) } : p))
+      const presets = state.presets.map((p) => (p.id === cmd.id ? { ...p, ...(cmd.name ? { name: cmd.name } : {}), ...(cmd.scope ? { scope: mergeScope(p.scope, cmd.scope) } : {}), ...(cmd.capture ? snapshot(state) : {}) } : p))
       return { ...state, presets }
     }
     case 'deletePreset': {
@@ -333,13 +363,15 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       }
     }
     case 'resetScores':
-      return withDraft(state, { scores: { races: [], adjustments: [0, 0, 0, 0] } })
+      return liveScores(withDraft(state, { scores: { races: [], adjustments: [0, 0, 0, 0] } }), ctx)
     case 'resetShow': {
       const fresh = createDefaultState(ctx.catalog, ctx.now)
-      return { ...fresh, uploadedFonts: state.uploadedFonts, presets: state.presets, stacks: state.stacks }
+      return { ...fresh, uploadedFonts: state.uploadedFonts, settings: state.settings, presets: state.presets, stacks: state.stacks }
     }
     case 'resetOnAirClock':
       return { ...state, clocks: { onAirSince: state.clocks.onAirSince === null ? null : ctx.now } }
+    case 'setMattify':
+      return state.settings.mattify === cmd.on ? state : { ...state, settings: { ...state.settings, mattify: cmd.on } }
     case 'registerFont': {
       if (state.uploadedFonts.some((f) => f.family === cmd.family)) return state
       return { ...state, uploadedFonts: [...state.uploadedFonts, { family: cmd.family, file: cmd.file }] }

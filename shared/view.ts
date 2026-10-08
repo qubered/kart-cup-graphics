@@ -35,7 +35,7 @@ function raceInfo(data: ShowData, catalog: CatalogIndex): RaceInfo {
   const track = catalog.track(trackId)
   const cup = catalog.cup(r.mode === 'cup' ? r.cupId : (track?.cupId ?? r.cupId))
   return {
-    raceLabel: r.mode === 'cup' ? `RACE ${r.raceIndex + 1} / 4` : `RACE ${data.scores.races.length + 1}`,
+    raceLabel: `RACE ${r.raceNo} / ${r.raceTotal}`,
     cupName: cup?.name ?? '?',
     cupEmblem: cup?.emblem ?? '',
     trackName: track?.name ?? '?',
@@ -55,11 +55,11 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
   if (SUPPORTED_SCENES[output.format].includes(layers.scene)) {
     switch (layers.scene) {
       case 'title': scene = { kind: 'title', title }; break
-      case 'lineup': scene = { kind: 'lineup', players: data.players.map((_, i) => pv(i)) }; break
+      case 'lineup': scene = { kind: 'lineup', players: data.players.slice(0, Math.min(4, Math.max(1, layers.lineupShown ?? 4))).map((_, i) => pv(i)) }; break
       case 'nextRace':
         scene = {
           kind: 'nextRace', raceLabel: info.raceLabel, cupName: info.cupName, cupEmblem: info.cupEmblem,
-          trackName: info.trackName, trackImage: info.trackImage,
+          trackName: info.trackName, trackImage: info.trackImage, single: data.race.mode === 'track',
           cupTracks: catalog.tracksOfCup(info.cupId).map((t) => ({ name: t.name, thumb: t.thumb, current: t.id === info.trackId })),
         }
         break

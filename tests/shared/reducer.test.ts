@@ -15,6 +15,15 @@ const taken = () => {
 }
 
 describe('reducer', () => {
+  it('score changes update an on-air standings scene without a take', () => {
+    let s = reduce(base, { type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } }, ctx)
+    s = reduce(reduce(s, { type: 'arm', outputIds: ['wide'] }, ctx), { type: 'take', mode: 'cut' }, ctx)
+    const takenAt = s.program.wide.takenAt
+    s = reduce(s, { type: 'setAdjustment', index: 1, value: 7 }, { ...ctx, now: 5000 })
+    const scene = s.program.wide.view.scene
+    expect(scene?.kind === 'standings' && scene.rows[0].total).toBe(7)
+    expect(s.program.wide.takenAt).toBe(takenAt)
+  })
   it('setPlayer does not touch program and is pure', () => {
     const frozen = structuredClone(base)
     const s = reduce(base, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, ctx)
@@ -120,6 +129,64 @@ describe('reducer', () => {
       const back = reduce(moved, { type: 'recallPreset', id: 'preset-1' }, ctx)
       expect(back.layers.wide.scene).toBe('lineup'); expect(back.armed).toEqual(['wide', 'twins'])
       expect(back.program).toBe(moved.program)
+    })
+    describe('captures everything', () => {
+      const setup = () => {
+        let s = reduce(reduce(base, { type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } }, ctx), { type: 'arm', outputIds: ['wide', 'twins'] }, ctx)
+        s = reduce(s, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, ctx)
+        s = reduce(s, { type: 'setEventText', patch: { title: 'FINALS' } }, ctx)
+        s = reduce(s, { type: 'setTypography', role: 'names', patch: { font: 'Saira' } }, ctx)
+        s = reduce(s, { type: 'setRace', patch: { mode: 'track', trackId: 'water-park' } }, ctx)
+        s = reduce(s, { type: 'saveResults', raceNo: 1, trackId: 'water-park', positions: [1, 2, 3, 4] }, ctx)
+        s = reduce(s, { type: 'setTransition', speed: 'slow' }, ctx)
+        s = reduce(s, { type: 'setMattify', on: true }, ctx)
+        return reduce(s, { type: 'savePreset', name: 'Everything', scope: { scores: true } }, ctx)
+      }
+      const scrambled = (s: ReturnType<typeof setup>) => {
+        let t = reduce(s, { type: 'setPlayer', index: 0, patch: { name: 'OTHER' } }, ctx)
+        t = reduce(t, { type: 'setEventText', patch: { title: 'X' } }, ctx)
+        t = reduce(t, { type: 'setTypography', role: 'names', patch: { font: 'Rubik' } }, ctx)
+        t = reduce(t, { type: 'setRace', patch: { mode: 'cup', cupId: 'mushroom' } }, ctx)
+        t = reduce(t, { type: 'resetScores' }, ctx)
+        t = reduce(t, { type: 'setTransition', speed: 'fast' }, ctx)
+        return reduce(t, { type: 'setMattify', on: false }, ctx)
+      }
+      it('restores show data, scores, transition speed and mattify as well as layers and arming', () => {
+        const s = setup()
+        const back = reduce(scrambled(s), { type: 'recallPreset', id: 'preset-1' }, ctx)
+        expect(back.draft).toEqual(s.draft)
+        expect(back.transition).toBe('slow'); expect(back.settings.mattify).toBe(true)
+        expect(back.layers).toEqual(s.layers); expect(back.armed).toEqual(s.armed)
+      })
+      it('scores are off by default and only restored when in scope', () => {
+        let s = setup()
+        s = reduce(s, { type: 'savePreset', name: 'Look' }, ctx)
+        expect(s.presets[1].scope).toEqual({ layers: true, armed: true, show: true, scores: false, transition: true, mattify: true })
+        const t = reduce(scrambled(s), { type: 'recallPreset', id: 'preset-2' }, ctx)
+        expect(t.draft.scores.races).toEqual([]); expect(t.draft.players[0].name).toBe('SAM')
+      })
+      it('scope toggles limit what a recall touches', () => {
+        let s = setup()
+        s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { show: false, scores: false, transition: false, mattify: false, armed: false } }, ctx)
+        const t = scrambled(s)
+        const back = reduce(t, { type: 'recallPreset', id: 'preset-1' }, ctx)
+        expect(back.layers).toEqual(s.layers); expect(back.armed).toEqual(t.armed)
+        expect(back.draft).toEqual(t.draft); expect(back.transition).toBe('fast'); expect(back.settings.mattify).toBe(false)
+      })
+      it('recalled scores refresh an on-air standings scene, and take uses the preset transition speed', () => {
+        let s = setup()
+        s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { scores: true } }, ctx)
+        const t = reduce(scrambled(s), { type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } }, ctx)
+        const live = reduce(reduce(t, { type: 'arm', outputIds: ['wide'] }, ctx), { type: 'take', mode: 'cut' }, ctx)
+        const back = reduce(live, { type: 'recallPreset', id: 'preset-1', take: 'auto' }, ctx)
+        expect(back.program.wide.speed).toBe('slow'); expect(back.program.wide.mode).toBe('auto')
+        expect(back.draft.scores.races).toHaveLength(1)
+      })
+      it('snapshots by value', () => {
+        const s = setup()
+        const edited = reduce(s, { type: 'setPlayer', index: 0, patch: { name: 'LATER' } }, ctx)
+        expect(edited.presets[0].draft.players[0].name).toBe('SAM')
+      })
     })
     it('snapshots by value, not reference', () => {
       const s = designed()

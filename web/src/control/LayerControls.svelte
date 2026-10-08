@@ -63,6 +63,15 @@
             onclick={() => patch({ scene: s.id })}>{s.label}</button>
         {/each}
       </div>
+      {#if layers.scene === 'lineup'}
+        <span class="k">Reveal</span>
+        <div class="seg lay">
+          {#each [1, 2, 3, 4] as n (n)}
+            <button class:draft={(layers.lineupShown ?? 4) === n} onclick={() => patch({ lineupShown: n })}>{n === 4 ? 'All' : n === 1 ? 'P1' : `P1–${n}`}</button>
+          {/each}
+          <button onclick={() => patch({ lineupShown: Math.min(4, (layers.lineupShown ?? 4) + 1) })}>Next player</button>
+        </div>
+      {/if}
     </div>
     <div class="lrow">
       <span class="k">Overlays</span>

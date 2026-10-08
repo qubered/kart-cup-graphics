@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { cueWindow } from '../../web/src/multiview/cues'
 import type { CueStack, Preset } from '../../shared/types'
 
-const presets = ['A', 'B'].map((n, i): Preset => ({ id: `p${i}`, name: n, layers: {}, armed: [] }))
+const presets = ['A', 'B'].map((n, i) => ({ id: `p${i}`, name: n }) as Preset)
 const stack = (n: number, current: string | null, selected: string | null): CueStack => ({
   id: 's', name: 'S', current, selected,
   cues: Array.from({ length: n }, (_, i) => ({ id: `c${i}`, presetId: `p${i % 2}`, take: i % 2 ? 'auto' : 'cut' })),
