@@ -3,7 +3,7 @@ import {
   type CompanionActionDefinitions, type CompanionFeedbackDefinitions, type CompanionPresetDefinitions,
   type DropdownChoice, type SomeCompanionConfigField,
 } from '@companion-module/base'
-import { armCommand, overwritePresetCommand, savePresetCommand, baseUrl, cueActionCommand, cueKey, cueState, KartCupApi, recallCommand, resolveOnOff, stepSelectionCommand, takeCommand, type ServerState } from './api.js'
+import { cueActionStandalone, setActiveMatchCommand, showSceneCommand, splitWinCommands, tournamentVars, type TournamentScene, armCommand, overwritePresetCommand, savePresetCommand, baseUrl, cueActionCommand, cueKey, cueState, KartCupApi, recallCommand, resolveOnOff, stepSelectionCommand, takeCommand, type ServerState } from './api.js'
 
 interface Config { host: string; port: number }
 
@@ -57,7 +57,10 @@ class KartCupInstance extends InstanceBase<Config> {
 
   private async poll(): Promise<void> {
     try {
-      this.apply(await this.api.state())
+      const next = await this.api.state()
+      // Servers that do not list the tournament in /api/presets still expose it through /api/export.
+      if (next.tournament === undefined) next.tournament = await this.api.exportedTournament().catch(() => null)
+      this.apply(next)
       if (!this.online) { this.online = true; this.updateStatus(InstanceStatus.Ok) }
     } catch (e) {
       if (this.online || this.shape === '') { this.online = false; this.updateStatus(InstanceStatus.ConnectionFailure, (e as Error).message) }
@@ -65,13 +68,15 @@ class KartCupInstance extends InstanceBase<Config> {
   }
 
   private apply(next: ServerState): void {
-    const shape = JSON.stringify([next.presets, next.outputs, next.stacks.map((k) => [k.id, k.name, k.cues])])
+    const shape = JSON.stringify([next.presets, next.outputs, next.stacks.map((k) => [k.id, k.name, k.cues]), next.tournament?.matches.map((m) => [m.id, m.label, m.round]) ?? null])
     this.st = next
     if (shape !== this.shape) { this.shape = shape; this.rebuild() }
     const values: Record<string, string | number> = {
       preset_count: next.presets.length,
       armed_outputs: next.outputs.filter((o) => next.armed.includes(o.id)).map((o) => o.name).join(', '),
     }
+    Object.assign(values, tournamentVars(next.tournament))
+    for (const m of next.tournament?.matches ?? []) { values[`match_${m.id}_status`] = m.status; values[`match_${m.id}_winner`] = m.winner }
     for (const k of next.stacks) {
       const name = (id: string | null) => next.presets.find((p) => p.id === k.cues.find((c) => c.id === id)?.presetId)?.name ?? ''
       const standby = k.selected ?? k.cues[k.cues.findIndex((c) => c.id === k.current) + 1]?.id ?? null
@@ -79,7 +84,7 @@ class KartCupInstance extends InstanceBase<Config> {
       values[`${k.id}_pvw`] = name(standby)
     }
     this.setVariableValues(values)
-    this.checkFeedbacks('preset_loaded', 'cue_state', 'output_armed', 'hold_on', 'ftb_on')
+    this.checkFeedbacks('preset_loaded', 'cue_state', 'output_armed', 'hold_on', 'ftb_on', 'match_active', 'match_status', 'match_has_winner')
   }
 
   private async send(cmd: Record<string, unknown>): Promise<void> {
@@ -91,6 +96,14 @@ class KartCupInstance extends InstanceBase<Config> {
     this.setVariableDefinitions([
       { variableId: 'preset_count', name: 'Number of presets' },
       { variableId: 'armed_outputs', name: 'Armed output names' },
+      { variableId: 'tournament_name', name: 'Tournament name' },
+      { variableId: 'active_match_label', name: 'Active match label' },
+      { variableId: 'active_match_status', name: 'Active match status (pending / live / done)' },
+      { variableId: 'active_match_winner', name: 'Active match winner name' },
+      ...(this.st.tournament?.matches ?? []).flatMap((m) => [
+        { variableId: `match_${m.id}_status`, name: `${m.label}: status` },
+        { variableId: `match_${m.id}_winner`, name: `${m.label}: winner name` },
+      ]),
       ...this.st.stacks.flatMap((k) => [
         { variableId: `${k.id}_pgm`, name: `${k.name}: preset on air (PGM)` },
         { variableId: `${k.id}_pvw`, name: `${k.name}: preset standing by (PVW)` },
@@ -114,6 +127,33 @@ class KartCupInstance extends InstanceBase<Config> {
     const outputOpt = { type: 'dropdown' as const, id: 'output', label: 'Output', choices: outputs, default: outputs[0]?.id ?? '' }
     const takeOpt = { type: 'dropdown' as const, id: 'take', label: 'Take', choices: TAKE_CHOICES, default: 'none' }
 
+    const matches = this.st.tournament?.matches ?? []
+    const matchChoices: DropdownChoice[] = matches.map((m) => ({ id: m.id, label: m.label }))
+    const matchOpt = { type: 'dropdown' as const, id: 'match', label: 'Match', choices: matchChoices, default: matchChoices[0]?.id ?? '' }
+    const refChoices: DropdownChoice[] = [{ id: 'active', label: 'Active match' }, { id: 'previous', label: 'Previous match' }, ...matchChoices]
+    const refOpt = { type: 'dropdown' as const, id: 'ref', label: 'Match shown', choices: refChoices, default: 'active' }
+    const partChoices: DropdownChoice[] = [{ id: 'full', label: 'Full (hero + scoreboard)' }, { id: 'hero', label: 'Hero (winner) only' }, { id: 'board', label: 'Scoreboard only' }]
+    const partOpt = { type: 'dropdown' as const, id: 'part', label: 'Part', choices: partChoices, default: 'full' }
+    const winSceneChoices: DropdownChoice[] = [{ id: 'raceWin', label: 'Race win' }, { id: 'cupWin', label: 'Cup win' }]
+    const rounds = [...new Set(matches.map((m) => m.round))].sort((a, b) => a - b)
+    const setChoices: DropdownChoice[] = [{ id: 'all', label: 'All matches' }, ...rounds.map((r) => ({ id: `round:${r}`, label: `Round ${r + 1}` }))]
+    const sceneAction = (scene: TournamentScene, name: string, extra: typeof outputOpt[] | Record<string, unknown>[] = []) => ({
+      name, options: [outputOpt, ...extra] as never,
+      callback: async (a: { options: Record<string, unknown> }) => {
+        await this.send(showSceneCommand(String(a.options.output), scene, { part: a.options.part, matchRef: a.options.ref, matches: a.options.set, range: a.options.range }))
+      },
+    })
+    const splitAction = (scene: 'raceWin' | 'cupWin', name: string) => ({
+      name,
+      options: [
+        { type: 'dropdown' as const, id: 'hero', label: 'Hero (winner) output', choices: outputs, default: outputs[0]?.id ?? '' },
+        { type: 'dropdown' as const, id: 'board', label: 'Scoreboard output', choices: outputs, default: outputs[1]?.id ?? outputs[0]?.id ?? '' },
+        refOpt,
+      ],
+      callback: async (a: { options: Record<string, unknown> }) => {
+        for (const c of splitWinCommands(scene, String(a.options.hero), String(a.options.board), a.options.ref)) await this.send(c)
+      },
+    })
     const sourceOpt = { type: 'dropdown' as const, id: 'source', label: 'Source', choices: [{ id: 'pvw', label: 'PVW (preview)' }, { id: 'pgm', label: 'PGM (on air)' }], default: 'pvw' }
     const actions: CompanionActionDefinitions = {
       save_preset: {
@@ -171,6 +211,28 @@ class KartCupInstance extends InstanceBase<Config> {
         name: 'Fade to black', options: [{ type: 'dropdown', id: 'mode', label: 'State', choices: ONOFF_CHOICES, default: 'toggle' }],
         callback: async (a) => { await this.send({ type: 'ftb', on: resolveOnOff(a.options.mode, this.st.ftb) }) },
       },
+      next_match: { name: 'Tournament: next match', options: [], callback: async () => { await this.send({ type: 'nextMatch' }) } },
+      set_active_match: {
+        name: 'Tournament: set active match', options: [matchOpt],
+        callback: async (a) => { const c = setActiveMatchCommand(a.options.match); if (c) await this.send(c) },
+      },
+      show_race_win: sceneAction('raceWin', 'Tournament: show race win', [partOpt, refOpt]),
+      show_cup_win: sceneAction('cupWin', 'Tournament: show cup win', [partOpt, refOpt]),
+      show_bracket: sceneAction('bracket', 'Tournament: show bracket'),
+      show_matches: sceneAction('matches', 'Tournament: show matches', [
+        { type: 'dropdown', id: 'set', label: 'Matches', choices: setChoices, default: 'all' },
+        { type: 'textinput', id: 'range', label: 'Range, 1-based (e.g. 1-2; blank = no slice)', default: '' },
+      ]),
+      split_race_win: splitAction('raceWin', 'Tournament: split race win across two outputs'),
+      split_cup_win: splitAction('cupWin', 'Tournament: split cup win across two outputs'),
+      run_cue_action: {
+        name: 'Tournament: run a cue action (next race / next match / reset stack)',
+        options: [
+          { type: 'dropdown', id: 'action', label: 'Action', choices: [{ id: 'nextRace', label: 'Next race' }, { id: 'nextMatch', label: 'Next match (resets stacks)' }, { id: 'resetStack', label: 'Reset cue stack' }], default: 'nextMatch' },
+          stackOpt,
+        ],
+        callback: async (a) => { const c = cueActionStandalone(a.options.action, a.options.stack); if (c) await this.send(c) },
+      },
     }
     this.setActionDefinitions(actions)
 
@@ -191,6 +253,19 @@ class KartCupInstance extends InstanceBase<Config> {
       },
       hold_on: { type: 'boolean', name: 'Hold slate is on', defaultStyle: lit, options: [], callback: () => this.st.hold },
       ftb_on: { type: 'boolean', name: 'Fade to black is on', defaultStyle: lit, options: [], callback: () => this.st.ftb },
+      match_active: {
+        type: 'boolean', name: 'Tournament: match is the active match', defaultStyle: lit, options: [matchOpt],
+        callback: (f) => this.st.tournament?.activeMatchId === f.options.match,
+      },
+      match_status: {
+        type: 'boolean', name: 'Tournament: match has status', defaultStyle: { bgcolor: GREEN, color: WHITE },
+        options: [matchOpt, { type: 'dropdown', id: 'status', label: 'Status', choices: [{ id: 'pending', label: 'Pending' }, { id: 'live', label: 'Live' }, { id: 'done', label: 'Done' }], default: 'done' }],
+        callback: (f) => this.st.tournament?.matches.find((m) => m.id === f.options.match)?.status === f.options.status,
+      },
+      match_has_winner: {
+        type: 'boolean', name: 'Tournament: match has a winner', defaultStyle: { bgcolor: GREEN, color: WHITE }, options: [matchOpt],
+        callback: (f) => !!this.st.tournament?.matches.find((m) => m.id === f.options.match)?.winner,
+      },
     }
     this.setFeedbackDefinitions(feedbacks)
 
@@ -231,6 +306,18 @@ class KartCupInstance extends InstanceBase<Config> {
     defs.hold = button('Emergency', 'Hold', 'HOLD', [{ actionId: 'hold', options: { mode: 'toggle' } }], [{ feedbackId: 'hold_on', options: {} }])
     defs.clear = button('Emergency', 'Clear', 'CLEAR', [{ actionId: 'clear', options: {} }])
     defs.ftb = button('Emergency', 'Fade to black', 'FTB', [{ actionId: 'ftb', options: { mode: 'toggle' } }], [{ feedbackId: 'ftb_on', options: {} }])
+    if (this.st.tournament) {
+      const cat = 'Tournament'
+      defs.t_next_match = button(cat, 'Next match', 'NEXT\\nMATCH', [{ actionId: 'next_match', options: {} }], [], GREEN)
+      const out0 = String(outputs[0]?.id ?? '')
+      defs.t_race_win = button(cat, 'Race win', 'RACE\\nWIN', [{ actionId: 'show_race_win', options: { output: out0, part: 'full', ref: 'active' } }])
+      defs.t_cup_win = button(cat, 'Cup win', 'CUP\\nWIN', [{ actionId: 'show_cup_win', options: { output: out0, part: 'full', ref: 'active' } }])
+      defs.t_bracket = button(cat, 'Bracket', 'BRACKET', [{ actionId: 'show_bracket', options: { output: out0 } }])
+      defs.t_matches = button(cat, 'Matches', 'MATCHES', [{ actionId: 'show_matches', options: { output: out0, set: 'all', range: '' } }])
+      for (const m of this.st.tournament.matches) {
+        defs[`t_match_${m.id}`] = button(cat, `Make ${m.label} active`, `${m.label}\\n$(${this.label}:match_${m.id}_winner)`, [{ actionId: 'set_active_match', options: { match: m.id } }], [{ feedbackId: 'match_active', options: { match: m.id } }])
+      }
+    }
     this.setPresetDefinitions(defs)
   }
 }
