@@ -1,6 +1,6 @@
 <script lang="ts">
   import { control, send } from './store'
-  import { SUPPORTED_SCENES, isSceneSupported } from '../../../shared/view'
+  import { isSceneSupported } from '../../../shared/view'
   import { activeTournament } from '../../../shared/tournament'
   import type { BackgroundId, QrStyle, SceneId, ScenePart } from '../../../shared/types'
   import { choiceToRef, rangeSet, refToChoice, splitAcrossOutputs, toggleRound } from './tournament'
