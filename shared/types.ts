@@ -39,7 +39,9 @@ export interface Layers { background: BackgroundId; scene: SceneId; trackCard: b
   /** Where the logo sits on the title scene. Absent = 'corner'. */
   logo?: LogoMode
   /** Layout of the QR scene. Absent = 'center'. */
-  qrStyle?: QrStyle }
+  qrStyle?: QrStyle
+  /** Notice scene: also show the QR codes beside / under the text. */
+  noticeQr?: boolean }
 
 export interface FontStacks { eventTitle: string; headings: string; names: string; labels: string }
 export interface TitleView { preTitle: string; title: string; accent: string }
@@ -51,7 +53,7 @@ export type SceneView =
   | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; single: boolean; cupTracks: { name: string; thumb: string; current: boolean }[] }
   | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[] }
   | { kind: 'winner'; player: PlayerView; total: number }
-  | { kind: 'notice'; doc: NoticeDoc }
+  | { kind: 'notice'; doc: NoticeDoc; qr: QrItem[] | null }
   | { kind: 'qr'; style: QrStyle; title: TitleView; text: string; items: QrItem[] }
 export interface ViewModel {
   format: OutputFormat; canvas: { w: number; h: number }; safeArea: SafeArea; graphicsScale: number

@@ -16,7 +16,11 @@ describe('notice board', () => {
   it('setNotice updates the draft and the notice scene view', () => {
     const s = reduce(st, { type: 'setNotice', doc }, ctx)
     expect(s.draft.notice).toEqual(doc)
-    expect(deriveView(s.draft, { ...EMPTY_LAYERS, scene: 'notice' }, s.outputs[0], idx).scene).toEqual({ kind: 'notice', doc })
+    expect(deriveView(s.draft, { ...EMPTY_LAYERS, scene: 'notice' }, s.outputs[0], idx).scene).toEqual({ kind: 'notice', doc, qr: null })
+  })
+  it('adds the QR codes when the layer asks for them', () => {
+    const scene = deriveView(st.draft, { ...EMPTY_LAYERS, scene: 'notice', noticeQr: true }, st.outputs[0], idx).scene
+    expect(scene).toMatchObject({ kind: 'notice', qr: st.draft.qr.items })
   })
   it('is not offered on twin outputs', () => {
     expect(deriveView(st.draft, { ...EMPTY_LAYERS, scene: 'notice' }, st.outputs[1], idx).scene).toBeNull()
