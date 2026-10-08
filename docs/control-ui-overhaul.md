@@ -34,14 +34,14 @@ It is a show-control surface, not a dashboard. These came from the "production a
 
 `a-live.png`, `a-library.png`, `a-libconfirm.png`, `a-save.png`, `a-edit.png`, `a-drag.png`, `a-data.png`, `a-setup.png`
 
-The cue list is the spine of the page and is always visible. Layout: **Rundown (left) · monitors + scene strip (centre) · Look / Library inspector (right) · slim transport**. Workspaces collapse from 7 tabs to **Live · Show data · Setup**.
+The cue list is the spine of the page and is always visible. Layout (revised after review, see *Round 3*): **Rundown (left) · monitors + Looks library (centre) · this screen's scenes and options (right) · slim transport**. Workspaces collapse from 7 tabs to **Live · Show data · Setup**.
 
 - **Run / Edit lock** on the rundown. Run rows are glanceable: number, name, CUT/AUTO, ON AIR (red) / NEXT (green). A big **GO** sits at the foot of the rail.
 - **Edit** shows drag handles, ✕ and an inline editor per cue (look, take, after, recall). The editor says *"Used by 2 cues"* with **Make unique**, replacing the silent global overwrite.
 - **Add cue from Preview** is one button; **Save look…** has "Also add to rundown as cue N".
 - **Save look** is an inline panel: name, Preview / On air, and 4 groups (Look, Outputs armed, Race & players, Scores) instead of 8 checkboxes. "Advanced" still exposes all 8.
-- **Library** tab: tap a look to load it to Preview; a pinned "Preview now · Modified" card offers *Update "X"* (two-tap) or *Save as new…*.
-- **Scene strip** (12 visual tiles) replaces the scene button row; the inspector only shows options for the current scene (Race win: Part, Match, Split).
+- **Looks library** (centre, under the monitors): the saved presets as a tile grid with a filter. Tap a tile to load it to Preview; the header shows *Preview: X · Modified/Saved* with *Update "X"* (two-tap) and *Save as new…*. ⋯ on a tile renames, duplicates or deletes it.
+- **Scene editor** (right): for the screen chosen above the monitors, 12 scene tiles (Title, Line-up, Next race, Standings…), then that scene's options (Race win: Part, Match shown, Split), then Background and Overlays.
 
 Best for: scripted run-of-show, one operator learning the page. Cost: biggest restructure of the page shell, but every existing panel (monitors, layers, show data) is reused.
 
@@ -122,7 +122,7 @@ Companion keeps working for A, C and D as long as existing commands are unchange
 
 Shared: Undo (toast and Ctrl/Cmd+Z) for loads, saves, overwrites, deletes, moves; two-tap for overwrite and delete; pointer-based drag and drop (works with a finger); keyboard map; a disconnect state that disables controls; on-air graphics keep the data they were taken with, so editing scores never changes Program.
 
-- **A:** several rundowns with an inline switcher; per-cue editor with tri-state recall override; Library filter, rename, duplicate, delete; drag a Library grip onto the rundown; twin and HD outputs show Preview and Program side by side with a "recent takes" log.
+- **A:** several rundowns with an inline switcher; per-cue editor with tri-state recall override; Looks filter, rename, duplicate, delete; drag a Looks tile's grip onto the rundown, or tap its ＋ in Edit; twin and HD outputs show Preview and Program side by side with a "recent takes" log.
 - **B:** bank pages (Pre-show, Races, Tournament, Sponsors); STORE with a two-tap overwrite; Edit bank (drag to swap, rename, clear, delete); REC to record a sequence; sequence Edit with a roomy cue editor; the bank page as a Stream Deck (5×3 keys = Companion page).
 
 ### Race page (shared by A and B)
@@ -133,7 +133,7 @@ Just three things, per your steer:
 2. **Players and result.** Each player's name and character are editable in place; tap a finishing place per player (a taken place moves, never duplicates); adjustment steppers. Everything saves as you tap, like the real results table.
 3. **Scoreboard.** Ranked table with per-race points, adjustments and totals. When the match is complete it shows the winner (tie-breaks noted) and **Next match ▶**.
 
-It does not touch the graphics and does not switch matches. Graphics scenes stay on **Live** (scene tiles; "Match shown: Previous" keeps a finished match on screen), and match switching lives on the Tournament Overview. Free play (no tournament) uses the same page.
+It does not touch the graphics and does not switch matches. Graphics scenes stay on **Live** (the scene picker on the right; "Match shown: Previous" keeps a finished match on screen), and match switching lives on the Tournament Overview. Free play (no tournament) uses the same page.
 
 ### Tournament workspace (shared by A and B)
 
@@ -163,6 +163,15 @@ Replaces today's single long scroll (picker, match list, setup, results, three c
 
 Screenshots: `docs/mockups/ui/demo/shots/`. Option A: `a-live`, `a-library-update`, `a-save`, `a-edit`, `a-drag`, `a-library-manage`, `a-twin`, `a-hold`, `a-disconnected`, `a-live-previous-match`. Race: `a-race-start`, `a-race-complete`, `a-race-winner`, `a-race-map-changed`, `a-race-freeplay`. Tournament: `a-tour-overview`, `a-tour-round`, `a-tour-final`, `a-tour-graphics`, `a-tour-library`, `a-tour-new-round`, `a-tour-overview-todo`, `a-setup`. Option B: `b-live`, `b-store`, `b-bank-edit`, `b-sequence-edit`, `b-deck`, `b-rundowns`.
 
+### Round 3: Option A, revised
+
+A was picked. Change requested: the old centre scene strip becomes the **Looks library** (saved presets), and the right bar becomes the **per-screen scene editor**. Done in the demo (`?layout=a`):
+
+- **Centre:** output tabs, Preview and Program side by side (Wide now sits side by side too, so the library has room), then the Looks grid. The library header carries the Preview state (*Modified / Saved*), *Update* and *Save as new…*.
+- **Right:** *Wide screen* / *Twins screen* / … follows the output tab. Scenes first, the chosen scene's options straight below (Reveal for Line-up, Part and Match shown for Race win / Cup win, QR for Notice), then Background and Overlays. A scene with no options says so. *Based on "X" · Modified · ↺ Revert* sits on top.
+- **Save as new…** swaps the right bar for the inline save form and back, so the library stays visible.
+- Trade-off: Wide monitors are about half the previous height (426 px wide each at 1600 px). Say if you would rather keep them large and scroll the library.
+
 ### Where this leaves the recommendation
 
 The Race and Tournament workspaces are identical in A and B, so the **Live layout choice is independent** and can be made last. A is still my pick for a scripted show; B wins if the operator already thinks in Stream Deck pages. A hybrid is natural: A's layout with the Library offered as a numbered bank (B's slots and STORE) so a look has the same position on screen and on the deck.
@@ -187,7 +196,7 @@ The graphics in the mockups are schematic stand-ins, not the real renderer.
 
 ## Open questions
 
-1. A, B, or the hybrid (A's layout, Library as a numbered bank)? The Live layout is the only thing that differs.
+1. ~~A, B, or the hybrid?~~ **A chosen.** Still open: should the Looks tiles also carry a bank number, so a look has the same position on screen and on the Stream Deck (the hybrid)?
 2. Touchscreen, or mouse and keyboard plus Stream Deck? That decides how strictly the 44px targets matter.
 3. Is the Race page scope right (race and map, players, scoreboard), and is it fine that only the winner state offers **Next match ▶**?
 4. Do you want the per-race **map override**, and optional **round names**?

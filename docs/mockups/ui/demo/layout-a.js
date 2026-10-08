@@ -1,5 +1,5 @@
 'use strict'
-/* Layout A — Rundown-first: rundown rail (left) · monitors + scene strip (centre) · Look / Library / Save inspector (right). */
+/* Layout A — Rundown-first: rundown rail (left) · monitors + Looks library (centre) · this screen's scenes and their options (right). */
 
 const takeLbl = (t) => (t === 'cut' ? 'CUT' : t === 'auto' ? 'AUTO' : 'RECALL')
 const AFTERS = [['', 'Nothing'], ['nextRace', 'Then next race'], ['nextMatch', 'Then next match'], ['resetStack', 'Then reset rundown']]
@@ -52,49 +52,53 @@ function rundownRail() {
     ? `<div class="gofoot"><button class="go ${stby ? '' : 'off'}" data-act="go" ${stby ? '' : 'disabled'}><span class="gl">GO</span><span class="gt"><small>${stby ? `Fires cue ${r.pvw + 1} · ${takeLbl(stby.take)}` : 'End of rundown'}</small><b>${stby ? esc(lookById(stby.lookId)?.name ?? '') : 'Rewind to start again'}</b></span><kbd>G</kbd></button>
         <div class="gnav"><button class="btn sm" data-act="back">◀ Back</button><button class="btn sm" data-act="skip">Skip ▶</button><button class="btn sm" data-act="rewind">Rewind</button></div></div>`
     : `<div class="gofoot"><button class="btn ghost addprev" data-act="addprev"><span>＋ Add cue from Preview</span><span class="dim sm">${esc(lookById(S.loadedLookId)?.name ?? 'New look')}${isModified() ? ' · modified' : ''} → saved as a new look</span></button>
-        <div class="gnav" style="grid-template-columns:1fr 1fr"><button class="btn sm" data-act="rtab" data-t="library">＋ From Library</button><button class="btn sm" data-act="rdnew">＋ New rundown</button></div>
+        <div class="dim sm" style="text-align:center">Add from the Looks library: tap ＋ on a look, or drag its grip onto this list</div><button class="btn sm" data-act="rdnew">＋ New rundown</button>
         <button class="go off" style="height:46px" disabled><span class="gl" style="font-size:20px">GO</span><span class="gt"><small>Locked while editing</small></span></button></div>`
   return `<section class="panel">${head}${S.rdMenu ? rdMenu() : ''}${S.edit ? '<div class="editbar">EDITING — GO is locked. Switch to Run to fire cues.</div>' : ''}<div class="grow rdlist" data-drop="rundown" style="overflow:auto;position:relative">${rows}</div>${foot}</section>`
 }
 
-/* ── centre ── */
+/* ── centre: monitors, then the Looks library (saved presets) ── */
+const trunc = (s, n = 12) => (s.length > n ? s.slice(0, n) + '…' : s)
+function manageBar(l) {
+  const n = usedBy(l.id), del = S.confirm === 'del:' + l.id
+  return `<div class="ph libh manage"><b class="mname">${S.libRename === l.id ? `<input class="field inp sm" data-in="libren" value="${esc(l.name)}" maxlength="40" aria-label="Look name">` : esc(l.name)}</b><span class="dim sm">${n ? `in ${n} cue${n > 1 ? 's' : ''}` : 'not in a rundown'}</span>
+    <span class="mact"><button class="btn sm" data-act="libren" data-id="${l.id}">${S.libRename === l.id ? 'Save name' : 'Rename'}</button><button class="btn sm" data-act="libdup" data-id="${l.id}">Duplicate</button><button class="btn sm" data-act="libadd" data-id="${l.id}">＋ Add as cue</button>
+    <button class="btn sm ${del ? 'amberb' : 'danger'}" data-act="libdel" data-id="${l.id}">${del ? `Tap again${n ? ` · ${n} cue${n > 1 ? 's' : ''}` : ''}` : 'Delete'}</button><button class="btn sm acc" data-act="libmenu" data-id="${l.id}">Done</button></span></div>`
+}
+function libraryPanel() {
+  const look = lookById(S.loadedLookId), mod = isModified(), used = look ? usedBy(look.id) : 0
+  const f = S.libFilter.trim().toLowerCase(), list = S.looks.filter((l) => l.name.toLowerCase().includes(f)), menuLook = S.libMenu ? lookById(S.libMenu) : null
+  const upd = S.confirm === 'upd'
+    ? `<button class="btn amberb updb" data-act="upd"><span>Tap again to overwrite<br><small>affects ${used} cue${used === 1 ? '' : 's'}</small></span></button>`
+    : `<button class="btn updb" data-act="upd" ${look && mod ? '' : 'disabled'}>Update “${esc(trunc(look?.name ?? '', 10))}”</button>`
+  const head = menuLook ? manageBar(menuLook)
+    : `<div class="ph libh"><span class="lab">Looks</span><span class="dim cnt">${S.looks.length}</span><input class="field inp sm libf" data-in="libfilter" placeholder="Filter…" value="${esc(S.libFilter)}" aria-label="Filter looks">
+      <span class="libst">Preview: <b>${esc(look?.name ?? 'unsaved')}</b> ${mod ? '<span class="tag mod">● MODIFIED</span>' : '<span class="tag pvw">SAVED</span>'}</span>${upd}<button class="btn acc" data-act="saveopen">Save as new…</button></div>`
+  const tiles = list.map((l) => { const pvw = l.id === S.loadedLookId, pgm = l.id === S.programLookId, n = usedBy(l.id)
+    return `<div class="ltile ${pvw ? 'inpvw' : ''} ${pgm ? 'airtile' : ''} ${S.libMenu === l.id ? 'managing' : ''}"><button class="ltb" data-act="loadlook" data-id="${l.id}" aria-label="Load ${esc(l.name)} into Preview">${thumb(l, pgm ? '<span class="tag pgm">ON AIR</span>' : pvw ? '<span class="tag pvw">IN PREVIEW</span>' : '')}<span class="ltn">${esc(l.name)}</span><span class="lsub">${n ? `${n} cue${n > 1 ? 's' : ''}` : 'no cue'}</span></button>
+      <span class="gripc" data-drag="look:${l.id}" aria-label="Drag ${esc(l.name)} onto the rundown"><i></i></span><button class="lmore" data-act="libmenu" data-id="${l.id}" aria-label="Manage ${esc(l.name)}">⋯</button>${S.edit ? `<button class="ladd" data-act="libadd" data-id="${l.id}" aria-label="Add ${esc(l.name)} as a cue">＋</button>` : ''}</div>` }).join('')
+  return `<section class="panel libp">${head}<div class="grow libgrid">${tiles || '<div class="empty" style="grid-column:1/-1"><b>No looks yet</b><span>Set up Preview with the scene editor, then tap “Save as new…”.</span></div>'}</div></section>`
+}
 function centreA() {
-  const o = out(S.outSel), l = S.layers[o.id], pg = S.program[o.id]?.layers ?? blank()
-  const tiles = SCENES.map(([id, label]) => `<button class="scn ${l.scene === id ? 'sel' : ''} ${pg.scene === id ? 'live' : ''}" data-act="layer" data-k="scene" data-v="${id}"><div class="th">${gfx({ ...l, scene: id, bg: id === 'none' ? 'none' : l.bg, track: false, lt: false })}</div><span class="lb">${label}</span></button>`).join('')
-  return `<section class="centre">${outTabs()}${monitorsBlock()}<div class="scenes-h"><span class="lab">Scene for ${o.name} preview</span><span class="dim" style="margin-left:auto;font-size:12px">Tap = load into Preview · red tag = on air now</span></div><div class="scenes">${tiles}</div>${o.kind !== 'wide' ? logPanel() : ''}</section>`
+  const o = out(S.outSel)
+  return `<section class="centre">${outTabs()}<div class="pair">${monitor('pv', o)}${monitor('pg', o)}</div>${libraryPanel()}</section>`
 }
 
-/* ── inspector ── */
-function lookTabA() {
-  const l = S.layers[S.outSel], pg = S.program[S.outSel]?.layers ?? blank(), look = lookById(S.loadedLookId), mod = isModified()
-  const so = sceneOptions()
-  return `<div class="stat2"><div class="l1">Based on <b>${esc(look?.name ?? 'nothing yet')}</b>${mod ? '<span class="tag mod">● MODIFIED</span>' : '<span class="tag pvw">SAVED</span>'}</div>
-      <div class="l2"><button class="btn" data-act="revert" ${look && mod ? '' : 'disabled'}>↺ Revert</button><button class="btn acc" data-act="saveopen">Save look…</button></div></div>
+/* ── right bar: the screen's scenes, then the options for the chosen scene ── */
+function sceneEditorA() {
+  const o = out(S.outSel), l = S.layers[o.id], pg = S.program[o.id]?.layers ?? blank(), look = lookById(S.loadedLookId), mod = isModified(), so = sceneOptions()
+  const scenes = SCENES.map(([id, label]) => `<button class="scb ${l.scene === id ? 'sel' : ''} ${pg.scene === id ? 'livedot' : ''}" data-act="layer" data-k="scene" data-v="${id}" aria-pressed="${l.scene === id}"><span class="sct"><span class="th">${gfx({ ...l, scene: id, bg: id === 'none' ? 'none' : l.bg, track: false, lt: false })}</span></span><span class="scl">${label}</span></button>`).join('')
+  return `<section class="panel scenep"><div class="ph"><span class="lab">${esc(o.name)} screen</span><span class="dim" style="font-size:12px">${o.fmt}</span></div>
+    <div class="stat3"><span>Based on <b>${esc(look?.name ?? 'nothing yet')}</b></span>${mod ? '<span class="tag mod">● MODIFIED</span>' : '<span class="tag pvw">SAVED</span>'}<button class="btn sm" style="margin-left:auto" data-act="revert" ${look && mod ? '' : 'disabled'}>↺ Revert</button></div>
     <div class="grow" style="overflow:auto">
-      ${so.length ? sectionHtml(`${SCENE_NAME[l.scene]} options`, '', so.map(([k, h]) => `<div class="optrow"><span class="lab">${k}</span>${h}</div>`).join('')) : ''}
-      ${sectionHtml('Background', l.bg === 'none' ? 'None' : 'Pattern ' + l.bg, `<div class="grid2">${BGS.map(([v, t]) => `<div class="seg" style="border:0">${opt('layer', 'bg', v, t, l.bg, 'style="border:1px solid var(--ui-field);border-radius:8px"')}</div>`).join('')}</div>`)}
+      ${sectionHtml('Scene', SCENE_NAME[l.scene], `<div class="scgrid2">${scenes}</div>`)}
+      ${l.scene === 'none' ? '' : sectionHtml(`${SCENE_NAME[l.scene]} options`, '', so.length ? so.map(([k, h]) => `<div class="optrow"><span class="lab">${k}</span>${h}</div>`).join('') : '<div class="dim" style="font-size:12px">No extra options for this scene.</div>')}
+      ${sectionHtml('Background', l.bg === 'none' ? 'None' : 'Pattern ' + l.bg, `<div class="seg bgseg">${BGS.map(([v, t]) => opt('layer', 'bg', v, t.split(' ')[0], l.bg)).join('')}</div>`)}
       ${sectionHtml('Overlays', [l.track && 'Track card', l.lt && 'Lower thirds'].filter(Boolean).join(' · ') || 'none',
-        `${tgl('layerflip', 'track', 'Track card', l.track, pg.track)}${tgl('layerflip', 'lt', 'Lower thirds', l.lt, pg.lt)}${out(S.outSel).kind !== 'twin' ? `<div class="chips4">${[0, 1, 2, 3].map((i) => `<button class="${l.lt && l.ltp.includes(i) ? 'sel' : ''} ${l.lt ? '' : 'dis'}" data-act="ltp" data-i="${i}">P${i + 1}</button>`).join('')}</div>` : ''}`)}
-    </div>`
+        `<div class="grid2">${tgl('layerflip', 'track', 'Track card', l.track, pg.track)}${tgl('layerflip', 'lt', 'Lower thirds', l.lt, pg.lt)}</div>${o.kind !== 'twin' ? `<div class="chips4">${[0, 1, 2, 3].map((i) => `<button class="${l.lt && l.ltp.includes(i) ? 'sel' : ''} ${l.lt ? '' : 'dis'}" data-act="ltp" data-i="${i}">P${i + 1}</button>`).join('')}</div>` : ''}`)}
+    </div></section>`
 }
-function libTabA() {
-  const look = lookById(S.loadedLookId), mod = isModified(), used = look ? usedBy(look.id) : 0
-  const upd = S.confirm === 'upd'
-    ? `<button class="btn amberb" data-act="upd"><span>Tap again to overwrite<br><small>affects ${used} cue${used === 1 ? '' : 's'}</small></span></button>`
-    : `<button class="btn" data-act="upd" ${look && mod ? '' : 'disabled'}>Update “${esc((look?.name ?? '').slice(0, 11))}${(look?.name ?? '').length > 11 ? '…' : ''}”</button>`
-  const f = S.libFilter.trim().toLowerCase(), list = S.looks.filter((l) => l.name.toLowerCase().includes(f))
-  const cards = list.map((l) => { const pvw = l.id === S.loadedLookId, pgm = l.id === S.programLookId, n = usedBy(l.id), menu = S.libMenu === l.id
-    return `<div class="look ${pvw ? 'inpvw' : ''} ${pgm ? 'onair' : ''}"><span class="gripc" data-drag="look:${l.id}" aria-label="Drag to the rundown"><i></i></span>
-      <button class="lthumb" data-act="loadlook" data-id="${l.id}" aria-label="Load ${esc(l.name)} into Preview">${thumb(l, pgm ? '<span class="tag pgm">ON AIR</span>' : pvw ? '<span class="tag pvw">IN PREVIEW</span>' : '')}</button>
-      <div class="lm" data-act="loadlook" data-id="${l.id}">${S.libRename === l.id ? `<input class="field inp sm" data-in="libren" value="${esc(l.name)}" maxlength="40">` : `<b>${esc(l.name)}</b>`}<small>${n ? `In ${n} cue${n > 1 ? 's' : ''}` : 'Not in a rundown'}</small></div>
-      ${menu ? `<div class="manage"><button class="btn sm" data-act="libren" data-id="${l.id}">${S.libRename === l.id ? 'Save name' : 'Rename'}</button><button class="btn sm" data-act="libdup" data-id="${l.id}">Duplicate</button><button class="btn sm ${S.confirm === 'del:' + l.id ? 'amberb' : 'danger'}" data-act="libdel" data-id="${l.id}">${S.confirm === 'del:' + l.id ? `Tap again${n ? ` · ${n} cue${n > 1 ? 's' : ''}` : ''}` : 'Delete'}</button><button class="btn sm" data-act="libmenu" data-id="${l.id}">Done</button></div>`
-        : `<div class="la"><button class="btn" data-act="libadd" data-id="${l.id}">＋ Cue</button><button class="btn" data-act="libmenu" data-id="${l.id}" aria-label="Manage ${esc(l.name)}">⋯</button></div>`}</div>` }).join('')
-  return `<div class="curcard ${mod ? '' : 'clean'}"><div class="r1"><div class="th">${gfx(S.layers.wide)}</div><div><b>Preview now</b> ${mod ? '<span class="tag mod">● MODIFIED</span>' : '<span class="tag pvw">SAVED</span>'}<small>${look ? `Based on “${esc(look.name)}”<br>Used by ${used} cue${used === 1 ? '' : 's'}` : 'Not saved yet'}</small></div></div>
-      <div class="r2">${upd}<button class="btn acc" data-act="saveopen">Save as new…</button></div></div>
-    <input class="field inp search" data-in="libfilter" placeholder="Filter ${S.looks.length} looks…" value="${esc(S.libFilter)}" aria-label="Filter looks">
-    <div class="grow" style="overflow:auto"><div class="looks">${cards || '<div class="empty" style="grid-column:1/-1"><b>No looks yet</b><span>Set up Preview the way you want it, then tap “Save as new…”.</span></div>'}</div></div>
-    <div class="hint">Tap a look to load it into Preview — nothing goes to air until you Take or GO. Drag the grip onto the rundown to add a cue.</div>`
-}
+
 function savePanel() {
   const f = S.saveForm, g = groupsFromScope(f.scope8), r = R()
   return `<div class="ph"><button class="btn sm" data-act="savecancel">← Back</button><b style="color:#fff">Save look</b></div>
@@ -111,7 +115,7 @@ function savePanel() {
 }
 function inspectorA() {
   if (S.saveOpen) return `<section class="panel">${savePanel()}</section>`
-  return `<section class="panel"><div class="tabs2"><button data-act="rtab" data-t="look" class="${S.rtab === 'look' ? 'on' : ''}">Look</button><button data-act="rtab" data-t="library" class="${S.rtab === 'library' ? 'on' : ''}">Library <span class="ct">${S.looks.length}</span></button></div>${S.rtab === 'look' ? lookTabA() : libTabA()}</section>`
+  return sceneEditorA()
 }
 
 /* ── workspace dispatch (A) ── */

@@ -91,7 +91,7 @@ function act(a, d) {
     case 'seqmode': S.seqEdit = d.m === 'edit'; S.selCue = null; S.advCue = null; S.rdMenu = false; break
     case 'rdmenu': S.rdMenu = !S.rdMenu; S.rdRename = null; break
     case 'rdpick': S.rundownId = d.id; S.rdMenu = false; S.openCue = null; S.selCue = null; break
-    case 'rdnew': createRundown(); S.rdMenu = false; S.edit = true; S.seqEdit = true; toast('New rundown — add cues from Preview or the Library', true); break
+    case 'rdnew': createRundown(); S.rdMenu = false; S.edit = true; S.seqEdit = true; toast('New rundown — add cues from Preview or the Looks library', true); break
     case 'rdrename': S.rdRename = r.name; break
     case 'rdrenamego': if ((S.rdRename ?? '').trim()) { pushUndo('rename rundown'); r.name = S.rdRename.trim() } S.rdRename = null; break
     case 'rddel': if (S.rundowns.length > 1 && twoTap('rddel')) { pushUndo('delete rundown'); S.rundowns = S.rundowns.filter((x) => x.id !== r.id); S.rundownId = S.rundowns[0].id; S.rdMenu = false; toast(`Deleted rundown “${r.name}”`, true) } break
@@ -111,7 +111,6 @@ function act(a, d) {
     case 'rec': S.rec = !S.rec; if (S.rec) toast('Recording — tap looks in the bank to append them as cues'); break
 
     /* looks and the inspector (A) */
-    case 'rtab': S.rtab = d.t; S.saveOpen = false; break
     case 'revert': { const look = lookById(S.loadedLookId); if (look) { pushUndo('revert'); applyLook(look, { layers: true, armed: true }); toast(`Preview reverted to “${look.name}”`, true) } break }
     case 'saveopen': S.saveForm = { name: suggestName(), from: 'pvw', scope8: scopeFromGroups(DEFAULT_GROUPS), adv: false, addCue: false, take: 'auto' }; S.saveOpen = true; break
     case 'savecancel': S.saveOpen = false; break
@@ -125,7 +124,7 @@ function act(a, d) {
       const f = S.saveForm; pushUndo('save look')
       const look = createLook(f.name.trim(), f.from, null, { scope8: f.scope8 }); let msg = `Saved look “${look.name}”`
       if (f.addCue) { const { at } = addCue(look.id, null, { take: f.take === 'none' ? null : f.take }); msg += ` and added as cue ${at + 1}` }
-      S.saveOpen = false; S.rtab = 'library'; toast(msg, true); break
+      S.saveOpen = false; toast(msg, true); break
     }
     case 'upd': { const look = lookById(S.loadedLookId); if (look && twoTap('upd')) updateLook(look.id, 'pvw'); break }
     case 'loadlook': loadLook(d.id); S.libMenu = null; break
@@ -149,7 +148,7 @@ function act(a, d) {
     case 'loadslot': { const id = S.bank.pages[S.bank.page].slots[+d.i]; if (id) { loadLook(id); if (S.rec) { pushUndo('record cue'); const { at } = addCue(id); toast(`Recorded cue ${at + 1}: ${lookById(id).name}`, true) } } break }
     case 'slotmenu': S.slotMenu = S.slotMenu === +d.i ? null : +d.i; S.libRename = null; S.confirm = null; break
     case 'slotren': { const id = S.bank.pages[S.bank.page].slots[+d.i]; if (S.libRename === id) { renameLook(id, S.libRenVal ?? ''); S.libRename = null } else { S.libRename = id; S.libRenVal = lookById(id).name } break }
-    case 'slotclear': pushUndo('clear slot'); S.bank.pages[S.bank.page].slots[+d.i] = null; S.slotMenu = null; toast(`Cleared slot ${+d.i + 1} — the look is still in the Library`, true); break
+    case 'slotclear': pushUndo('clear slot'); S.bank.pages[S.bank.page].slots[+d.i] = null; S.slotMenu = null; toast(`Cleared slot ${+d.i + 1} — the look is still in the Looks library`, true); break
     case 'more': S.moreScenes = !S.moreScenes; break
     case 'deck': S.modal = 'deck'; break
   }
@@ -287,10 +286,11 @@ document.addEventListener('pointercancel', () => dragEnd(false))
 const GUIDE = {
   A: [
     ['Fire the show', 'Tap cue 5 “Standings” in the rundown: it loads into Preview (green). Press <kbd>G</kbd> or the big GO: it goes to Program with the cue’s Cut/Auto and the next cue loads. Cue 7 has “then next race”, the last cue “then next match”.'],
-    ['Change Preview, then save or update', 'Tap a different scene tile. Preview shows MODIFIED. Open <b>Library</b>: “Update …” needs two taps and says how many cues it affects; “Save as new…” opens the inline form. Try the Undo toast.'],
-    ['Build a rundown from what you see', 'Switch the rundown to <b>Edit</b>. “Add cue from Preview” saves a look and appends a cue in one tap. Drag a Library card’s grip onto the rundown, or tap “＋ Cue”. Drag a cue grip to reorder.'],
+    ['Pick scenes per screen', 'Pick a screen (Wide, Twins, Stream…) above the monitors. The right bar lists that screen’s scenes (Title, Line-up, Next race, Standings…), then the options for the chosen scene, then Background and Overlays. Everything lands in Preview first.'],
+    ['Looks library: load, update, save', 'The Looks tiles under the monitors are your saved presets. Tap one to load it into Preview (never Program). Change a scene or option and Preview shows MODIFIED: “Update …” needs two taps and says how many cues it affects, “Save as new…” opens the inline form. ⋯ on a tile renames, duplicates or deletes it. Try the Undo toast.'],
+    ['Build a rundown from what you see', 'Switch the rundown to <b>Edit</b>. “Add cue from Preview” saves a look and appends a cue in one tap. Drag a Looks tile’s grip onto the rundown, or tap its ＋. Drag a cue grip to reorder.'],
     ['Run a race', 'Open <b>Race</b>. Left: pick the live race and its map. Middle: tap each player’s finishing place (names and characters are editable here too). Right: the scoreboard updates as you tap. Then <b>Next race ▶</b>; after the last race the winner appears with <b>Next match ▶</b>.'],
-    ['Show the result on the graphics', 'The Race page never touches the graphics. Use the <b>Live</b> scene tiles (Race win, Standings, Cup win, Bracket, Matches). “Match shown: Previous” keeps the match you just finished on screen after you move on.'],
+    ['Show the result on the graphics', 'The Race page never touches the graphics. Use the scene picker on the <b>Live</b> page (Race win, Standings, Cup win, Bracket, Matches). “Match shown: Previous” keeps the match you just finished on screen after you move on.'],
     ['Set up a tournament', 'Open <b>Tournament</b>. The left outline lists each round: click one to edit its matches (tabs), players and results. The Final’s players fill automatically from the semis. <b>Overview</b> lists anything still to fix; <b>All ›</b> manages tournaments.'],
     ['Emergency and safety', 'Try HOLD, CLEAR and FTB. Keys: Space = AUTO, Enter = CUT, H, Shift+Esc, Shift+B, 1–4 arm outputs, Ctrl/Cmd+Z undo. Use “Simulate disconnect” above.'],
   ],

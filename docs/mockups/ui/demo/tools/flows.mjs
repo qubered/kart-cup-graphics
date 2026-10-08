@@ -1,4 +1,4 @@
-// Click-through checks for the control-page demo (94 assertions).
+// Click-through checks for the control-page demo .
 //   node docs/mockups/ui/demo/tools/flows.mjs [screenshotDir]
 // Needs Chromium: CHROMIUM_PATH=/path/to/chromium (defaults to /opt/pw-browsers/chromium).
 import { chromium } from 'playwright'
@@ -42,11 +42,10 @@ await p.keyboard.press('g'); await p.keyboard.press('g'); await p.waitForTimeout
 r = await R(); ok('A: GO x2 reaches cue 7 and runs its "then next race" action', r.pgm === 6 && (await ev(() => DEMO.S.race.index)) === 3, JSON.stringify(r))
 await shot('a-after-go')
 
-// modify preview, then Library: two-tap update
+// modify preview, then the Looks library: two-tap update
 const lid = await SS('loadedLookId'), scBefore = await ev((id) => lookById(id).layers.wide.scene, lid)
 await click('[data-act=layer][data-v=bracket]')
 ok('A: changing a scene tile marks Preview modified', await ev(() => isModified()))
-await click('[data-act=rtab][data-t=library]')
 await click('[data-act=upd]')
 ok('A: first tap on Update only arms it (nothing overwritten yet)', (await SS('confirm')) === 'upd' && (await ev((id) => lookById(id).layers.wide.scene, lid)) === scBefore)
 await shot('a-libconfirm-live')
@@ -57,7 +56,7 @@ ok('A: Undo restores the previous look', (await ev((id) => lookById(id).layers.w
 
 // save look inline with add-to-rundown
 const looksBefore = (await SS('looks')).length, cuesBefore = (await R()).n
-await click('[data-act=rtab][data-t=look]'); await click('[data-act=saveopen]')
+await click('[data-act=saveopen]')
 await p.locator('[data-in=savename]').fill('Test look'); await click('[data-act=saveaddcue]')
 await shot('a-save-live')
 await click('[data-act=savego]')
@@ -82,10 +81,9 @@ const after = (await R()).looks.slice(0, 4)
 ok('A: dragging a grip reorders the rundown', JSON.stringify(before) !== JSON.stringify(after) && after[2] === before[0], JSON.stringify({ before, after }))
 await shot('a-edit-live')
 // drag library card onto rundown
-await click('[data-act=rtab][data-t=library]')
 const cuesN = (await R()).n
 const rl = await p.locator('.rdlist').boundingBox()
-await drag('.look [data-drag^="look:"]', rl.x + 120, rl.y + 60)
+await drag('.ltile [data-drag^="look:"]', rl.x + 120, rl.y + 60)
 ok('A: dragging a Library card onto the rundown adds a cue', (await R()).n === cuesN + 1)
 await click('[data-act=mode][data-m=run]')
 
@@ -96,13 +94,31 @@ await p.keyboard.press('Control+z'); ok('A: Ctrl+Z undoes the removal', (await R
 await click('[data-act=mode][data-m=run]')
 
 // library manage: rename / duplicate / delete (two-tap)
-await click('[data-act=rtab][data-t=library]')
 const l0 = (await SS('looks')).length
-await click('[data-act=libmenu]'); await click('[data-act=libdup]')
+await click('.ltile [data-act=libmenu]'); await click('[data-act=libdup]')
 ok('A: Duplicate adds a look', (await SS('looks')).length === l0 + 1)
 await click('[data-act=libdel]'); ok('A: Delete needs a second tap', (await SS('looks')).length === l0 + 1 && (await SS('confirm')).startsWith('del:'))
 await click('[data-act=libdel]'); ok('A: second tap deletes', (await SS('looks')).length <= l0)
 await shot('a-library-manage')
+
+// centre = Looks library, right = per-screen scene editor
+await p.goto(url('layout=a&fresh=1')); await p.waitForTimeout(250)
+ok('A: Looks library sits under the monitors, scene editor is the right bar', (await p.locator('.centre .libp').count()) === 1 && (await p.locator('.main > .scenep').count()) === 1 && (await p.locator('.scenep .ltile').count()) === 0)
+ok('A: scene editor lists all 12 scenes for the selected screen', (await p.locator('.scenep .scb').count()) === 12 && (await p.locator('.scenep .ph .lab').innerText()).toLowerCase().includes('wide'))
+await click('[data-act=out][data-o=twin]')
+ok('A: choosing another screen retargets the scene editor', (await p.locator('.scenep .ph .lab').innerText()).toLowerCase().includes('twin'))
+await click('[data-act=out][data-o=wide]')
+await click('.scenep [data-v=lineup]')
+ok('A: Line-up shows Reveal options under the scene grid', (await p.locator('.scenep').innerText()).toLowerCase().includes('reveal') && (await p.locator('.scenep').innerText()).toLowerCase().includes('line-up options'))
+await click('.scenep [data-v=standings]')
+ok('A: a scene without options says so', (await p.locator('.scenep').innerText()).toLowerCase().includes('no extra options'))
+const pgmLayers0 = await ev(() => JSON.stringify(DEMO.S.program.wide.layers))
+await click('.ltile [data-act=loadlook][data-id=l2]')
+ok('A: tapping a Look tile loads it into Preview only', (await SS('loadedLookId')) === 'l2' && (await ev(() => JSON.stringify(DEMO.S.program.wide.layers))) === pgmLayers0 && !(await ev(() => isModified())))
+ok('A: loaded tile is marked IN PREVIEW and the header says SAVED', (await p.locator('.ltile.inpvw').count()) === 1 && (await p.locator('.libst .tag.pvw').count()) === 1)
+await p.locator('[data-in=libfilter]').fill('race'); await p.waitForTimeout(80)
+ok('A: filter narrows the library', (await p.locator('.ltile').count()) > 0 && (await p.locator('.ltile').count()) < 10)
+await p.locator('[data-in=libfilter]').fill('')
 
 // ── Race: live race + map, players, scoreboard ──
 await p.goto(url('layout=a&fresh=1')); await p.waitForTimeout(250)

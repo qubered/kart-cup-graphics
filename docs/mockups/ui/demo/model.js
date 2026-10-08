@@ -149,7 +149,7 @@ function seed() {
   const cues = [cue('l1', 'cut'), cue('l3', 'auto'), cue('l4', 'auto'), cue('l5', 'cut', 'nextRace'), cue('l6', 'auto'), cue('l4', 'auto'), cue('l5', 'cut', 'nextRace'), cue('l6', 'auto'), cue('l7', 'auto', 'nextMatch')]
   const slots = (...ids) => [...ids, ...Array(SLOTS - ids.length).fill(null)]
   const s = {
-    layout: 'A', view: 'live', rtab: 'look', outSel: 'wide', snav: 'Outputs', tpage: 'overview', tmatch: 'm3', tnew: null, trename: null, matchRefSel: 'active', matchSetSel: 'all',
+    layout: 'A', view: 'live', outSel: 'wide', snav: 'Outputs', tpage: 'overview', tmatch: 'm3', tnew: null, trename: null, matchRefSel: 'active', matchSetSel: 'all',
     looks, rundowns: [{ id: 'r1', name: 'Per-match show', cues, pgm: 2, pvw: 3 }], rundownId: 'r1',
     bank: { page: 1, pages: [{ name: 'Pre-show', slots: slots('l1', 'l2', 'l3', 'l8') }, { name: 'Races', slots: slots('l4', 'l5', 'l6', 'l7') }, { name: 'Tournament', slots: slots('l9', 'l10') }, { name: 'Sponsors', slots: slots('l8') }] },
     layers: {}, program: {}, armed: [...base.armed], speed: 'normal', mattify: true, event: clone(base.style),
