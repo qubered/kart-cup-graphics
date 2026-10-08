@@ -38,3 +38,12 @@ test('title scene shows the logo top-right, clear of the track card, once per tw
   await command({ type: 'take', mode: 'cut', outputIds: ['twins'] })
   await expect(page.locator('[data-layer=scene] .logo-mark svg')).toHaveCount(2)
 })
+
+test('Icon pattern background (B) includes the logo as one of its icons', async ({ page }) => {
+  await command({ type: 'setLayers', outputId: 'wide', patch: { background: 'B' } })
+  await command({ type: 'take', mode: 'cut', outputIds: ['wide'] })
+  await page.goto('/out/wide'); await page.waitForSelector('body[data-ready]')
+  expect(await page.locator('[data-bg=B] #pattern-tile use[href="#i-logo"]').count()).toBe(1)
+  const symbol = await page.evaluate(() => document.querySelector('[data-bg=B] #i-logo')?.innerHTML ?? '')
+  expect(symbol).toContain(LOGO_PATH.slice(0, 60))
+})
