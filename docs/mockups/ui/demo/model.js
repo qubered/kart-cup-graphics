@@ -159,7 +159,7 @@ function seed() {
     // ephemeral UI state
     hold: false, ftb: false, cleared: false, lastTake: null, log: [],
     edit: false, openCue: null, rdMenu: false, rdRename: null, advCue: null,
-    saveOpen: false, saveForm: null, libFilter: '', libMenu: null, libRename: null,
+    saveOpen: false, saveForm: null, libFilter: '', libMenu: null, libRename: null, libRecalls: false, libAdv: false,
     store: false, bankEdit: false, slotMenu: null, rec: false, seqEdit: false, selCue: null,
     confirm: null, toast: null, undo: [], connected: true, modal: null,
   }

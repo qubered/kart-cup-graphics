@@ -170,6 +170,7 @@ A was picked. Change requested: the old centre scene strip becomes the **Looks l
 - **Centre:** output tabs, Preview and Program side by side (Wide now sits side by side too, so the library has room), then the Looks grid. The library header carries the Preview state (*Modified / Saved*), *Update* and *Save as new…*.
 - **Right:** *Wide screen* / *Twins screen* / … follows the output tab. Scenes first, the chosen scene's options straight below (Reveal for Line-up, Part and Match shown for Race win / Cup win, QR for Notice), then Background and Overlays. A scene with no options says so. *Based on "X" · Modified · ↺ Revert* sits on top.
 - **Save as new…** swaps the right bar for the inline save form and back, so the library stays visible.
+- **Recall options:** the save form says *"Saves all 4 screens, not just Wide"* and groups the 8 recall flags into 4 toggles (Advanced shows all 8). The ⋯ manage bar has **Recalls…**, which edits a saved look's flags later; a cue can still override them per cue.
 - Trade-off: Wide monitors are about half the previous height (426 px wide each at 1600 px). Say if you would rather keep them large and scroll the library.
 
 ### Where this leaves the recommendation

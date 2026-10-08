@@ -120,6 +120,22 @@ await p.locator('[data-in=libfilter]').fill('race'); await p.waitForTimeout(80)
 ok('A: filter narrows the library', (await p.locator('.ltile').count()) > 0 && (await p.locator('.ltile').count()) < 10)
 await p.locator('[data-in=libfilter]').fill('')
 
+// recall options: per look (manage bar) and the save-form note
+await click('.ltile [data-act=libmenu][data-id=l2]'); await click('[data-act=librecalls]')
+ok('A: manage bar opens a Recalls editor for that look', (await p.locator('.recallbar').count()) === 1)
+const sc0 = await ev(() => JSON.stringify(lookById('l2').scope8))
+await click('.recallbar [data-act=libgroup][data-g=race]')
+ok('A: toggling Race & players changes what the look recalls', await ev(() => { const s = lookById('l2').scope8; return s.match && s.players }))
+await p.keyboard.press('Control+z')
+ok('A: Ctrl+Z undoes a recall change', (await ev(() => JSON.stringify(lookById('l2').scope8))) === sc0)
+await click('.ltile [data-act=libmenu][data-id=l2]'); await click('[data-act=librecalls]'); await click('[data-act=libadv]')
+await click('.recallbar [data-act=libkey][data-k=scores]')
+ok('A: Advanced exposes each of the 8 parts', (await p.locator('.recallbar [data-act=libkey]').count()) === 8 && await ev(() => lookById('l2').scope8.scores === true))
+await click('.manage [data-act=libmenu]')
+await click('[data-act=saveopen]')
+ok('A: save form says it saves all screens, not just the selected one', (await p.locator('.savenote').innerText()).includes('all 4 screens'))
+await click('[data-act=savecancel]')
+
 // ── Race: live race + map, players, scoreboard ──
 await p.goto(url('layout=a&fresh=1')); await p.waitForTimeout(250)
 await click('[data-act=view][data-v=race]')

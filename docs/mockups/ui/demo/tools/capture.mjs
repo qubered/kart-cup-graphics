@@ -24,7 +24,7 @@ await fresh('a'); await click('[data-act=mode][data-m=edit]'); await click('[dat
 await fresh('a'); await click('[data-act=mode][data-m=edit]')
 { const g = await p.locator('[data-drag="cue:1"]').first().boundingBox(), row = await p.locator('.cue.ed[data-di="6"]').boundingBox()
   await p.mouse.move(g.x + 10, g.y + 10); await p.mouse.down(); await p.mouse.move(g.x + 30, g.y + 40, { steps: 3 }); await p.mouse.move(row.x + 120, row.y + row.height - 4, { steps: 12 }); await shot('a-drag'); await p.mouse.up() }
-await fresh('a'); await click('[data-act=libmenu][data-id=l2]'); await shot('a-library-manage')
+await fresh('a'); await click('[data-act=libmenu][data-id=l2]'); await click('[data-act=librecalls]'); await shot('a-library-manage')
 await fresh('a'); await click('[data-act=out][data-o=twin]'); await p.keyboard.press('Enter'); await shot('a-twin')
 await fresh('a'); await click('[data-act=emerg][data-e=hold]'); await shot('a-hold')
 await fresh('a'); await p.evaluate(() => { DEMO.S.connected = false; DEMO.render() }); await shot('a-disconnected')

@@ -312,3 +312,11 @@ input.field.libf { width: 112px; flex: none; height: 40px; font-size: 13px; }
 .scb.livedot::after { top: 8px; right: 8px; }
 .bgseg button { padding: 0 4px; }
 .stat3 > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .stat3 .tag, .stat3 .btn { flex: none; }
+
+.manage { height: auto; min-height: 54px; flex-wrap: wrap; padding-top: 7px; padding-bottom: 7px; } .manage .mname { max-width: 150px; } .manage .mname .inp { width: 150px; }
+.mact .btn.sel { background: #1e3a8a; border-color: #2f56b8; color: #fff; }
+.recallbar { padding: 10px 12px 12px; border-bottom: 1px solid var(--ui-line); background: #101319; display: grid; gap: 8px; flex: none; }
+.rbtop { display: flex; flex-direction: column; gap: 2px; } .rbtop b { color: #fff; font-size: 13px; }
+.rbgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; } .rbgrid .tgl { min-height: 56px; padding: 0 10px; } .rbgrid .tgl .sw { margin-left: 6px; }
+.rbadv { margin-left: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); } .recallbar .linkb { text-align: left; padding: 0; }
+.savenote { line-height: 1.35; padding: 0 2px; }

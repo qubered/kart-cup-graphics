@@ -129,7 +129,11 @@ function act(a, d) {
     case 'upd': { const look = lookById(S.loadedLookId); if (look && twoTap('upd')) updateLook(look.id, 'pvw'); break }
     case 'loadlook': loadLook(d.id); S.libMenu = null; break
     case 'libadd': { pushUndo('add cue'); const { at } = addCue(d.id); toast(`Added “${lookById(d.id).name}” as cue ${at + 1}`, true); break }
-    case 'libmenu': S.libMenu = S.libMenu === d.id ? null : d.id; S.libRename = null; S.confirm = null; break
+    case 'libmenu': S.libMenu = S.libMenu === d.id ? null : d.id; S.libRename = null; S.libRecalls = false; S.libAdv = false; S.confirm = null; break
+    case 'librecalls': flip(S, 'libRecalls'); break
+    case 'libadv': flip(S, 'libAdv'); break
+    case 'libgroup': { const l = lookById(S.libMenu), g = GROUPS.find((x) => x.key === d.g); if (!l || !g) break; pushUndo('recalls'); const on = groupsFromScope(l.scope8)[d.g]; g.keys.forEach((k) => { l.scope8[k] = !on }); break }
+    case 'libkey': { const l = lookById(S.libMenu); if (!l) break; pushUndo('recalls'); l.scope8[d.k] = !l.scope8[d.k]; break }
     case 'libren': if (S.libRename === d.id) { renameLook(d.id, S.libRenVal ?? ''); S.libRename = null } else { S.libRename = d.id; S.libRenVal = lookById(d.id).name } break
     case 'libdup': { const c = duplicateLook(d.id); if (c) toast(`Duplicated as “${c.name}”`, true); break }
     case 'libdel': if (twoTap('del:' + d.id)) { deleteLook(d.id); S.libMenu = null; S.slotMenu = null } break

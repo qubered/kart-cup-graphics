@@ -62,8 +62,15 @@ const trunc = (s, n = 12) => (s.length > n ? s.slice(0, n) + '…' : s)
 function manageBar(l) {
   const n = usedBy(l.id), del = S.confirm === 'del:' + l.id
   return `<div class="ph libh manage"><b class="mname">${S.libRename === l.id ? `<input class="field inp sm" data-in="libren" value="${esc(l.name)}" maxlength="40" aria-label="Look name">` : esc(l.name)}</b><span class="dim sm">${n ? `in ${n} cue${n > 1 ? 's' : ''}` : 'not in a rundown'}</span>
-    <span class="mact"><button class="btn sm" data-act="libren" data-id="${l.id}">${S.libRename === l.id ? 'Save name' : 'Rename'}</button><button class="btn sm" data-act="libdup" data-id="${l.id}">Duplicate</button><button class="btn sm" data-act="libadd" data-id="${l.id}">＋ Add as cue</button>
+    <span class="mact"><button class="btn sm ${S.libRecalls ? 'sel' : ''}" data-act="librecalls" aria-expanded="${S.libRecalls}">Recalls…</button><button class="btn sm" data-act="libren" data-id="${l.id}">${S.libRename === l.id ? 'Save name' : 'Rename'}</button><button class="btn sm" data-act="libdup" data-id="${l.id}">Duplicate</button><button class="btn sm" data-act="libadd" data-id="${l.id}">＋ Cue</button>
     <button class="btn sm ${del ? 'amberb' : 'danger'}" data-act="libdel" data-id="${l.id}">${del ? `Tap again${n ? ` · ${n} cue${n > 1 ? 's' : ''}` : ''}` : 'Delete'}</button><button class="btn sm acc" data-act="libmenu" data-id="${l.id}">Done</button></span></div>`
+}
+function recallBar(l) {
+  const g = groupsFromScope(l.scope8)
+  return `<div class="recallbar"><div class="rbtop"><b>When “${esc(trunc(l.name, 24))}” is recalled it restores</b><span class="dim sm">${scopeSummary(l.scope8)} · applies to every cue using it unless the cue overrides it</span></div>
+    <div class="rbgrid">${GROUPS.map((x) => `<button class="tgl ${g[x.key] ? 'on' : ''}" data-act="libgroup" data-g="${x.key}" aria-pressed="${g[x.key]}"><span class="tt"><b>${x.label}</b><small>${x.hint}</small></span><span class="sw"></span></button>`).join('')}</div>
+    <button class="linkb" data-act="libadv">${S.libAdv ? 'Hide advanced ▴' : 'Advanced: choose from all 8 parts ›'}</button>
+    ${S.libAdv ? `<div class="advgrid rbadv">${SCOPE8.map(([k, t]) => `<button class="chipx ${l.scope8[k] ? 'on' : ''}" data-act="libkey" data-k="${k}">${t}</button>`).join('')}</div>` : ''}</div>`
 }
 function libraryPanel() {
   const look = lookById(S.loadedLookId), mod = isModified(), used = look ? usedBy(look.id) : 0
@@ -77,7 +84,7 @@ function libraryPanel() {
   const tiles = list.map((l) => { const pvw = l.id === S.loadedLookId, pgm = l.id === S.programLookId, n = usedBy(l.id)
     return `<div class="ltile ${pvw ? 'inpvw' : ''} ${pgm ? 'airtile' : ''} ${S.libMenu === l.id ? 'managing' : ''}"><button class="ltb" data-act="loadlook" data-id="${l.id}" aria-label="Load ${esc(l.name)} into Preview">${thumb(l, pgm ? '<span class="tag pgm">ON AIR</span>' : pvw ? '<span class="tag pvw">IN PREVIEW</span>' : '')}<span class="ltn">${esc(l.name)}</span><span class="lsub">${n ? `${n} cue${n > 1 ? 's' : ''}` : 'no cue'}</span></button>
       <span class="gripc" data-drag="look:${l.id}" aria-label="Drag ${esc(l.name)} onto the rundown"><i></i></span><button class="lmore" data-act="libmenu" data-id="${l.id}" aria-label="Manage ${esc(l.name)}">⋯</button>${S.edit ? `<button class="ladd" data-act="libadd" data-id="${l.id}" aria-label="Add ${esc(l.name)} as a cue">＋</button>` : ''}</div>` }).join('')
-  return `<section class="panel libp">${head}<div class="grow libgrid">${tiles || '<div class="empty" style="grid-column:1/-1"><b>No looks yet</b><span>Set up Preview with the scene editor, then tap “Save as new…”.</span></div>'}</div></section>`
+  return `<section class="panel libp">${head}${menuLook && S.libRecalls ? recallBar(menuLook) : ''}<div class="grow libgrid">${tiles || '<div class="empty" style="grid-column:1/-1"><b>No looks yet</b><span>Set up Preview with the scene editor, then tap “Save as new…”.</span></div>'}</div></section>`
 }
 function centreA() {
   const o = out(S.outSel)
@@ -104,6 +111,7 @@ function savePanel() {
   return `<div class="ph"><button class="btn sm" data-act="savecancel">← Back</button><b style="color:#fff">Save look</b></div>
     <div class="grow" style="overflow:auto"><div class="savef">
       <div><div class="lab" style="margin-bottom:6px">Name</div><input class="field inp big" data-in="savename" value="${esc(f.name)}" maxlength="40" aria-label="Look name"></div>
+      <div class="dim sm savenote">Saves all ${OUTS.length} screens (${OUTS.map((o) => o.name).join(', ')}), not just ${esc(out(S.outSel).name)}. The options below choose what comes back when it is recalled.</div>
       <div><div class="lab" style="margin-bottom:6px">Save from</div><div class="seg blue"><button class="${f.from === 'pvw' ? 'sel' : ''}" data-act="savefrom" data-f="pvw">Preview</button><button class="${f.from === 'pgm' ? 'sel' : ''}" data-act="savefrom" data-f="pgm">On air now</button></div></div>
       <div style="display:grid;gap:8px"><div class="lab">Remember when recalled</div>
         ${GROUPS.map((x) => `<button class="tgl ${g[x.key] ? 'on' : ''}" data-act="savegroup" data-g="${x.key}" aria-pressed="${g[x.key]}"><span class="tt"><b>${x.label}</b><small>${x.hint}</small></span><span class="sw"></span></button>`).join('')}
