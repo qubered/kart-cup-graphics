@@ -39,7 +39,6 @@ test('name, character label, colour and track card text all crossfade on AUTO', 
   await onAir(page)
   await command({ type: 'setPlayer', index: 1, patch: { name: 'PRIYA', colour: 'pink' } })
   await command({ type: 'stepRace', delta: 1 })
-  await command({ type: 'setRace', patch: { raceNo: 2 } })
   await autoTake()
   const lt = page.locator('.lower-third[data-slot="1"]')
   await expect(lt.locator('.name')).toHaveCount(2)                     // "Player 2" fading out, "PRIYA" in
