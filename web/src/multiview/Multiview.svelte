@@ -117,7 +117,7 @@
   .tile.hold { border-color: #f59e0b; }
   .vp { width: 100%; overflow: hidden; }
   .frame { position: relative; }
-  iframe { border: 0; display: block; background: transparent; }
+  iframe { color-scheme: normal; border: 0; display: block; background: transparent; }
   .label { position: absolute; left: 6px; top: 6px; padding: 2px 8px; font-size: 14px; font-weight: 700; letter-spacing: .05em; background: rgba(0,0,0,.65); border-radius: 4px; display: flex; align-items: center; gap: 6px; }
   .light { width: 9px; height: 9px; border-radius: 50%; background: #6b7280; display: inline-block; }
   .light.up { background: #22c55e; }

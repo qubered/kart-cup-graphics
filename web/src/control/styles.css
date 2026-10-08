@@ -66,16 +66,17 @@ h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: v
 .badge { background: var(--hold); color: #1a1100; font-size: 11px; font-weight: 700; border-radius: 10px; padding: 0 6px; min-width: 18px; text-align: center; }
 
 /* monitors */
-.monitors { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.monitors > div { min-width: 0; }
+.monitors { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
 .mon-label { font-size: 11px; font-weight: 700; letter-spacing: .12em; margin-bottom: 4px; }
 .mon-label.pv { color: var(--preview); }
 .mon-label.pg { color: var(--program); }
-.mon { position: relative; overflow: hidden; background: #000; border: 2px solid var(--line); border-radius: 4px;
+.mon { min-width: 0; position: relative; overflow: hidden; background: #000; border: 2px solid var(--line); border-radius: 4px;
   background-image: linear-gradient(45deg,#1a1d24 25%,transparent 25%,transparent 75%,#1a1d24 75%),linear-gradient(45deg,#1a1d24 25%,transparent 25%,transparent 75%,#1a1d24 75%);
   background-size: 16px 16px; background-position: 0 0, 8px 8px; background-color: #111318; }
 .mon.pv { border-color: var(--preview); }
 .mon.pg { border-color: var(--program); }
-.mon iframe { border: 0; display: block; background: transparent; pointer-events: none; }
+.mon iframe { color-scheme: normal; border: 0; display: block; background: transparent; pointer-events: none; }
 
 /* layer controls */
 .layer { display: grid; grid-template-columns: 96px 1fr; gap: 10px 12px; align-items: center; }
