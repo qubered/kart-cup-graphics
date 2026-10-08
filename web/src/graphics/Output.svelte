@@ -6,6 +6,10 @@
   import IconPattern from './backgrounds/IconPattern.svelte'
   import HoldOverlay from './overlays/HoldOverlay.svelte'
   import Ftb from './overlays/Ftb.svelte'
+  import StickerWall from './backgrounds/StickerWall.svelte'
+  import SceneLayer from './SceneLayer.svelte'
+  import TrackCardLayer from './TrackCardLayer.svelte'
+  import LowerThirdsLayer from './LowerThirdsLayer.svelte'
 
   interface Props { payload: OutputPayload | null; firstPaint: boolean; lowfx: boolean; debug: boolean; connected: boolean }
   let { payload, firstPaint, lowfx, debug, connected }: Props = $props()
@@ -34,20 +38,21 @@
             <SkyBackground watermark={view.background.watermark} font={view.fonts.eventTitle} {lowfx} w={view.canvas.w} h={view.canvas.h} />
           {:else if view.background.id === 'B'}
             <IconPattern w={view.canvas.w} h={view.canvas.h} />
+          {:else if view.background.id === 'C'}
+            <StickerWall watermark={view.background.watermark} title={view.background.title} titleFont={view.fonts.eventTitle} labelFont={view.fonts.labels} {lowfx} w={view.canvas.w} h={view.canvas.h} />
           {/if}
-          <!-- BACKGROUND C: {:else if view.background.id === 'C'} <StickerWall ... /> -->
         </div>
       {/key}
     {/if}
 
     <!-- SCENE: SceneLayer goes inside this container -->
-    <div class="layer" data-layer="scene"></div>
+    <div class="layer" data-layer="scene">{#if view.scene}<SceneLayer scene={view.scene} {view} {enter} {exit} {lowfx} />{/if}</div>
 
     <!-- TRACK CARD: TrackCardLayer goes inside this container -->
-    <div class="layer" data-layer="trackcard"></div>
+    <div class="layer" data-layer="trackcard">{#if view.trackCard}<TrackCardLayer card={view.trackCard} {view} {enter} {exit} />{/if}</div>
 
     <!-- LOWER THIRDS: LowerThirdsLayer goes inside this container -->
-    <div class="layer" data-layer="lowerthirds"></div>
+    <div class="layer" data-layer="lowerthirds">{#if view.lowerThirds.length}<LowerThirdsLayer players={view.lowerThirds} {view} {enter} {exit} />{/if}</div>
 
     <!-- HOLD: instant, no transition -->
     {#if payload?.hold}
