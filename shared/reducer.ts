@@ -33,6 +33,19 @@ function withDraft(state: ShowState, draft: Partial<ShowState['draft']>): ShowSt
   return { ...state, draft: { ...state.draft, ...draft } }
 }
 
+/** Scores are live: refresh any on-air standings/winner scene in place (no Take, no re-transition). */
+function liveScores(state: ShowState, ctx: ReduceContext): ShowState {
+  let program = state.program
+  for (const o of state.outputs) {
+    const frame = program[o.id]
+    const kind = frame?.view.scene?.kind
+    if (kind !== 'standings' && kind !== 'winner') continue
+    const fresh = deriveView(state.draft, { ...emptyLayers(), scene: kind }, o, ctx.catalog)
+    program = { ...program, [o.id]: { ...frame, view: { ...frame.view, scene: fresh.scene } } }
+  }
+  return program === state.program ? state : { ...state, program }
+}
+
 function applyRace(state: ShowState, patch: Partial<RaceState>, ctx: ReduceContext): ShowState {
   let race: RaceState = { ...state.draft.race, ...patch }
   if (race.mode === 'cup' && !('trackId' in patch)) {
@@ -73,11 +86,11 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
     case 'saveResults': {
       const entry = { raceNo: cmd.raceNo, trackId: cmd.trackId, positions: [...cmd.positions] }
       const races = [...state.draft.scores.races.filter((r) => r.raceNo !== cmd.raceNo), entry].sort((a, b) => a.raceNo - b.raceNo)
-      return withDraft(state, { scores: { ...state.draft.scores, races } })
+      return liveScores(withDraft(state, { scores: { ...state.draft.scores, races } }), ctx)
     }
     case 'setAdjustment': {
       const adjustments = state.draft.scores.adjustments.map((v, i) => (i === cmd.index ? cmd.value : v))
-      return withDraft(state, { scores: { ...state.draft.scores, adjustments } })
+      return liveScores(withDraft(state, { scores: { ...state.draft.scores, adjustments } }), ctx)
     }
     case 'setEventText':
       return withDraft(state, { event: { ...state.draft.event, ...cmd.patch } })
@@ -176,7 +189,7 @@ export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): Show
       }
     }
     case 'resetScores':
-      return withDraft(state, { scores: { races: [], adjustments: [0, 0, 0, 0] } })
+      return liveScores(withDraft(state, { scores: { races: [], adjustments: [0, 0, 0, 0] } }), ctx)
     case 'resetShow': {
       const fresh = createDefaultState(ctx.catalog, ctx.now)
       return { ...fresh, uploadedFonts: state.uploadedFonts, settings: state.settings }
