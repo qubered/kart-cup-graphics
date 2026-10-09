@@ -50,7 +50,7 @@
       if (from !== -1) moveCue(s, from, dropDestination(from, index))
     } else if (p.kind === 'look') {
       const look = st?.presets.find((x) => x.id === p.id)
-      if (look) void addCueFromLook(s.id, look.id, Math.min(index, s.cues.length), look.name)
+      if (look) void addCueFromLook(s.id, look.id, Math.min(index, s.cues.length))
     }
   }
 </script>

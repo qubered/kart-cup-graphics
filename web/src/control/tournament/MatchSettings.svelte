@@ -4,7 +4,6 @@
   import type { Match, RaceState, Tournament } from '../../../../shared/types'
   import { roundLabel } from '../../../../shared/tournament'
   import { send } from '../store'
-  import { toast } from '../ui'
   import { twoTap } from '../ui/twotap.svelte'
   import { roundNumbers, trackOverridesWith } from '../tournament'
   import MapSelect from './MapSelect.svelte'
@@ -42,7 +41,6 @@
   }
   function remove() {
     send({ type: 'removeMatch', matchId: match.id })
-    toast(`Removed “${match.label}”`)
   }
 </script>
 

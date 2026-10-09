@@ -5,10 +5,9 @@
   import { makeUnique, setCueAfter, setCueLook, setCueScope, setCueTake } from './actions'
   import { AFTERS, SCOPE_KEYS, TAKES, afterFromValue, effectiveScope, hasScopeOverride, nextScopeOverride, recallSummary, takeFromValue, takeValue, usedByCount } from './model'
 
-  interface Props { stack: CueStack; cue: Cue; index: number; st: ShowState }
-  let { stack, cue, index, st }: Props = $props()
+  interface Props { stack: CueStack; cue: Cue; st: ShowState }
+  let { stack, cue, st }: Props = $props()
 
-  const n = $derived(index + 1)
   const preset = $derived(st.presets.find((p) => p.id === cue.presetId))
   const used = $derived(usedByCount(st, cue.presetId))
   const eff = $derived(effectiveScope(preset, cue))
@@ -20,14 +19,14 @@
   <label class="r">
     <span>Look</span>
     <select class="u-select" name="cuePreset" value={cue.presetId}
-      onchange={(e) => setCueLook(stack, cue, n, e.currentTarget.value, st.presets.find((p) => p.id === e.currentTarget.value)?.name ?? '')}>
+      onchange={(e) => setCueLook(stack, cue, e.currentTarget.value)}>
       {#if !preset}<option value={cue.presetId}>(missing look)</option>{/if}
       {#each st.presets as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
     </select>
   </label>
 
   {#if used > 1}
-    <div class="warn" data-shared><span>⚠ Used by {used} cues</span><button type="button" class="u-btn" data-make-unique onclick={() => makeUnique(stack, cue, n)}>Make unique</button></div>
+    <div class="warn" data-shared><span>⚠ Used by {used} cues</span><button type="button" class="u-btn" data-make-unique onclick={() => makeUnique(stack, cue)}>Make unique</button></div>
   {:else}
     <div class="warn quiet">Only this cue uses this Look</div>
   {/if}
@@ -37,7 +36,7 @@
     <div class="u-seg blue" role="group" aria-label="Take">
       {#each TAKES as t (t.value)}
         <button type="button" data-take={t.value} class:sel={takeValue(cue.take) === t.value} aria-pressed={takeValue(cue.take) === t.value}
-          onclick={() => setCueTake(stack, cue, n, takeFromValue(t.value), t.label)}>{t.label}</button>
+          onclick={() => setCueTake(stack, cue, takeFromValue(t.value))}>{t.label}</button>
       {/each}
     </div>
   </div>
@@ -45,7 +44,7 @@
   <label class="r">
     <span>After</span>
     <select class="u-select" name="cueAction" value={cue.action ?? ''}
-      onchange={(e) => setCueAfter(stack, cue, n, afterFromValue(e.currentTarget.value), AFTERS.find((a) => a.value === e.currentTarget.value)?.label ?? 'Nothing')}>
+      onchange={(e) => setCueAfter(stack, cue, afterFromValue(e.currentTarget.value))}>
       {#each AFTERS as a (a.value)}<option value={a.value}>{a.label}</option>{/each}
     </select>
   </label>
@@ -64,7 +63,7 @@
         {@const on = own ?? preset?.scope[key] ?? false}
         <button type="button" class="u-chip" class:on class:forced={own !== undefined} data-scope={key}
           aria-label="{label}: {own === undefined ? `inherits the Look (${on ? 'on' : 'off'})` : `forced ${own ? 'on' : 'off'} for this cue`}"
-          onclick={() => setCueScope(stack, cue, n, key, nextScopeOverride(own), label)}>{label}{own === undefined ? '' : own ? ' ✓' : ' ✕'}</button>
+          onclick={() => setCueScope(stack, cue, key, nextScopeOverride(own))}>{label}{own === undefined ? '' : own ? ' ✓' : ' ✕'}</button>
       {/each}
     </div>
     <div class="hint">Tap cycles: inherit the Look → force on → force off.</div>

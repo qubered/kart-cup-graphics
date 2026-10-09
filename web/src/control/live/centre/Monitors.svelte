@@ -7,7 +7,12 @@
   import { FORMAT_CANVAS } from '../../../../../shared/view'
   import type { SceneId } from '../../../../../shared/types'
   import { sceneLabel } from '../scene/scenes'
+  import { monitorSize } from './layout'
   import { onAirLookId, previewLook } from './status'
+
+  /** Pane height chosen with the divider (px); null = automatic (side by side at the full column width). */
+  let { height = null }: { height?: number | null } = $props()
+  let boxW = $state(0)
 
   const st = $derived($control.payload?.state)
   const out = $derived(st?.outputs.find((o) => o.id === $control.selectedOutput))
@@ -23,12 +28,15 @@
     if (view?.scene) return sceneLabel(view.scene.kind as SceneId)
     return view?.background ? 'Background only' : 'Nothing on air'
   })
+  // With a chosen height, the pair is scaled to fit the pane, side by side or stacked, whichever gives the bigger picture.
+  const sized = $derived(height && boxW ? monitorSize(boxW, height, canvas.w / canvas.h) : null)
   const flags = $derived([st?.overlay.hold.on ? 'HOLD' : '', st?.overlay.ftb ? 'FTB' : ''].filter(Boolean))
 </script>
 
+<div class="pane" data-monitors-pane bind:clientWidth={boxW} style:height={height ? `${height}px` : undefined}>
 {#if out}
   {#key out.id}
-    <div class="monitors" data-monitors>
+    <div class="monitors" class:sized={!!sized} class:stacked={sized?.stacked} style:--mw={sized ? `${sized.w}px` : undefined} data-monitors>
       <div class="mon pv" data-monitor="preview">
         <div class="mh">
           <span class="t">PREVIEW · {name}</span>
@@ -53,8 +61,12 @@
     </div>
   {/key}
 {/if}
+</div>
 
 <style>
+  .pane { flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .monitors.sized { grid-template-columns: repeat(2, var(--mw)); justify-content: center; }
+  .monitors.sized.stacked { grid-template-columns: var(--mw); }
   .monitors { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; flex: none; }
   .mon { min-width: 0; overflow: hidden; background: #000; border: 2px solid var(--ui-line); border-radius: 8px; }
   .mon.pv { border-color: var(--ui-preview); }

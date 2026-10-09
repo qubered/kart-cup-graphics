@@ -23,7 +23,7 @@
     const name = e.currentTarget.value.trim()
     if (!name) { e.currentTarget.value = t.name; return }
     if (name === t.name) return
-    act('Rename tournament', [{ type: 'renameTournament', id: t.id, name }], [{ type: 'renameTournament', id: t.id, name: t.name }], `Renamed to “${name}”`)
+    act('Rename tournament', [{ type: 'renameTournament', id: t.id, name }], [{ type: 'renameTournament', id: t.id, name: t.name }])
   }
   /** What a player chip says: the name, or which winner the slot is waiting for. */
   function chip(m: Match, slot: number): string {

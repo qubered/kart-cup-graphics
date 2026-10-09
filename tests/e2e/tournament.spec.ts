@@ -153,7 +153,7 @@ test('round names: edit, reset to Round n, undo', async ({ page }) => {
   await expect.poll(async () => (await T()).roundNames).toEqual({ '0': 'Semi-finals' })
   await expect(page.locator('[data-round="0"]')).toContainText('Semi-finals')
   // Undo puts the old name back
-  await page.locator('[data-undo]').first().click()
+  await page.locator('[data-undo]').click()
   await expect.poll(async () => (await T()).roundNames).toBeUndefined()
   await expect(name).toHaveValue('Round 1')
   // a name, then an empty field, falls back to Round n
@@ -344,7 +344,7 @@ test('library: duplicate with and without scores, close, load, rename, delete is
   await page.locator('[data-tournament=tournament-1] [data-load]').click()
   await expect.poll(async () => (await state()).activeTournamentId).toBe('tournament-1')
   await expect(page.locator('[data-loaded-name]')).toHaveText('Orig')
-  await page.locator('[data-undo]').first().click()
+  await page.locator('[data-undo]').click()
   await expect.poll(async () => (await state()).activeTournamentId).toBeNull()
   await page.locator('[data-tournament=tournament-1] [data-load]').click()
   await expect.poll(async () => (await state()).activeTournamentId).toBe('tournament-1')
@@ -373,7 +373,7 @@ test('overview renames the tournament and Undo restores the name', async ({ page
   await name.blur()
   await expect.poll(async () => (await T()).name).toBe('After')
   await expect(page.locator('[data-loaded-name]')).toHaveText('After')
-  await page.locator('[data-undo]').first().click()
+  await page.locator('[data-undo]').click()
   await expect.poll(async () => (await T()).name).toBe('Before')
 })
 

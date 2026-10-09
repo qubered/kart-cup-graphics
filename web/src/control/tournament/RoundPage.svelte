@@ -4,7 +4,7 @@
   import type { Match, Tournament } from '../../../../shared/types'
   import { roundLabel } from '../../../../shared/tournament'
   import { send } from '../store'
-  import { act, toast } from '../ui'
+  import { act } from '../ui'
   import { twoTap } from '../ui/twotap.svelte'
   import { fillFromPreviousCommands, matchesOfRound, matchStatusOf, newMatchLabel, previousRound, removeRoundCommands, type Readiness } from '../tournament'
   import MatchPlayers from './MatchPlayers.svelte'
@@ -30,19 +30,16 @@
     const was = t.roundNames?.[String(round)] ?? null
     input.value = next || fallback
     if ((was ?? '') === next) return
-    act('Rename round', [{ type: 'setRoundName', round, name: next || null }], [{ type: 'setRoundName', round, name: was }],
-      next ? `Round named “${next}”` : `Round name reset to “${fallback}”`)
+    act('Rename round', [{ type: 'setRoundName', round, name: next || null }], [{ type: 'setRoundName', round, name: was }])
   }
   function fill() {
     const cmds = fillFromPreviousCommands(matches, round)
     if (!cmds.length || prev === null) return
     for (const c of cmds) send(c)
-    toast(`${name} now takes its players from the winners of ${roundLabel(t, prev)}`)
   }
   function removeRound() {
     if (!removeCmds) return
     for (const c of removeCmds) send(c)
-    toast(`Removed ${name} and its ${ms.length} match${ms.length === 1 ? '' : 'es'}`)
     openOverview()
   }
 
