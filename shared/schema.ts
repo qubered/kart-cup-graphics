@@ -22,7 +22,7 @@ export const outputConfigSchema: z.ZodType<OutputConfig> = z.object({
   graphicsScale: z.number().finite().positive().max(10),
 })
 
-export const playerSchema = z.object({ name: z.string().max(200), characterId: z.string(), colour: colourIdSchema })
+export const playerSchema = z.object({ name: z.string().max(200), characterId: z.string(), colour: colourIdSchema, subtitle: z.string().max(200).default('') })
 export const raceStateSchema = z.object({
   mode: z.enum(['cup', 'track']), cupId: z.string(), raceIndex: slotSchema, trackId: z.string(),
   raceNo: z.number().int().min(1).max(99).default(1), raceTotal: z.number().int().min(1).max(99).default(4),

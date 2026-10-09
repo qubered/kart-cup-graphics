@@ -36,6 +36,7 @@
       <input name="name" type="text" value={p.name} disabled={!connected} maxlength="40" aria-label="Player {i + 1} name" oninput={(e) => set(i, { name: e.currentTarget.value })} />
       <CharacterSelect value={p.characterId} {catalog} disabled={!connected} onchange={(id) => set(i, { characterId: id })} />
       <ColourSelect value={p.colour} disabled={!connected} onchange={(c) => set(i, { colour: c })} />
+      <input class="sub" name="subtitle" type="text" value={p.subtitle ?? ''} disabled={!connected} maxlength="80" placeholder="Subtitle: job title · group" aria-label="Player {i + 1} subtitle" oninput={(e) => set(i, { subtitle: e.currentTarget.value })} />
     </div>
   {/each}
   <div style="height:6px"></div>

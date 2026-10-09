@@ -135,6 +135,7 @@ kbd { font: 600 10px/1 var(--ui-font); background: #1f2430; color: #cbd5e1; padd
 
 /* show tab cards */
 .prow { display: grid; grid-template-columns: 34px 1fr 190px 112px; gap: 8px; align-items: center; padding: 6px 12px; }
+.prow .sub { grid-column: 2 / -1; }
 .prow .n { text-align: center; font-weight: 700; font-size: 12px; color: #fff; padding: 5px 0; border-radius: 5px; }
 .prow input[type=text] { width: 100%; }
 .rrow { display: flex; gap: 10px; align-items: center; padding: 10px 12px; }
