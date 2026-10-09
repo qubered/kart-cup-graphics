@@ -15,6 +15,13 @@ describe('shortcutCommand', () => {
     expect(shortcutCommand(k('1'), s)).toEqual({ type: 'arm', outputIds: [] })
     expect(shortcutCommand(k('9'), s)).toBeNull()
   })
+  it('g fires GO on the current rundown, but not in Edit mode or in inputs', () => {
+    expect(shortcutCommand(k('g'), { ...s, goStackId: 'stack-1' })).toEqual({ type: 'goStack', stackId: 'stack-1' })
+    expect(shortcutCommand(k('G'), { ...s, goStackId: 'stack-1' })).toEqual({ type: 'goStack', stackId: 'stack-1' })
+    expect(shortcutCommand(k('g'), s)).toBeNull()
+    expect(shortcutCommand(k('g'), { ...s, goStackId: null })).toBeNull()
+    expect(shortcutCommand(k('g', 'INPUT'), { ...s, goStackId: 'stack-1' })).toBeNull()
+  })
   it('hold ignored in inputs', () => {
     expect(shortcutCommand(k('h'), s)).toEqual({ type: 'hold', on: true })
     expect(shortcutCommand(k('h', 'INPUT'), s)).toBeNull()

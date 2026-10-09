@@ -1,0 +1,94 @@
+/* Shared primitives for the overhauled control page. Prefixed `u-` so they never collide with the legacy
+   classes in ../styles.css (still used by the Setup pages). Operator UI, not game-styled.
+
+   Colour contract (same as the Companion feedbacks): GREEN = Preview/standby, RED = Program/on air,
+   BLUE = armed/primary, AMBER = pending / modified / editing. Nothing else uses these colours.
+   Production rules: no hover-only actions, every primary target >= 44px, nothing floats over the monitors or the
+   transport, Run mode cannot delete/reorder/overwrite, destructive actions are two-tap (see ui/twotap.svelte.ts),
+   not confirm(). Reference design: docs/mockups/ui/demo (open index.html, ?layout=a). */
+
+.u-lab { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ui-muted); }
+.u-dim { color: var(--ui-muted); }
+.u-sm { font-size: 11px; }
+
+/* panels */
+.u-panel { position: relative; background: var(--ui-panel); border: 1px solid var(--ui-line); border-radius: 10px; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; }
+.u-ph { display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 48px; border-bottom: 1px solid var(--ui-line); flex: none; }
+.u-grow { flex: 1; min-height: 0; overflow: auto; }
+.u-sec { padding: 12px; border-bottom: 1px solid var(--ui-line); display: grid; gap: 10px; }
+.u-sec > .u-sh { display: flex; align-items: center; }
+.u-sec > .u-sh .u-sum { margin-left: auto; font-size: 12px; color: var(--ui-muted); }
+.u-empty { display: grid; gap: 4px; padding: 22px 18px; text-align: center; color: var(--ui-muted); }
+.u-empty b { color: #e5e7eb; }
+
+/* buttons: 44px by default, .sm = 36px for secondary actions inside dense rows */
+.u-btn { height: 44px; padding: 0 14px; border: 1px solid var(--ui-field); border-radius: 8px; background: #1b1f27; color: #e5e7eb; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; cursor: pointer; }
+.u-btn:hover:not(:disabled) { border-color: #4a5160; background: #232834; }
+.u-btn.sm { height: 36px; padding: 0 10px; font-size: 12.5px; }
+.u-btn.acc { background: var(--ui-accent); border-color: var(--ui-accent); color: #fff; }
+.u-btn.acc:hover:not(:disabled) { background: #2f6fdb; border-color: #2f6fdb; }
+.u-btn.ghost { background: transparent; border-style: dashed; color: #cbd5e1; }
+.u-btn.danger { color: #fca5a5; border-color: #7f1d1d; }
+.u-btn.danger:hover:not(:disabled) { background: rgba(220,38,38,.18); border-color: var(--ui-program); }
+/* armed second tap of a two-tap action */
+.u-btn.confirm { background: #78350f; border-color: #b45309; color: #fde68a; }
+.u-btn.confirm:hover:not(:disabled) { background: #8a3f10; border-color: #d97706; }
+.u-btn.sel { background: #1e3a8a; border-color: #2f56b8; color: #fff; }
+.u-btn small { font-weight: 400; font-size: 11px; display: block; }
+.u-link { background: none; border: 0; padding: 0; color: #93c5fd; font-size: 12.5px; cursor: pointer; text-align: left; }
+.u-link:hover { text-decoration: underline; }
+
+/* segmented control. Green = what Preview has, red dot = what Program has (add class u-livedot to that button). */
+.u-seg { display: flex; border: 1px solid var(--ui-field); border-radius: 8px; overflow: hidden; }
+.u-seg > button { flex: 1; height: 42px; padding: 0 12px; text-align: center; border: 0; border-right: 1px solid var(--ui-field); border-radius: 0; background: transparent; color: #cbd5e1; font-weight: 600; font-size: 13px; white-space: nowrap; position: relative; cursor: pointer; }
+.u-seg > button:last-child { border-right: 0; }
+.u-seg > button:hover:not(:disabled) { background: #1b2030; }
+.u-seg.s36 > button { height: 34px; font-size: 12px; }
+.u-seg > button.sel { background: #14532d; color: #fff; }
+.u-seg.blue > button.sel { background: #1e3a8a; }
+.u-seg.amber > button.sel { background: #78350f; }
+.u-livedot::after { content: ''; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--ui-program); }
+
+/* on/off switch row */
+.u-tgl { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 12px; border: 1px solid var(--ui-field); border-radius: 8px; background: transparent; color: #cbd5e1; font-weight: 600; font-size: 13px; position: relative; text-align: left; cursor: pointer; width: 100%; }
+.u-tgl .u-sw { margin-left: auto; width: 38px; height: 22px; border-radius: 11px; background: #374151; position: relative; flex: none; }
+.u-tgl .u-sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #9ca3af; }
+.u-tgl.on { background: #14532d; border-color: #1d6b3b; color: #fff; }
+.u-tgl.on .u-sw { background: #22c55e; }
+.u-tgl.on .u-sw::after { left: 19px; background: #fff; }
+.u-tgl .u-tt { display: flex; flex-direction: column; min-width: 0; padding: 6px 0; }
+.u-tgl .u-tt small { font-weight: 400; font-size: 11px; color: var(--ui-muted); margin-top: 1px; }
+.u-tgl.on .u-tt small { color: #bbf7d0; }
+.u-tgl.u-livedot::after { top: 6px; right: 52px; }
+
+/* tags, pills, chips */
+.u-tag { font: 700 10px/1 var(--ui-font); letter-spacing: .08em; padding: 3px 6px; border-radius: 3px; color: #fff; white-space: nowrap; }
+.u-tag.pgm { background: var(--ui-program); } .u-tag.pvw { background: var(--ui-preview); } .u-tag.mod { background: #78350f; color: #fde68a; }
+.u-pill { font: 700 10px/1 var(--ui-font); letter-spacing: .06em; padding: 4px 7px; border-radius: 4px; border: 1px solid #3a4150; color: #cbd5e1; white-space: nowrap; }
+.u-pill.cut { background: #e5e7eb; color: #111; border-color: #e5e7eb; }
+.u-pill.auto { background: #1e3a8a; color: #fff; border-color: #2f56b8; }
+.u-pill.none { color: var(--ui-muted); border-style: dashed; }
+.u-chip { height: 40px; padding: 0 10px; border: 1px solid var(--ui-field); border-radius: 8px; color: var(--ui-muted); font-size: 12px; font-weight: 600; text-align: center; background: transparent; cursor: pointer; }
+.u-chip.on { background: #14532d; border-color: #1d6b3b; color: #fff; }
+.u-chip.forced { outline: 2px solid #fbbf24; outline-offset: -2px; }
+
+/* form fields: 44px */
+.u-input, .u-select { height: 44px; padding: 0 12px; border: 1px solid var(--ui-field); border-radius: 8px; background: var(--ui-bg); color: #fff; font-size: 14px; min-width: 0; width: 100%; }
+.u-input.sm, .u-select.sm { height: 36px; font-size: 12.5px; padding: 0 8px; }
+.u-input:focus, .u-select:focus { outline: 2px solid var(--ui-accent); outline-offset: 0; }
+
+/* two-tap affordance: shows the armed state label in amber (see twoTap) */
+.u-drop-marker { position: fixed; z-index: 3000; display: none; background: var(--ui-accent); border-radius: 2px; pointer-events: none; box-shadow: 0 0 0 2px rgba(59,130,246,.35); }
+.u-drag-ghost { position: fixed; z-index: 3001; display: none; pointer-events: none; background: #1d2a4a; border: 1px solid var(--ui-accent); color: #fff; font: 600 13px var(--ui-font); padding: 8px 12px; border-radius: 8px; box-shadow: 0 10px 24px rgba(0,0,0,.55); }
+
+/* grip: a drag handle (>= 44px hit area) */
+.u-grip { display: grid; place-items: center; width: 44px; height: 44px; cursor: grab; touch-action: none; border-radius: 8px; }
+.u-grip i { width: 12px; height: 16px; background: radial-gradient(circle, #9ca3af 1.6px, transparent 2px) 0 0/6px 6px; display: block; }
+
+/* toasts: top-right so they never cover GO, the race pad or the transport */
+.u-toasts { position: fixed; top: 56px; right: 16px; z-index: 60; display: grid; gap: 8px; max-width: 520px; pointer-events: none; }
+.u-toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; background: #14532d; border: 1px solid #1d6b3b; color: #fff; padding: 8px 8px 8px 14px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5); font-size: 13.5px; }
+.u-toast.error { background: #3b1212; border-color: var(--ui-program); }
+.u-toast button { height: 34px; padding: 0 14px; border-radius: 7px; background: rgba(255,255,255,.16); border: 0; color: #fff; font-weight: 700; cursor: pointer; }
+.u-toast button:hover { background: rgba(255,255,255,.26); }
+.u-toast button.x { width: 34px; padding: 0; color: #d1fae5; }
