@@ -2,7 +2,7 @@
 // Performance actions (select, GO, Back, Skip, Rewind) are not undoable; edits are, through act() / pushUndo() from ui.ts.
 import type { Command, Cue, CueAction, CueStack, PresetScope, ShowState, TakeMode } from '../../../../../shared/types'
 import { control, send } from '../../store'
-import { act, currentState, editRundown, previewSnapshot, pushUndo, restoreCommand, stackPick, toast } from '../../ui'
+import { DEFAULT_LOOK_SCOPE, act, currentState, editRundown, previewSnapshot, pushUndo, restoreCommand, stackPick, toast } from '../../ui'
 import { addedIds, nextId, previewModified, restoreCueCommand, scopeRestore } from './model'
 
 /** A keyboard move re-inserts the row, which drops focus: the cue whose grip should get focus back once the list has updated (see CueRow). */
@@ -97,7 +97,7 @@ export async function addCueFromPreview(stackId: string, name: string): Promise<
     const cue = claim('cue', addedIds(cuesBefore, st.stacks.find((k) => k.id === stackId)?.cues ?? []))
     return cue === null ? null : { cue, preset: addedIds(looksBefore, st.presets)[0] ?? null, at: (st.stacks.find((k) => k.id === stackId)?.cues.findIndex((c) => c.id === cue) ?? 0) + 1 }
   })
-  send({ type: 'addCueFromPreview', stackId, name, take: 'auto' })
+  send({ type: 'addCueFromPreview', stackId, name, take: 'auto', scope: { ...DEFAULT_LOOK_SCOPE } })
   const hit = await seen
   if (!hit) return null
   // Removing the new Look removes its cue with it; the explicit removeCue keeps the order obvious.
