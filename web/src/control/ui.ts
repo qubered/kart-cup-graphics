@@ -1,4 +1,4 @@
-// Client-only UI state for the overhauled control page: current page, rundown pick, Run/Edit lock, toasts and Undo.
+// Client-only UI state for the overhauled control page: current page, rundown pick, Run/Edit lock, error notice and Undo.
 // Nothing here is show state: that lives on the server (see store.ts).
 import { derived, get, writable } from 'svelte/store'
 import type { Command, CueStack, PresetScope, PreviewSnapshot, ShowState } from '../../../shared/types'
@@ -46,45 +46,44 @@ export const activeStack = derived([control, stackPick], ([$c, $p]) => pickStack
  *  UI always sends this explicitly. */
 export const DEFAULT_LOOK_SCOPE: PresetScope = { layers: true, armed: true, style: true, match: false, players: false, scores: false, transition: true, mattify: true }
 
-// ---- toasts ----
-export interface Toast { id: number; message: string; kind: 'info' | 'error'; undoable: boolean }
-export const toasts = writable<Toast[]>([])
-let toastId = 0
-/** Show a toast top-right. `undoable` adds an Undo button (runs the last undo entry). Auto-dismisses. */
-export function toast(message: string, opts: { undoable?: boolean; kind?: 'info' | 'error'; ms?: number } = {}): void {
-  const t: Toast = { id: ++toastId, message, kind: opts.kind ?? 'info', undoable: !!opts.undoable }
-  toasts.update((l) => [...l.slice(-3), t])
-  setTimeout(() => dismissToast(t.id), opts.ms ?? (opts.undoable ? 7000 : 4000))
+// ---- errors ----
+/** The one message the page ever pops up: something the operator asked for could not be done. Auto-dismisses. Everything else just happens on screen. */
+export const notice = writable<string | null>(null)
+let noticeTimer: ReturnType<typeof setTimeout> | undefined
+export function reportError(message: string): void {
+  notice.set(message)
+  clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => notice.set(null), 5000)
 }
-export const dismissToast = (id: number) => toasts.update((l) => l.filter((t) => t.id !== id))
 
 // ---- undo ----
-// Every undoable action sends its commands and records the commands that put things back. Undo replays them.
-// Undo is for the operator's own edits (loads into Preview, saves, overwrites, deletes, cue edits), never for takes.
+// Every undoable action sends its commands and records the commands that put things back. Undo replays them (top-bar Undo button
+// or Ctrl/Cmd+Z). Undo is for the operator's own edits (loads into Preview, saves, overwrites, deletes, cue edits), never for takes.
 interface UndoEntry { label: string; commands: Command[] }
 const undoStack: UndoEntry[] = []
 export const undoDepth = writable(0)
+/** What the next Undo would undo (for the button's tooltip), or null. */
+export const undoLabel = writable<string | null>(null)
 const MAX_UNDO = 30
+const syncUndo = () => { undoDepth.set(undoStack.length); undoLabel.set(undoStack[undoStack.length - 1]?.label ?? null) }
 
 export function pushUndo(label: string, commands: Command[]): void {
   undoStack.push({ label, commands })
   if (undoStack.length > MAX_UNDO) undoStack.shift()
-  undoDepth.set(undoStack.length)
+  syncUndo()
 }
 /** Replay the most recent undo entry. Returns false when there is nothing to undo. */
 export function undo(): boolean {
   const e = undoStack.pop()
-  undoDepth.set(undoStack.length)
-  if (!e) { toast('Nothing to undo'); return false }
+  syncUndo()
+  if (!e) return false
   for (const c of e.commands) send(c)
-  toast(`Undid: ${e.label}`)
   return true
 }
-/** Send `commands`, remember `undoCommands` for Undo, and confirm with a toast (with an Undo button). */
-export function act(label: string, commands: Command[], undoCommands: Command[], message?: string): void {
+/** Send `commands` and remember `undoCommands` so Undo can put things back. */
+export function act(label: string, commands: Command[], undoCommands: Command[]): void {
   for (const c of commands) send(c)
   pushUndo(label, undoCommands)
-  toast(message ?? label, { undoable: true })
 }
 
 /** Everything on the Preview side of the show (what a load / recall changes). Use with the `restoreSnapshot` command to undo it. */

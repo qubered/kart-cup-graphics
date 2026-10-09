@@ -7,7 +7,13 @@
   import { FORMAT_CANVAS } from '../../../../../shared/view'
   import type { SceneId } from '../../../../../shared/types'
   import { sceneLabel } from '../scene/scenes'
+  import { MIN_PANE, monitorSize, naturalHeight } from './layout'
   import { onAirLookId, previewLook } from './status'
+
+  /** height: pane height chosen with the divider (px), null = the biggest the arrangement allows. stacked: Preview above Program. room: tallest pane the column can spare.
+   *  onlimit: reports the tallest useful pane (monitors at the full column width) to the divider. */
+  let { height = null, stacked = false, room = 100000, onlimit }: { height?: number | null; stacked?: boolean; room?: number; onlimit?: (n: number) => void } = $props()
+  let boxW = $state(0)
 
   const st = $derived($control.payload?.state)
   const out = $derived(st?.outputs.find((o) => o.id === $control.selectedOutput))
@@ -23,12 +29,20 @@
     if (view?.scene) return sceneLabel(view.scene.kind as SceneId)
     return view?.background ? 'Background only' : 'Nothing on air'
   })
+  const aspect = $derived(canvas.w / canvas.h)
+  // The pane never needs more than the monitors at the full column width (more would only be blank space), nor more than the column can spare.
+  const maxH = $derived(boxW ? Math.max(MIN_PANE, Math.min(naturalHeight(boxW, aspect, stacked), room)) : 0)
+  $effect(() => { onlimit?.(maxH) })
+  // Automatic = side by side at the natural size (CSS), or stacked at the tallest pane that fits. A chosen height is clamped to what is useful.
+  const paneH = $derived(boxW ? (height ? Math.min(Math.max(MIN_PANE, height), maxH) : stacked ? maxH : null) : null)
+  const sized = $derived(paneH && boxW ? monitorSize(boxW, paneH, aspect, stacked) : null)
   const flags = $derived([st?.overlay.hold.on ? 'HOLD' : '', st?.overlay.ftb ? 'FTB' : ''].filter(Boolean))
 </script>
 
+<div class="pane" data-monitors-pane bind:clientWidth={boxW} style:height={paneH ? `${paneH}px` : undefined}>
 {#if out}
   {#key out.id}
-    <div class="monitors" data-monitors>
+    <div class="monitors" class:sized={!!sized} class:stacked data-stacked={stacked} style:--mw={sized ? `${sized}px` : undefined} data-monitors>
       <div class="mon pv" data-monitor="preview">
         <div class="mh">
           <span class="t">PREVIEW · {name}</span>
@@ -53,8 +67,13 @@
     </div>
   {/key}
 {/if}
+</div>
 
 <style>
+  .pane { flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .monitors.sized { grid-template-columns: repeat(2, var(--mw)); justify-content: center; }
+  .monitors.stacked { grid-template-columns: minmax(0, 1fr); }
+  .monitors.sized.stacked { grid-template-columns: var(--mw); }
   .monitors { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; flex: none; }
   .mon { min-width: 0; overflow: hidden; background: #000; border: 2px solid var(--ui-line); border-radius: 8px; }
   .mon.pv { border-color: var(--ui-preview); }

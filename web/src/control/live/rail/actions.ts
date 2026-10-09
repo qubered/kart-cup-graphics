@@ -2,7 +2,7 @@
 // Performance actions (select, GO, Back, Skip, Rewind) are not undoable; edits are, through act() / pushUndo() from ui.ts.
 import type { Command, Cue, CueAction, CueStack, PresetScope, ShowState, TakeMode } from '../../../../../shared/types'
 import { control, send } from '../../store'
-import { DEFAULT_LOOK_SCOPE, act, currentState, editRundown, previewSnapshot, pushUndo, restoreCommand, stackPick, toast } from '../../ui'
+import { DEFAULT_LOOK_SCOPE, act, currentState, editRundown, previewSnapshot, pushUndo, restoreCommand, stackPick } from '../../ui'
 import { addedIds, nextId, previewModified, restoreCueCommand, scopeRestore } from './model'
 
 /** A keyboard move re-inserts the row, which drops focus: the cue whose grip should get focus back once the list has updated (see CueRow). */
@@ -50,7 +50,6 @@ function loadIntoPreview(name: string, cmds: Command[]): void {
   for (const c of cmds) send(c)
   if (!snapshot) return
   pushUndo(`load ${name}`, [restoreCommand(snapshot)])
-  toast(`Loaded “${name}” — unsaved Preview changes discarded`, { undoable: true })
 }
 export const selectCue = (stackId: string, cue: Cue, name: string) => loadIntoPreview(name, [{ type: 'selectCue', stackId, cueId: cue.id }])
 export const stepSelection = (stackId: string, delta: 1 | -1, name: string) => loadIntoPreview(name, [{ type: 'stepSelection', stackId, delta }])
@@ -66,25 +65,24 @@ export function rewind(stack: CueStack, firstName: string): void {
 export function removeCue(stack: CueStack, index: number): void {
   const cue = stack.cues[index]
   if (!cue) return
-  act(`remove cue ${index + 1}`, [{ type: 'removeCue', stackId: stack.id, cueId: cue.id }], [restoreCueCommand(stack.id, cue, index)], `Removed cue ${index + 1}`)
+  act(`remove cue ${index + 1}`, [{ type: 'removeCue', stackId: stack.id, cueId: cue.id }], [restoreCueCommand(stack.id, cue, index)])
 }
 
 /** Move a cue to `to` (its final position in the list). */
 export function moveCue(stack: CueStack, from: number, to: number): void {
   const cue = stack.cues[from]
   if (!cue || to < 0 || to >= stack.cues.length || to === from) return
-  act('move cue', [{ type: 'moveCueTo', stackId: stack.id, cueId: cue.id, index: to }], [{ type: 'moveCueTo', stackId: stack.id, cueId: cue.id, index: from }], `Moved to cue ${to + 1}`)
+  act('move cue', [{ type: 'moveCueTo', stackId: stack.id, cueId: cue.id, index: to }], [{ type: 'moveCueTo', stackId: stack.id, cueId: cue.id, index: from }])
 }
 
 /** Add a cue for an existing Look at `index` (a Look dropped from the library). Resolves with the new cue's id. */
-export async function addCueFromLook(stackId: string, presetId: string, index: number, lookName: string): Promise<string | null> {
+export async function addCueFromLook(stackId: string, presetId: string, index: number): Promise<string | null> {
   const before = currentState()?.stacks.find((k) => k.id === stackId)?.cues ?? []
   const seen = observe((st) => claim('cue', addedIds(before, st.stacks.find((k) => k.id === stackId)?.cues ?? [])))
   send({ type: 'addCue', stackId, presetId, take: 'auto', index })
   const cueId = await seen
   if (cueId === null) return null
   pushUndo('add cue', [{ type: 'removeCue', stackId, cueId }])
-  toast(`Added “${lookName}” as cue ${index + 1}`, { undoable: true })
   return cueId
 }
 
@@ -102,38 +100,35 @@ export async function addCueFromPreview(stackId: string, name: string): Promise<
   if (!hit) return null
   // Removing the new Look removes its cue with it; the explicit removeCue keeps the order obvious.
   pushUndo('add cue', [{ type: 'removeCue', stackId, cueId: hit.cue }, ...(hit.preset ? [{ type: 'deletePreset', id: hit.preset } as Command] : [])])
-  toast(`Added cue ${hit.at} · saved as look “${name}”`, { undoable: true })
   return hit.cue
 }
 
 /** Give a cue its own copy of its Look (the shared one stays as it is for the other cues). */
-export async function makeUnique(stack: CueStack, cue: Cue, n: number): Promise<void> {
+export async function makeUnique(stack: CueStack, cue: Cue): Promise<void> {
   const looksBefore = currentState()?.presets ?? []
   const seen = observe((st) => claim('preset', addedIds(looksBefore, st.presets)))
   send({ type: 'makeCuePresetUnique', stackId: stack.id, cueId: cue.id })
   const copy = await seen
   if (copy === null) return
   pushUndo('make unique', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, presetId: cue.presetId }, { type: 'deletePreset', id: copy }])
-  const name = currentState()?.presets.find((p) => p.id === copy)?.name ?? 'its own look'
-  toast(`Cue ${n} now has its own look “${name}”`, { undoable: true })
 }
 
 // ---- cue settings (each is undoable with the inverse updateCue) ----
 
-export function setCueLook(stack: CueStack, cue: Cue, n: number, presetId: string, lookName: string): void {
+export function setCueLook(stack: CueStack, cue: Cue, presetId: string): void {
   if (presetId === cue.presetId) return
-  act('change look', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, presetId }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, presetId: cue.presetId }], `Cue ${n} now plays “${lookName}”`)
+  act('change look', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, presetId }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, presetId: cue.presetId }])
 }
-export function setCueTake(stack: CueStack, cue: Cue, n: number, take: TakeMode | null, label: string): void {
+export function setCueTake(stack: CueStack, cue: Cue, take: TakeMode | null): void {
   if (take === cue.take) return
-  act('change take', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, take }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, take: cue.take }], `Cue ${n} take: ${label}`)
+  act('change take', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, take }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, take: cue.take }])
 }
-export function setCueAfter(stack: CueStack, cue: Cue, n: number, action: CueAction | null, label: string): void {
+export function setCueAfter(stack: CueStack, cue: Cue, action: CueAction | null): void {
   if ((action ?? undefined) === cue.action) return
-  act('change after', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, action }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, action: cue.action ?? null }], `Cue ${n} after: ${label}`)
+  act('change after', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, action }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, action: cue.action ?? null }])
 }
-export function setCueScope(stack: CueStack, cue: Cue, n: number, key: keyof PresetScope, value: boolean | null, label: string): void {
-  act('cue recall', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, scope: { [key]: value } }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, scope: scopeRestore(cue, key) }], `Cue ${n} recall: ${label}`)
+export function setCueScope(stack: CueStack, cue: Cue, key: keyof PresetScope, value: boolean | null): void {
+  act('cue recall', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, scope: { [key]: value } }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, scope: scopeRestore(cue, key) }])
 }
 
 // ---- rundowns ----
@@ -148,13 +143,12 @@ export async function newRundown(name: string): Promise<void> {
   stackPick.set(id)
   editRundown.set(true)
   pushUndo('new rundown', [{ type: 'deleteStack', id }])
-  toast('New rundown — add cues from Preview or the Looks library', { undoable: true })
 }
 
 export function renameRundown(stack: CueStack, name: string): void {
   const next = name.trim()
   if (!next || next === stack.name) return
-  act('rename rundown', [{ type: 'renameStack', id: stack.id, name: next }], [{ type: 'renameStack', id: stack.id, name: stack.name }], `Renamed to “${next}”`)
+  act('rename rundown', [{ type: 'renameStack', id: stack.id, name: next }], [{ type: 'renameStack', id: stack.id, name: stack.name }])
 }
 
 /** Delete a rundown. Undo builds it again (same name and cues, at the end of the list; progress is not kept). */
@@ -167,5 +161,5 @@ export function deleteRundown(stack: CueStack, all: CueStack[]): void {
     ...stack.cues.map((c, i): Command => restoreCueCommand(newId, c, i)),
   ]
   stackPick.set(rest[0].id)
-  act('delete rundown', [{ type: 'deleteStack', id: stack.id }], rebuild, `Deleted rundown “${stack.name}”`)
+  act('delete rundown', [{ type: 'deleteStack', id: stack.id }], rebuild)
 }

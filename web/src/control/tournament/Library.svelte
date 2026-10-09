@@ -2,7 +2,7 @@
   // All tournaments: load, close, rename, duplicate (with or without scores), delete, and create from a template.
   import type { ShowState } from '../../../../shared/types'
   import { send } from '../store'
-  import { act, toast } from '../ui'
+  import { act } from '../ui'
   import { twoTap } from '../ui/twotap.svelte'
   import { roundNumbers } from '../tournament'
   import { closeNewForm, openRound, setNewTemplate, tourNav, type Template } from './nav'
@@ -32,17 +32,16 @@
     const name = newName.trim()
     if (!name) return
     send({ type: 'createTournament', name, template })
-    toast(`Created “${name}”, now set up its matches`)
     newName = ''
     closeNewForm()
     openRound(0, null)
   }
-  function load(id: string, name: string) {
-    act('Load tournament', [{ type: 'loadTournament', id }], [{ type: 'loadTournament', id: show.activeTournamentId }], `Loaded “${name}”`)
+  function load(id: string) {
+    act('Load tournament', [{ type: 'loadTournament', id }], [{ type: 'loadTournament', id: show.activeTournamentId }])
   }
   function close() {
     const id = show.activeTournamentId
-    if (id) act('Close tournament', [{ type: 'loadTournament', id: null }], [{ type: 'loadTournament', id }], 'Tournament closed, back to free play')
+    if (id) act('Close tournament', [{ type: 'loadTournament', id: null }], [{ type: 'loadTournament', id }])
   }
   function startRename(id: string, name: string) { renamingId = id; renameTo = name }
   function commitRename() {
@@ -51,15 +50,13 @@
     const name = renameTo.trim()
     renamingId = null
     if (!id || was === undefined || !name || name === was) return
-    act('Rename tournament', [{ type: 'renameTournament', id, name }], [{ type: 'renameTournament', id, name: was }], `Renamed to “${name}”`)
+    act('Rename tournament', [{ type: 'renameTournament', id, name }], [{ type: 'renameTournament', id, name: was }])
   }
-  function duplicate(id: string, name: string, resetScores: boolean) {
+  function duplicate(id: string, resetScores: boolean) {
     send({ type: 'duplicateTournament', id, ...(resetScores ? { resetScores: true } : {}) })
-    toast(`Duplicated “${name}”${resetScores ? ' with scores cleared' : ''}, the copy is now loaded`)
   }
-  function remove(id: string, name: string) {
+  function remove(id: string) {
     send({ type: 'deleteTournament', id })
-    toast(`Deleted “${name}”`)
   }
 </script>
 
@@ -107,16 +104,16 @@
         {#if loaded}
           <button type="button" class="u-btn" data-close-tournament onclick={close}>Close</button>
         {:else}
-          <button type="button" class="u-btn acc" data-load onclick={() => load(tn.id, tn.name)}>Load</button>
+          <button type="button" class="u-btn acc" data-load onclick={() => load(tn.id)}>Load</button>
         {/if}
         {#if renamingId === tn.id}
           <button type="button" class="u-btn acc" data-rename-save onclick={commitRename}>Save name</button>
         {:else}
           <button type="button" class="u-btn" data-rename onclick={() => startRename(tn.id, tn.name)}>Rename</button>
         {/if}
-        <button type="button" class="u-btn" data-duplicate onclick={() => duplicate(tn.id, tn.name, false)}>Duplicate</button>
-        <button type="button" class="u-btn" data-duplicate-clear onclick={() => duplicate(tn.id, tn.name, true)}>Duplicate, clear scores</button>
-        <button type="button" class="u-btn danger" class:confirm={tt.armed === `del:${tn.id}`} data-delete onclick={() => tt.tap(`del:${tn.id}`, () => remove(tn.id, tn.name))}>
+        <button type="button" class="u-btn" data-duplicate onclick={() => duplicate(tn.id, false)}>Duplicate</button>
+        <button type="button" class="u-btn" data-duplicate-clear onclick={() => duplicate(tn.id, true)}>Duplicate, clear scores</button>
+        <button type="button" class="u-btn danger" class:confirm={tt.armed === `del:${tn.id}`} data-delete onclick={() => tt.tap(`del:${tn.id}`, () => remove(tn.id))}>
           {tt.armed === `del:${tn.id}` ? (loaded ? 'Tap again: it is loaded' : 'Tap again to delete') : 'Delete'}
         </button>
       </div>

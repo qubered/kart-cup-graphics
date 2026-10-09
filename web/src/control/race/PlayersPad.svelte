@@ -55,11 +55,11 @@
     clr.tap('clear', () => {
       staging.drop(matchKey, raceNo)
       act(`Clear race ${raceNo}`, clearRaceCommands(raceNo),
-        [{ type: 'saveResults', raceNo, trackId: s.trackId, positions: [...s.positions] }], `Cleared race ${raceNo}`)
+        [{ type: 'saveResults', raceNo, trackId: s.trackId, positions: [...s.positions] }])
     })
   }
   function nextRace() {
-    if (fwd) act('Next race', fwd.commands, fwd.undo, fwd.message)
+    if (fwd) act('Next race', fwd.commands, fwd.undo)
   }
 
   const adj = (i: number) => draft.scores.adjustments[i] ?? 0

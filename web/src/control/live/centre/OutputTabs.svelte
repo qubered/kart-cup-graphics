@@ -2,6 +2,7 @@
   // One tab per output (the screen the monitors and the scene editor follow). LED = connected pages, amber badge = changes pending in Preview.
   import { light } from '../../presence'
   import { control, selectOutput } from '../../store'
+  import { monitorsHeight, monitorsStacked } from './layout'
 
   const outputs = $derived($control.payload?.state.outputs ?? [])
   const pending = $derived($control.payload?.pending ?? {})
@@ -16,6 +17,12 @@
       {#if (pending[o.id] ?? 0) > 0}<span class="badge" data-pending title="Changes in Preview that Program does not have yet">{pending[o.id]}</span>{/if}
     </button>
   {/each}
+  <div class="u-seg arr" role="group" aria-label="Preview and Program arrangement">
+    <button type="button" class:sel={!$monitorsStacked} aria-pressed={!$monitorsStacked} data-arrange="side" title="Preview and Program side by side"
+      onclick={() => { monitorsStacked.set(false); monitorsHeight.set(null) }}>◫ Side by side</button>
+    <button type="button" class:sel={$monitorsStacked} aria-pressed={$monitorsStacked} data-arrange="stack" title="Preview above Program, as big as the column allows"
+      onclick={() => { monitorsStacked.set(true); monitorsHeight.set(null) }}>⬒ Stacked</button>
+  </div>
   <a class="otab mv" href="/multiview" target="_blank" rel="noopener">Open Multiview ↗</a>
 </div>
 
@@ -24,7 +31,9 @@
   .otab { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 9px; border: 1px solid var(--ui-line); background: transparent; color: var(--ui-muted); font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap; }
   .otab:hover:not(:disabled) { background: #181c24; border-color: var(--ui-line); color: #fff; }
   .otab[aria-selected='true'] { background: #1d2430; border-color: #3a4455; color: #fff; }
-  .mv { margin-left: auto; font-weight: 500; }
+  .arr { margin-left: auto; flex: none; }
+  .arr > button { font-size: 12.5px; padding: 0 12px; }
+  .mv { font-weight: 500; }
   .led { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4b5563; flex: none; }
   .led.on { background: #22c55e; }
   .led.partial { background: #f59e0b; }

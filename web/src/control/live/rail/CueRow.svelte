@@ -77,7 +77,7 @@
     </button>
     <button type="button" class="x" data-remove aria-label="Remove cue {index + 1}" onclick={() => removeCue(stack, index)}>✕</button>
   </div>
-  {#if open}<CueEditor {stack} {cue} {index} {st} />{/if}
+  {#if open}<CueEditor {stack} {cue} {st} />{/if}
 {/if}
 
 <style>

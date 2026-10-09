@@ -38,11 +38,11 @@
   function pickMap(id: string, el: HTMLSelectElement) {
     const plan = mapPlan(catalog, race, results, id)
     if (!plan) { el.value = trackId; return }
-    act('Change map', plan.commands, plan.undo, plan.message)
+    act('Change map', plan.commands, plan.undo)
   }
   function backToCup() {
     const plan = mapPlan(catalog, race, results, null)
-    if (plan) act('Back to cup order', plan.commands, plan.undo, plan.message)
+    if (plan) act('Back to cup order', plan.commands, plan.undo)
   }
 
   // Race settings. A new cup replaces the hand-picked maps, so with any picked it asks for a second tap.

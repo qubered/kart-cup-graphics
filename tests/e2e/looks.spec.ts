@@ -16,7 +16,7 @@ test.afterAll(clean)
 
 const tile = (page: Page, id: string) => page.locator(`[data-look-tile=${id}]`)
 const manage = async (page: Page, id: string) => page.locator(`[data-manage=${id}]`).click()
-const undoLast = (page: Page) => page.locator('[data-toast] [data-undo]').last().click()
+const undoLast = (page: Page) => page.locator('[data-undo]').click()
 const update = (page: Page) => page.locator('[data-update-look]')
 const wideLayers = async () => (await state()).layers.wide
 
@@ -60,7 +60,6 @@ test.describe('library', () => {
     await expect(page.locator('[data-look-status]')).toContainText('Lineup look')
     await expect(page.locator('[data-saved]')).toBeVisible()
     // undo puts Preview back exactly as it was
-    await expect(page.locator('[data-toast]').last()).toContainText('Loaded “Lineup look” into Preview')
     await undoLast(page)
     await expect.poll(async () => (await wideLayers()).scene).toBe('none')
     expect((await state()).lastPreset).toBe('preset-2')
@@ -130,7 +129,6 @@ test.describe('modified, update and revert', () => {
     await expect.poll(async () => (await state()).presets[0].layers.wide.scene).toBe('standings')
     await expect(page.locator('[data-saved]').first()).toBeVisible()
     await expect(update(page)).toBeDisabled()
-    await expect(page.locator('[data-toast]').last()).toContainText('Updated “A” — used by 2 cues')
 
     await undoLast(page)
     await expect.poll(async () => (await state()).presets[0].layers.wide.scene).toBe('lineup')
@@ -204,7 +202,6 @@ test.describe('save as new', () => {
     await expect(page.locator('[data-save-form]')).toHaveCount(0)
     await expect(page.locator('[data-scene-editor]')).toBeVisible()
     await expect(tile(page, 'preset-1')).toContainText('League table')
-    await expect(page.locator('[data-toast]').last()).toContainText('Saved look “League table”')
     await undoLast(page)
     await expect.poll(async () => (await state()).presets.length).toBe(0)
   })
@@ -254,7 +251,6 @@ test.describe('save as new', () => {
     const s = await state()
     expect(s.stacks[0].cues[0]).toMatchObject({ presetId: 'preset-1', take: 'cut' })
     expect(s.presets[0].name).toBe('Table')
-    await expect(page.locator('[data-toast]').last()).toContainText('added it as cue 1 of “Run”')
     await expect(tile(page, 'preset-1')).toContainText('1 cue')
     await undoLast(page)
     await expect.poll(async () => (await state()).presets.length).toBe(0)
@@ -347,7 +343,6 @@ test.describe('manage', () => {
     await manage(page, 'preset-1')
     await page.locator('[data-duplicate]').click()
     await expect.poll(async () => (await state()).presets.map((p) => p.name)).toEqual(['A', 'A copy', 'B'])
-    await expect(page.locator('[data-toast]').last()).toContainText('Duplicated “A” as “A copy”')
     await undoLast(page)
     await expect.poll(async () => (await state()).presets.map((p) => p.name)).toEqual(['A', 'B'])
   })
@@ -371,7 +366,6 @@ test.describe('manage', () => {
     await expect.poll(async () => (await state()).presets.map((p) => p.id)).toEqual(['preset-2'])
     expect((await state()).stacks[0].cues).toHaveLength(1)
     await expect(page.locator('[data-manage-bar]')).toHaveCount(0)
-    await expect(page.locator('[data-toast]').last()).toContainText('Deleted “A” and 2 cues')
 
     await undoLast(page)
     await expect.poll(async () => (await state()).presets.map((p) => p.id)).toEqual(['preset-1', 'preset-2'])
@@ -452,7 +446,6 @@ test.describe('manage', () => {
     await page.locator('[data-add-cue]').click()
     await expect.poll(async () => (await state()).stacks[0].cues.map((c) => [c.presetId, c.take])).toEqual([['preset-1', 'auto']])
     await expect(page.locator('[data-manage-bar]')).toContainText('in 1 cue')
-    await expect(page.locator('[data-toast]').last()).toContainText('Added “A” as cue 1')
     await undoLast(page)
     await expect.poll(async () => (await state()).stacks[0].cues.length).toBe(0)
   })
@@ -502,7 +495,6 @@ test.describe('with the rundown', () => {
     await page.locator('[data-add-as-cue=preset-3]').click()
     await expect.poll(cues).toEqual(['preset-1', 'preset-2', 'preset-3'])
     expect((await state()).stacks[0].cues[2].take).toBe('auto')
-    await expect(page.locator('[data-toast]').last()).toContainText('Added “C” as cue 3')
     await undoLast(page)
     await expect.poll(cues).toEqual(['preset-1', 'preset-2'])
     await page.locator('[data-edit-toggle=run]').click()
@@ -511,6 +503,7 @@ test.describe('with the rundown', () => {
 
   test('dragging a tile grip onto the rundown adds the look as a cue where it is dropped', async ({ page }) => {
     await seed()
+    const loadedBefore = (await state()).lastPreset
     await page.goto('/control')
     await page.locator('[data-edit-toggle=edit]').click()
     const grip = page.locator('[data-look=preset-3] .u-grip')
@@ -521,8 +514,8 @@ test.describe('with the rundown', () => {
     await page.mouse.move(row.x + 120, row.y + row.height - 4, { steps: 12 })
     await page.mouse.up()
     await expect.poll(cues).toEqual(['preset-1', 'preset-3', 'preset-2'])
-    // the drag ended over the tile it started from, but did not also tap it (no "Loaded ..." toast)
-    await expect(page.locator('[data-toast]').filter({ hasText: 'Loaded' })).toHaveCount(0)
+    // the drag did not also tap the tile: nothing was loaded into Preview
+    expect((await state()).lastPreset).toBe(loadedBefore)
   })
 
   test('the new-look form offers to add the look to the rundown on show as the next cue', async ({ page }) => {

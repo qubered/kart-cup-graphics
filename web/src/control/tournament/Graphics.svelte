@@ -5,7 +5,7 @@
   import type { Layers, MatchesDetail, MatchesLayout, OutputConfig, OutputFormat, SceneId, ShowState, Tournament, WinScreenConfig } from '../../../../shared/types'
   import { deriveView } from '../../../../shared/view'
   import { control, send } from '../store'
-  import { goto, toast } from '../ui'
+  import { goto } from '../ui'
   import { partForScene } from '../tournament'
   import ScenePreview from './ScenePreview.svelte'
 
@@ -49,7 +49,6 @@
     if (!out || !part) return
     const isWin = scene === 'raceWin' || scene === 'cupWin'
     send({ type: 'setLayers', outputId: out.id, patch: { scene, ...(isWin && part !== (show.layers[out.id]?.part ?? 'full') ? { part } : {}) } })
-    toast(`${LABELS[scene]} is in the ${out.name} Preview`)
   }
 </script>
 

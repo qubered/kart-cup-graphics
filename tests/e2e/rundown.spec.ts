@@ -44,7 +44,7 @@ async function undoKey(page: Page) {
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
   await page.keyboard.press('Control+z')
 }
-/** The Undo button of the newest toast. */
+/** The top-bar Undo button. */
 const undoButton = (page: Page) => page.locator('[data-undo]').last()
 /** Drag with real mouse events from the centre of `from` to a point. */
 async function dragTo(page: Page, from: Locator, x: number, y: number) {
@@ -184,21 +184,21 @@ test('tapping a row over unsaved Preview changes says so, and Undo brings them b
   await openLive(page)
   await page.locator('[data-cue=cue-3] [data-select]').click()
   await expect.poll(async () => (await stack()).selected).toBe('cue-3')
-  await expect(page.locator('[data-toast]')).toContainText('unsaved Preview changes discarded')
+  await expect(undoButton(page)).toBeEnabled() // the discarded Preview can be brought back
   expect((await state()).layers.wide.scene).toBe('winner')
   await undoButton(page).click()
   await expect.poll(async () => (await state()).layers.wide.scene).toBe('standings')
   expect((await state()).lastPreset).toBe('preset-1')
 })
 
-test('tapping a row over an unchanged Preview shows no toast', async ({ page }) => {
+test('tapping a row over an unchanged Preview leaves nothing to undo', async ({ page }) => {
   await seedRundown()
   await command({ type: 'recallPreset', id: 'preset-1' })
   await openLive(page)
   await page.locator('[data-cue=cue-2] [data-select]').click()
   await expect.poll(async () => (await stack()).selected).toBe('cue-2')
   await page.waitForTimeout(300)
-  await expect(page.locator('[data-toast]')).toHaveCount(0)
+  await expect(undoButton(page)).toBeDisabled()
 })
 
 test('Enter on a focused row selects it and does not take', async ({ page }) => {
@@ -279,7 +279,6 @@ test('Add cue from Preview saves a Look and a cue in one step, and Undo removes 
   expect(s.lastPreset).toBe(fresh.id)
   expect(fresh.name).toBe('Standings 2')
   expect(fresh.layers.wide.scene).toBe('winner')
-  await expect(page.locator('[data-toast]')).toContainText('Added cue 3')
   // the new cue's editor is open so Take can be set straight away
   await expect(page.locator(`[data-cue-editor=${s.stacks[0].cues[2].id}]`)).toBeVisible()
   await undoButton(page).click()
@@ -295,7 +294,6 @@ test('drag a grip to reorder the rundown; Undo puts it back', async ({ page }) =
   const to = await belowRow(page.locator('[data-cue=cue-3]'))
   await dragTo(page, page.locator('[data-cue=cue-1] [data-grip]'), to.x, to.y)
   await expect.poll(cueOrder).toEqual(['cue-2', 'cue-3', 'cue-1', 'cue-4'])
-  await expect(page.locator('[data-toast]').first()).toContainText('Moved to cue 3')
   await undoKey(page)
   await expect.poll(cueOrder).toEqual(['cue-1', 'cue-2', 'cue-3', 'cue-4'])
   // up: the last cue to the top
@@ -374,7 +372,6 @@ test('remove a cue, then Undo it with the button and with Ctrl+Z', async ({ page
   await expect(page.locator('[data-remove]').first()).toHaveCSS('width', '44px')
   await page.locator('[data-cue=cue-2] [data-remove]').click()
   await expect(page.locator('[data-cue]')).toHaveCount(2)
-  await expect(page.locator('[data-toast]').first()).toContainText('Removed cue 2')
   expect(await looksOf()).toEqual(['preset-1', 'preset-3'])
   await undoButton(page).click()
   await expect(page.locator('[data-cue]')).toHaveCount(3)
