@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Control page demo — A and B</title>
+  <!-- Interactive prototype of the control-page overhaul (options A and B). Simulated state, no server.
+       ?layout=a|b · ?view=live|data|setup · ?chrome=0 hides the prototype bar · ?fit=0 renders 1:1 · ?fresh=1 ignores saved state. -->
+  <link rel="stylesheet" href="../../shared/tokens.css">
+  <link rel="stylesheet" href="../control-v2/common.css">
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<div class="proto" id="proto"></div>
+<div class="ui" id="ui" style="position:absolute;width:1600px;height:1000px"></div>
+<div id="modal"></div>
+<script src="model.js"></script>
+<script src="views.js"></script>
+<script src="views-tour.js"></script>
+<script src="layout-a.js"></script>
+<script src="layout-b.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

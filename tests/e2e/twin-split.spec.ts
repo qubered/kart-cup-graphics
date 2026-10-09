@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { command, resetShow, state } from './helpers'
+import { command, resetShow, state, openSetup } from './helpers'
 
 test.beforeEach(resetShow)
 
@@ -45,7 +45,7 @@ test('halves count separately in presence and light up the twins output', async 
   await expect(twinsLed).toHaveClass(/partial/)
   const right = await context.newPage(); await right.goto('/out/twins/right'); await right.waitForSelector('body[data-ready]')
   await expect(twinsLed).toHaveClass(/\bon\b/)
-  await page.getByRole('tab', { name: 'Outputs' }).click()
+  await openSetup(page, 'Outputs')
   await expect(page.locator('[data-output-row=twins] [data-clients]')).toContainText('L 1 · R 1')
   await expect(page.locator('[data-output-row=twins] [data-half-url=left] code')).toContainText('/out/twins/left')
   await expect(page.locator('[data-output-row=twins] [data-half-url=right] code')).toContainText('/out/twins/right')

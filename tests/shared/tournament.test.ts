@@ -3,7 +3,7 @@ import { indexCatalog } from '../../shared/catalog'
 import { createDefaultState } from '../../shared/defaults'
 import { reduce } from '../../shared/reducer'
 import { commandSchema, showFileSchema, showStateSchema } from '../../shared/schema'
-import { activeTournament } from '../../shared/tournament'
+import { activeTournament, roundLabel } from '../../shared/tournament'
 import type { Command, ShowState } from '../../shared/types'
 import { deriveView, isSceneSupported } from '../../shared/view'
 import { fixtureCatalog } from '../fixtures/catalog'
@@ -168,7 +168,7 @@ describe('tournament reducer', () => {
     let s = run(start(), { type: 'addMatch', label: 'Extra', round: 0 })
     expect(T(s).matches).toHaveLength(6)
     s = run(s, { type: 'removeMatch', matchId: 'match-1' })
-    expect(T(s).activeMatchId).toBe('match-2'); expect(T(s).matches[3].slotSources?.[0]).toBeNull()
+    expect(T(s).activeMatchId).toBe('match-2'); expect(T(s).matches.find((m) => m.label === 'Final')!.slotSources?.[0]).toBeNull()
     s = run(s, { type: 'createTournament', name: 'Two', template: 'empty' })
     expect(s.activeTournamentId).toBe('tournament-2')
     s = run(s, { type: 'loadTournament', id: 'tournament-1' }, { type: 'renameTournament', id: 'tournament-1', name: 'Renamed' })
@@ -176,6 +176,13 @@ describe('tournament reducer', () => {
     expect(run(s, { type: 'loadTournament', id: null }).activeTournamentId).toBeNull()
     expect(run(s, { type: 'deleteTournament', id: 'tournament-1' }).activeTournamentId).toBeNull()
     expect(() => run(base, { type: 'nextMatch' })).toThrow()
+  })
+
+  it('addMatch keeps the matches in round order (an extra semi goes before the Final)', () => {
+    const s = run(start(), { type: 'addMatch', label: 'Extra semi', round: 0 })
+    expect(T(s).matches.map((m) => `${m.label}:${m.round}`)).toEqual(['Semi 1:0', 'Semi 2:0', 'Semi 3:0', 'Semi 4:0', 'Extra semi:0', 'Final:1'])
+    const t = run(s, { type: 'addMatch', label: 'Third place', round: 1 }, { type: 'addMatch', label: 'Round 3 match', round: 2 })
+    expect(T(t).matches.map((m) => m.round)).toEqual([0, 0, 0, 0, 0, 1, 1, 2])
   })
 
   it('updateMatch edits a non-active race', () => {
@@ -347,5 +354,74 @@ describe('schema compatibility', () => {
     expect(commandSchema.safeParse({ type: 'setLayers', outputId: 'wide', patch: { part: 'nope' } }).success).toBe(false)
     expect(commandSchema.safeParse({ type: 'addCue', stackId: 's', presetId: 'p', take: null, scope: { show: true }, action: 'nextMatch' }).success).toBe(true)
     expect(commandSchema.safeParse({ type: 'setWinnerOverride', matchId: 'm', slot: 5 }).success).toBe(false)
+  })
+})
+
+describe('round names', () => {
+  const start = () => run(base, { type: 'createTournament', name: 'Cup' })
+  it('roundLabel falls back to "Round n"', () => {
+    const t = T(start())
+    expect(roundLabel(t, 0)).toBe('Round 1'); expect(roundLabel(t, 3)).toBe('Round 4')
+    expect(roundLabel({ ...t, roundNames: { '1': 'Final', '2': '' } }, 1)).toBe('Final')
+    expect(roundLabel({ ...t, roundNames: { '1': 'Final', '2': '  ' } }, 2)).toBe('Round 3')
+    expect(roundLabel({ ...t, roundNames: { '1': 'Final' } }, 0)).toBe('Round 1')
+  })
+  it('setRoundName sets, replaces, trims and removes a name', () => {
+    let s = run(start(), { type: 'setRoundName', round: 0, name: 'Semi-finals' }, { type: 'setRoundName', round: 1, name: '  The Final ' })
+    expect(T(s).roundNames).toEqual({ '0': 'Semi-finals', '1': 'The Final' })
+    expect(roundLabel(T(s), 0)).toBe('Semi-finals')
+    s = run(s, { type: 'setRoundName', round: 0, name: 'Semis' })
+    expect(T(s).roundNames).toEqual({ '0': 'Semis', '1': 'The Final' })
+    s = run(s, { type: 'setRoundName', round: 0, name: null })
+    expect(T(s).roundNames).toEqual({ '1': 'The Final' }); expect(roundLabel(T(s), 0)).toBe('Round 1')
+    s = run(s, { type: 'setRoundName', round: 1, name: '' })
+    expect('roundNames' in T(s)).toBe(false)
+    // a round without matches may be named ahead of time
+    expect(T(run(s, { type: 'setRoundName', round: 5, name: 'Grand final' })).roundNames).toEqual({ '5': 'Grand final' })
+  })
+  it('does nothing when the name does not change', () => {
+    const s = run(start(), { type: 'setRoundName', round: 0, name: 'A' })
+    expect(run(s, { type: 'setRoundName', round: 0, name: 'A' })).toBe(s)
+    expect(run(s, { type: 'setRoundName', round: 1, name: null })).toBe(s)
+    const fresh = start()
+    expect(run(fresh, { type: 'setRoundName', round: 0, name: '   ' })).toBe(fresh)
+  })
+  it('needs an active tournament and a sensible round', () => {
+    expect(() => run(base, { type: 'setRoundName', round: 0, name: 'X' })).toThrow(/No active tournament/)
+    expect(() => run(start(), { type: 'setRoundName', round: -1, name: 'X' })).toThrow()
+    expect(() => run(start(), { type: 'setRoundName', round: 1.5, name: 'X' })).toThrow()
+  })
+  it('only the active tournament is named; renaming rounds is cosmetic (no graphics change)', () => {
+    let s = run(start(), { type: 'createTournament', name: 'Two' })
+    s = run(s, { type: 'setRoundName', round: 0, name: 'Heats' })
+    expect(s.tournaments[0].roundNames).toBeUndefined(); expect(s.tournaments[1].roundNames).toEqual({ '0': 'Heats' })
+    const before = s.program
+    expect(run(s, { type: 'setRoundName', round: 1, name: 'Finals' }).program).toBe(before)
+  })
+  it('duplicateTournament copies the names (deep)', () => {
+    const s = run(start(), { type: 'setRoundName', round: 0, name: 'Semis' }, { type: 'setRoundName', round: 1, name: 'Final' }, { type: 'duplicateTournament', id: 'tournament-1' })
+    expect(s.tournaments[1].roundNames).toEqual({ '0': 'Semis', '1': 'Final' })
+    const edited = run(s, { type: 'setRoundName', round: 0, name: 'Changed' })
+    expect(edited.tournaments[0].roundNames).toEqual({ '0': 'Semis', '1': 'Final' })
+    expect(run(s, { type: 'duplicateTournament', id: 'tournament-1', resetScores: true }).tournaments[2].roundNames).toEqual({ '0': 'Semis', '1': 'Final' })
+  })
+  it('schema: the command, the saved state and show files', () => {
+    const ok = { type: 'setRoundName', round: 1, name: 'Final' }
+    expect(commandSchema.safeParse(ok).success).toBe(true)
+    expect(commandSchema.safeParse({ ...ok, name: null }).success).toBe(true)
+    expect(commandSchema.safeParse({ ...ok, name: '' }).success).toBe(true)
+    for (const bad of [{ round: -1 }, { round: 21 }, { round: 1.5 }, { round: '1' }, { round: undefined }, { name: undefined }, { name: 3 }, { name: 'x'.repeat(101) }]) {
+      expect(commandSchema.safeParse({ ...ok, ...bad }).success).toBe(false)
+    }
+    const s = run(start(), { type: 'setRoundName', round: 0, name: 'Semis' })
+    expect(showStateSchema.parse(JSON.parse(JSON.stringify(s))).tournaments[0].roundNames).toEqual({ '0': 'Semis' })
+    const file = { draft: s.draft, outputs: s.outputs, layers: s.layers, transition: s.transition, presets: s.presets, stacks: s.stacks, tournaments: s.tournaments }
+    const parsed = showFileSchema.parse(JSON.parse(JSON.stringify(file)))
+    expect(parsed.tournaments[0].roundNames).toEqual({ '0': 'Semis' })
+    expect(run(base, { type: 'importShow', file: parsed }).tournaments[0].roundNames).toEqual({ '0': 'Semis' })
+    // old files have no names; junk keys or values are rejected
+    expect(showFileSchema.parse(JSON.parse(JSON.stringify({ ...file, tournaments: run(start()).tournaments }))).tournaments[0].roundNames).toBeUndefined()
+    const bad = (names: unknown) => showFileSchema.safeParse(JSON.parse(JSON.stringify({ ...file, tournaments: [{ ...s.tournaments[0], roundNames: names }] }))).success
+    expect(bad({ '0': 'ok' })).toBe(true); expect(bad({ first: 'x' })).toBe(false); expect(bad({ '0': 5 })).toBe(false); expect(bad(['x'])).toBe(false)
   })
 })

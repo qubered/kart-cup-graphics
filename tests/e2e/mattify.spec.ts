@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { command, resetShow, state } from './helpers'
+import { command, resetShow, state, openSetup } from './helpers'
 
 test.beforeEach(resetShow)
 
@@ -19,7 +19,7 @@ test('off by default: the normal mushroom is shown', async ({ page }) => {
 
 test('Settings toggle turns Mattify on and off', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Settings' }).click()
+  await openSetup(page, 'Settings')
   const toggle = page.locator('input[name=mattify]')
   await expect(toggle).not.toBeChecked()
   await toggle.check()

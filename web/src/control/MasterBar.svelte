@@ -18,13 +18,13 @@
 
 <footer class="master">
   <div class="ms">
-    <span class="lab">Take to · click to arm</span>
+    <span class="lab">Take to · tap to arm</span>
     <div class="ochips">
       {#each st?.outputs ?? [] as o (o.id)}
         {@const lt = light(presence[o.id], o.format)}
         {@const online = lt !== 'off'}
         <button class="oc" class:arm={armed.includes(o.id)} data-arm={o.id} aria-pressed={armed.includes(o.id)}
-          onclick={() => toggleArm(o.id)}>
+          title="Arm or disarm {o.name} (key {(st?.outputs.findIndex((x) => x.id === o.id) ?? 0) + 1})" onclick={() => toggleArm(o.id)}>
           {#if (pending[o.id] ?? 0) > 0}<span class="p" data-pending>{pending[o.id]}</span>{/if}
           <div class="nn"><span class="led" class:on={lt === 'on'} class:partial={lt === 'partial'}></span>{o.name}</div>
           <div class="s">{lt === 'partial' ? 'one half only' : online ? `${SIZE[o.format]}${armed.includes(o.id) ? ' · armed' : ''}` : 'offline'}</div>
@@ -34,10 +34,10 @@
     </div>
   </div>
   <div class="ms">
-    <span class="lab">Transition</span>
+    <span class="lab">Take Preview</span>
     <div class="row" style="flex-wrap:nowrap">
-      <button class="bb cut" onclick={() => send({ type: 'take', mode: 'cut' })}>CUT<small>instant</small></button>
-      <button class="bb auto" onclick={() => send({ type: 'take', mode: 'auto' })}>AUTO<small>animated</small></button>
+      <button class="bb cut" title="Instant (Enter)" onclick={() => send({ type: 'take', mode: 'cut' })}>CUT<small>Enter</small></button>
+      <button class="bb auto" title="Animated (Space)" onclick={() => send({ type: 'take', mode: 'auto' })}>AUTO<small>Space</small></button>
       <div class="durs" role="group" aria-label="Transition speed">
         {#each ['fast', 'normal', 'slow'] as sp (sp)}
           <button class:on={st?.transition === sp} onclick={() => send({ type: 'setTransition', speed: sp as 'fast' | 'normal' | 'slow' })}>
@@ -46,16 +46,14 @@
         {/each}
       </div>
     </div>
-    <div class="kb"><kbd>Space</kbd> AUTO · <kbd>Enter</kbd> CUT · <kbd>1</kbd>–<kbd>9</kbd> arm</div>
   </div>
   <div class="ms">
     <span class="lab">Emergency · all outputs · instant</span>
     <div class="row" style="flex-wrap:nowrap">
-      <button class="bb hold" class:on={hold?.on} aria-pressed={hold?.on ?? false}
+      <button class="bb hold" class:on={hold?.on} aria-pressed={hold?.on ?? false} title="Hold slate on every output (H)"
         onclick={() => send({ type: 'hold', on: !hold?.on })}>HOLD<small>"{st?.draft.event.holdMessage ?? ''}"</small></button>
-      <button class="bb clear" onclick={() => send({ type: 'clear' })}>CLEAR<small>graphics off</small></button>
-      <button class="bb ftb" class:on={ftb} aria-pressed={ftb} onclick={() => send({ type: 'ftb', on: !ftb })}>FTB<small>to black</small></button>
+      <button class="bb clear" title="Graphics off, instantly (Shift+Esc)" onclick={() => send({ type: 'clear' })}>CLEAR<small>graphics off</small></button>
+      <button class="bb ftb" class:on={ftb} aria-pressed={ftb} title="Fade to black (Shift+B)" onclick={() => send({ type: 'ftb', on: !ftb })}>FTB<small>to black</small></button>
     </div>
-    <div class="kb"><kbd>H</kbd> hold · <kbd>⇧Esc</kbd> clear · <kbd>⇧B</kbd> FTB</div>
   </div>
 </footer>

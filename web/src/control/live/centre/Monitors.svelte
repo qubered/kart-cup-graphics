@@ -1,0 +1,71 @@
+<script lang="ts">
+  // Preview (green) and Program (red) of the selected output, always side by side so the Looks library gets the room.
+  // Real output pages in low-effects mode, scaled to fit. The label bar sits above the picture: nothing covers it.
+  import { fit } from '../../../lib/fit'
+  import { light } from '../../presence'
+  import { control } from '../../store'
+  import { FORMAT_CANVAS } from '../../../../../shared/view'
+  import type { SceneId } from '../../../../../shared/types'
+  import { sceneLabel } from '../scene/scenes'
+  import { onAirLookId, previewLook } from './status'
+
+  const st = $derived($control.payload?.state)
+  const out = $derived(st?.outputs.find((o) => o.id === $control.selectedOutput))
+  const onAir = $derived(light($control.payload?.presence[$control.selectedOutput], out?.format ?? 'hd') !== 'off')
+  const canvas = $derived(out ? FORMAT_CANVAS[out.format] : { w: 1920, h: 1080 })
+  const name = $derived((out?.name ?? '').toUpperCase())
+  const previewName = $derived($previewLook.preset?.name ?? null)
+  // Program: the look that is on air, else what the output shows ("Next race", "Background only").
+  const programName = $derived.by(() => {
+    const look = st?.presets.find((p) => p.id === $onAirLookId)
+    if (look) return look.name
+    const view = out ? st?.program[out.id]?.view : undefined
+    if (view?.scene) return sceneLabel(view.scene.kind as SceneId)
+    return view?.background ? 'Background only' : 'Nothing on air'
+  })
+  const flags = $derived([st?.overlay.hold.on ? 'HOLD' : '', st?.overlay.ftb ? 'FTB' : ''].filter(Boolean))
+</script>
+
+{#if out}
+  {#key out.id}
+    <div class="monitors" data-monitors>
+      <div class="mon pv" data-monitor="preview">
+        <div class="mh">
+          <span class="t">PREVIEW · {name}</span>
+          <span class="src">
+            {#if $previewLook.modified}<span class="u-tag mod">MODIFIED</span>{/if}
+            <b class:dim={!previewName}>{previewName ?? 'Unsaved'}</b>
+          </span>
+        </div>
+        <div class="fitbox" use:fit={{ width: canvas.w, height: canvas.h }}>
+          <iframe title="Preview {out.name}" src="/out/{out.id}?view=preview&lowfx=1" width={canvas.w} height={canvas.h}></iframe>
+        </div>
+      </div>
+      <div class="mon pg" data-monitor="program">
+        <div class="mh">
+          <span class="t">PROGRAM · {name}{onAir ? ' · ON AIR' : ''}{flags.map((f) => ` · ${f}`).join('')}</span>
+          <span class="src"><b>{programName}</b></span>
+        </div>
+        <div class="fitbox" use:fit={{ width: canvas.w, height: canvas.h }}>
+          <iframe title="Program {out.name}" src="/out/{out.id}?lowfx=1" width={canvas.w} height={canvas.h}></iframe>
+        </div>
+      </div>
+    </div>
+  {/key}
+{/if}
+
+<style>
+  .monitors { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; flex: none; }
+  .mon { min-width: 0; overflow: hidden; background: #000; border: 2px solid var(--ui-line); border-radius: 8px; }
+  .mon.pv { border-color: var(--ui-preview); }
+  .mon.pg { border-color: var(--ui-program); }
+  .mh { display: flex; align-items: center; gap: 10px; height: 26px; padding: 0 8px; color: #fff; font: 700 11px/1 var(--ui-font); letter-spacing: .05em; }
+  .pv .mh { background: var(--ui-preview); }
+  .pg .mh { background: var(--ui-program); }
+  .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .src { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-weight: 600; letter-spacing: 0; }
+  .src b { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+  .src b.dim { font-weight: 500; opacity: .85; }
+  .fitbox { min-width: 0; }
+  iframe { color-scheme: normal; border: 0; display: block; background: transparent; pointer-events: none; }
+</style>

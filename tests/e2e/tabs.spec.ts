@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { command, state, resetShow } from './helpers'
+import { command, state, resetShow, openSetup } from './helpers'
 
 test.beforeEach(resetShow)
 
 test('headings font reaches output', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Text & Fonts' }).click()
+  await openSetup(page, 'Text & Fonts')
   await page.locator('[data-role=headings] select[name=font]').selectOption('Saira')
   await command({ type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } })
   await command({ type: 'take', mode: 'cut', outputIds: ['wide'] })
@@ -16,7 +16,7 @@ test('headings font reaches output', async ({ page }) => {
 
 test('add output appears everywhere', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Outputs' }).click()
+  await openSetup(page, 'Outputs')
   await page.locator('input[name=id]').fill('lobby')
   await page.locator('input[name=name]').fill('Lobby')
   await page.locator('select[name=format]').selectOption('hd')
@@ -27,7 +27,7 @@ test('add output appears everywhere', async ({ page }) => {
 
 test('remove output asks for confirmation', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Outputs' }).click()
+  await openSetup(page, 'Outputs')
   page.once('dialog', d => d.accept())
   await page.locator('[data-output-row=pillars]').getByRole('button', { name: 'Remove' }).click()
   await expect.poll(async () => (await state()).outputs.some(o => o.id === 'pillars')).toBe(false)
@@ -35,7 +35,7 @@ test('remove output asks for confirmation', async ({ page }) => {
 
 test('watermark text reaches background A', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Text & Fonts' }).click()
+  await openSetup(page, 'Text & Fonts')
   await page.locator('input[name=watermark]').fill('ACME RACING')
   await expect.poll(async () => (await state()).draft.event.watermark).toBe('ACME RACING')
   await command({ type: 'take', mode: 'cut', outputIds: ['wide'] })
@@ -47,7 +47,7 @@ test('watermark text reaches background A', async ({ page }) => {
 test('settings shows catalog counts and resets scores', async ({ page }) => {
   await command({ type: 'saveResults', raceNo: 1, trackId: 'mario-kart-stadium', positions: [1, 2, 3, 4] })
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Settings' }).click()
+  await openSetup(page, 'Settings')
   await expect(page.locator('[data-catalog]')).toContainText('24 cups')
   page.once('dialog', d => d.accept())
   await page.getByRole('button', { name: 'Reset scores' }).click()
@@ -56,7 +56,7 @@ test('settings shows catalog counts and resets scores', async ({ page }) => {
 
 test('font upload registers the font and export/import round-trips', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Text & Fonts' }).click()
+  await openSetup(page, 'Text & Fonts')
   await page.locator('input[name=fontFile]').setInputFiles({ name: 'MyFont.ttf', mimeType: 'font/ttf', buffer: Buffer.from('not-a-real-font') })
   await expect.poll(async () => (await state()).uploadedFonts.map(f => f.family)).toContain('MyFont')
   await expect(page.locator('[data-role=headings] select[name=font] option[value=MyFont]')).toHaveCount(1)

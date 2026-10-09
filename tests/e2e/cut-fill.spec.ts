@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import sharp from 'sharp'
-import { command, resetShow } from './helpers'
+import { command, resetShow, openSetup } from './helpers'
 
 test.beforeEach(resetShow)
 
@@ -92,7 +92,7 @@ test('cut & fill work on the half pages and on the superwide', async ({ page }) 
 
 test('Outputs tab lists fill and key URLs, including the halves and the superwide', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Outputs' }).click()
+  await openSetup(page, 'Outputs')
   const row = page.locator('[data-output-row=twins]')
   await row.locator('summary').click()
   for (const u of ['/out/twins', '/out/twins/left', '/out/twins/right'])
