@@ -36,7 +36,7 @@
   {#if open}
     <div class="pop" role="radiogroup" aria-label="Colour" style="left:{pos.left}px;top:{pos.top}px">
       {#each PLAYER_COLOURS as c (c.id)}
-        <button type="button" class="sw" class:on={value === c.id} style="background:{c.hex}" role="radio" aria-checked={value === c.id} aria-label={c.name} title={c.name} data-colour={c.id}
+        <button type="button" class="swatch" class:on={value === c.id} style="background:{c.hex}" role="radio" aria-checked={value === c.id} aria-label={c.name} title={c.name} data-colour={c.id}
           onclick={() => { onchange(c.id); open = false; trigger?.focus() }}></button>
       {/each}
     </div>
@@ -48,6 +48,6 @@
   .chip { width: 44px; height: 44px; padding: 0; border-radius: 9px; border: 2px solid rgba(255,255,255,.14); font-weight: 800; font-size: 14px; }
   .chip:hover:not(:disabled) { border-color: rgba(255,255,255,.55); }
   .pop { position: fixed; z-index: 40; background: var(--ui-panel); border: 1px solid var(--ui-field); border-radius: 10px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.6); display: grid; grid-template-columns: repeat(4, 44px); gap: 6px; }
-  .sw { width: 44px; height: 44px; padding: 0; border-radius: 9px; border: 3px solid transparent; }
-  .sw.on { border-color: #fff; box-shadow: 0 0 0 2px var(--ui-accent); }
+  .swatch { width: 44px; height: 44px; padding: 0; border-radius: 9px; border: 3px solid transparent; }
+  .swatch.on { border-color: #fff; box-shadow: 0 0 0 2px var(--ui-accent); }
 </style>

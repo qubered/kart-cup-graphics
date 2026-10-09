@@ -82,6 +82,8 @@
     drafts[i] = undefined
   }
   function nameKey(i: 0 | 1 | 2 | 3, e: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+    // Typing a capital B must not fade the outputs to black: only the emergency Shift+Esc still reaches the show shortcuts from here.
+    if (!(e.shiftKey && e.key === 'Escape')) e.stopPropagation()
     if (e.key === 'Enter') { e.currentTarget.blur(); return } // blur saves
     if (e.key !== 'Escape') return
     clearTimeout(timers[i])
@@ -97,7 +99,7 @@
     <b class="rn">Race {raceNo}</b>
     {#if trackName}<span class="u-dim">· {trackName}</span>{/if}
     {#if changed.length}
-      <span class="note" data-not-on-air title="Edited in Preview; Take to put it on air">● {changed.map((i) => `P${i + 1}`).join(', ')} edited, not on air yet</span>
+      <span class="notonair" data-not-on-air title="Edited in Preview; Take to put it on air">● {changed.map((i) => `P${i + 1}`).join(', ')} edited, not on air yet</span>
     {/if}
   </div>
 
@@ -106,7 +108,7 @@
   <div class="u-grow rows">
     {#each SLOTS as i (i)}
       {@const p = draft.players[i]}
-      <div class="prow" data-player={i} data-result={i}>
+      <div class="player" data-player={i} data-result={i}>
         <div class="chipc"><ColourChip slot={i} value={p.colour} onchange={(c) => setPlayer(i, { colour: c })} /></div>
         <div class="who">
           <input name="name" type="text" class="u-input nm" maxlength="40" autocomplete="off" aria-label="Player {i + 1} name"
@@ -140,22 +142,23 @@
     {/each}
   </div>
 
-  <div class="foot">
-    {#each view.issues as issue (issue)}<div class="msg warn" data-issue>{issue}</div>{/each}
+  <div class="padfoot">
+    {#each view.issues as issue (issue)}<div class="pmsg warn" data-issue>{issue}</div>{/each}
     {#if done}
-      <div class="msg ok" data-status="saved">Race {raceNo} is complete and saved</div>
+      <div class="pmsg ok" data-status="saved">Race {raceNo} is complete and saved</div>
     {:else if view.complete}
-      <div class="msg warn" data-status="saving">Saving race {raceNo}…</div>
+      <div class="pmsg warn" data-status="saving">Saving race {raceNo}…
+        <button type="button" class="u-link rv" data-resave onclick={() => send({ type: 'saveResults', raceNo, trackId, positions: [...view.row] })}>Save again</button></div>
     {:else if view.placed > 0}
-      <div class="msg warn" data-status="partial">
+      <div class="pmsg warn" data-status="partial">
         {view.placed} of 4 placed{view.staged ? ', not saved yet' : ''}. Tap a place for each remaining player{saved && view.staged ? '; the scoreboard keeps the saved result until then' : ''}.
         {#if view.staged && saved}<button type="button" class="u-link rv" data-revert onclick={revert}>Back to the saved result</button>{/if}
       </div>
     {:else if staging.get(matchKey, raceNo)}
-      <div class="msg warn" data-status="partial">Nothing placed. The saved result stays until all four places are set or the race is cleared.
+      <div class="pmsg warn" data-status="partial">Nothing placed. The saved result stays until all four places are set or the race is cleared.
         <button type="button" class="u-link rv" data-revert onclick={revert}>Back to the saved result</button></div>
     {:else}
-      <div class="msg" data-status="empty">Tap each player’s finishing place. Tap a taken place to move it.</div>
+      <div class="pmsg" data-status="empty">Tap each player’s finishing place. Tap a taken place to move it.</div>
     {/if}
     <div class="acts">
       <button type="button" class="u-btn clear" class:confirm={clr.armed === 'clear'} data-clear-race disabled={!canClear} onclick={clearRace}>
@@ -173,13 +176,13 @@
 <style>
   .pad { min-width: 0; }
   .rn { color: #fff; }
-  .note { margin-left: auto; font-size: 12px; color: var(--ui-pending); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .head, .prow { display: grid; grid-template-columns: 44px minmax(190px, 270px) auto 48px auto; justify-content: space-between; column-gap: 12px; align-items: center; padding: 0 14px; }
+  .notonair { margin-left: auto; font-size: 12px; color: var(--ui-pending); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .head, .player { display: grid; grid-template-columns: 44px minmax(190px, 270px) auto 48px auto; justify-content: space-between; column-gap: 12px; align-items: center; padding: 0 14px; }
   .head { min-height: 30px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ui-muted); flex: none; padding-top: 6px; }
   .head > span:first-child { grid-column: 1 / 3; }
   .head .rcol, .head > span:nth-child(2) { text-align: center; }
   .rows { overflow: auto; }
-  .prow { min-height: 104px; padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #1c1f26; }
+  .player { min-height: 104px; padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #1c1f26; }
   .who { display: grid; gap: 6px; min-width: 0; }
   .nm { font-weight: 700; }
   .places { display: grid; grid-template-columns: repeat(4, minmax(58px, 80px)); gap: 6px; }
@@ -200,10 +203,10 @@
   .val.nz { color: #fff; }
   .val::-webkit-outer-spin-button, .val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-  .foot { border-top: 1px solid var(--ui-line); background: #101319; padding: 12px 14px; display: grid; gap: 10px; flex: none; }
-  .msg { font-size: 13px; color: var(--ui-muted); }
-  .msg.ok { color: #4ade80; font-weight: 600; }
-  .msg.warn { color: var(--ui-pending); }
+  .padfoot { border-top: 1px solid var(--ui-line); background: #101319; padding: 12px 14px; display: grid; gap: 10px; flex: none; }
+  .pmsg { font-size: 13px; color: var(--ui-muted); }
+  .pmsg.ok { color: #4ade80; font-weight: 600; }
+  .pmsg.warn { color: var(--ui-pending); }
   .rv { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; }
   .acts { display: flex; gap: 8px; }
   .acts .u-btn { height: 56px; }
@@ -213,7 +216,7 @@
   /* narrower screens: name and character share a line, the places move under it */
   @media (max-width: 1500px) {
     .head { display: none; }
-    .prow { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: 'chip who who' 'places places adj'; row-gap: 8px; min-height: 0; }
+    .player { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: 'chip who who' 'places places adj'; row-gap: 8px; min-height: 0; }
     .chipc { grid-area: chip; }
     .who { grid-area: who; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .places { grid-area: places; grid-template-columns: repeat(4, minmax(0, 1fr)); }

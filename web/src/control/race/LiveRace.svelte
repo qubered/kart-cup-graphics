@@ -57,7 +57,9 @@
     if (pendingCup) send({ type: 'setRace', patch: { cupId: pendingCup, raceIndex: 0 } })
     pendingCup = null
   }
-  $effect(() => { if (race.cupId) pendingCup = null })
+  // a cup change that actually happened (here or elsewhere) settles the question; unrelated state updates must not
+  const cupId = $derived(race.cupId)
+  $effect(() => { if (cupId) pendingCup = null })
 
   const rnd = twoTap()
   function randomRace() {
@@ -144,7 +146,7 @@
         <button type="button" class:sel={race.mode === 'track'} aria-pressed={race.mode === 'track'} onclick={() => send({ type: 'setRace', patch: { mode: 'track' } })}>Single track</button>
       </div>
       {#if race.mode === 'cup'}
-        <label class="field">
+        <label class="cupfield">
           <span class="u-lab">Cup</span>
           <select class="u-select" aria-label="Cup" data-cup-select value={pendingCup ?? race.cupId} onchange={(e) => pickCup(e.currentTarget.value)}>
             {#each catalog.cups as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
@@ -198,7 +200,7 @@
   .tile.cur:hover:not(:disabled) { border-color: #3b82f6; background: #14233f; }
 
   .map { padding: 12px; border-top: 1px solid var(--ui-line); background: #101319; display: grid; gap: 8px; flex: none; }
-  .map label, .field { display: grid; gap: 6px; }
+  .map label, .cupfield { display: grid; gap: 6px; }
   .hint { font-size: 12px; line-height: 1.35; }
 
   .settings { border-top: 1px solid var(--ui-line); flex: none; }

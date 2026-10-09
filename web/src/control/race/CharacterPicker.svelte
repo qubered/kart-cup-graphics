@@ -38,6 +38,8 @@
   function close() { open = false; q = ''; active = 0 }
   function pick(id: string) { onchange(id); close(); trigger?.focus() }
   function key(e: KeyboardEvent) {
+    // Searching for "Bowser" must not fade the outputs to black (Shift+B): only the emergency Shift+Esc still reaches the show shortcuts from here.
+    if (!(e.shiftKey && e.key === 'Escape')) e.stopPropagation()
     if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, results.length - 1) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0) }
     else if (e.key === 'Enter') { e.preventDefault(); if (results[active]) pick(results[active].id) }

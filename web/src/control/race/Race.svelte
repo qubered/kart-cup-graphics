@@ -27,7 +27,7 @@
 </script>
 
 {#if st && catalog}
-  <div class="race">
+  <div class="racepage">
     <LiveRace {st} {catalog} {tournament} {matchId} {matchKey} />
     <PlayersPad {st} {catalog} {matchId} {matchKey} pending={$control.payload?.pending ?? {}} />
     <Scoreboard {st} {tournament} {matchId} />
@@ -37,8 +37,8 @@
 {/if}
 
 <style>
-  .race { display: grid; grid-template-columns: minmax(300px, 350px) minmax(0, 1fr) minmax(330px, 440px); gap: 14px; padding: 12px 14px; height: 100%; min-height: 0; }
+  .racepage { display: grid; grid-template-columns: minmax(300px, 350px) minmax(0, 1fr) minmax(330px, 440px); gap: 14px; padding: 12px 14px; height: 100%; min-height: 0; }
   @media (max-width: 1500px) {
-    .race { grid-template-columns: minmax(270px, 300px) minmax(0, 1fr) minmax(350px, 380px); gap: 10px; padding: 10px; }
+    .racepage { grid-template-columns: minmax(270px, 300px) minmax(0, 1fr) minmax(350px, 380px); gap: 10px; padding: 10px; }
   }
 </style>
