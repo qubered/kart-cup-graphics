@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Background D · Player Announce</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Role: per-player announcement background. The colour is the player's chosen colour (palette ids below).
+     ?slot=0..3 uses that sample player; ?colour=red|blue|green|yellow|pink|orange|purple|cyan overrides the colour.
+     ?demo=0 hides the stand-in character/name so you see the bare background. */
+  const HEX = { red: '#e60012', blue: '#1e6cff', green: '#22b14c', yellow: '#ffc400', pink: '#ff5fa2', orange: '#ff8a00', purple: '#8b5cf6', cyan: '#06b6d4' };
+  const L = 'https://mario.wiki.gallery/images/';
+  const ART = { 0: '../../../assets/characters/mario.png', 1: '../../../assets/characters/peach.png', 2: '../../../assets/characters/yoshi.png', 3: '../../../assets/characters/bowser.png' };
+  MK.page(MK.param('format', 'wide'), (f, S) => {
+    const slot = +MK.param('slot', 0), p = Object.assign({}, S.players[slot], { art: ART[slot] });
+    const c = MK.param('colour', ''); if (HEX[c]) { p.colour = HEX[c]; p.text = (c === 'yellow' || c === 'cyan') ? '#14213d' : '#ffffff'; }
+    return MK.bgPlayer(f, p, MK.param('demo', '1') !== '0');
+  }, 'Background D · Player Announce');
+</script>
+</body>
+</html>

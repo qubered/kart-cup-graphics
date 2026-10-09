@@ -135,6 +135,22 @@ window.MK = (function () {
   function bgPattern(f) {
     return `<div class="layer bg-pattern" data-bg="B"><svg class="pat" width="${f.w + 1250}" height="${f.h + 280}"><rect width="100%" height="100%" fill="url(#pat-b)"/></svg><div class="vignette"></div></div>`;
   }
+  /* ---------- background D · Player Announce (checkered bands + player colour) ---------- */
+  const mixHex = (hex, to, t) => { const a = parseInt(hex.slice(1), 16), b = parseInt(to.slice(1), 16), c = (sh) => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
+    return '#' + [16, 8, 0].map((sh) => c(sh).toString(16).padStart(2, '0')).join(''); };
+  function bgPlayer(f, p, demo) {
+    /* --pc / --pc-d / --pc-l are derived from the player's colour; Chromium 103 has no color-mix(), so compute them (real app: shared/palette.ts). */
+    const vars = `--pc:${p.colour};--pc-d:${mixHex(p.colour, '#000000', .55)};--pc-l:${mixHex(p.colour, '#ffffff', .38)};--pc-ink:${p.text}`;
+    const standIn = demo ? `<div class="pa-demo" data-guide="stand-in content (not part of background)"><img src="${p.art}" alt=""><div class="pa-pre">PLAYER ${p.slot + 1}</div><div class="pa-name" data-fit="${Math.round(f.w * (f.w > 2000 ? .3 : .62))}"><span>${esc(p.name)}</span></div><div class="pa-char">${esc(p.character)}</div></div>` : '';
+    return `<div class="layer bg-player" data-bg="D" style="${vars}">
+      <div class="pa-rays"></div><div class="pa-stripes"><i></i><i></i><i></i><i></i></div>
+      <div class="pa-slot s1">P${p.slot + 1}</div><div class="pa-slot s2">P${p.slot + 1}</div>
+      <div class="pa-fade top"></div><div class="pa-fade bottom"></div>
+      <div class="pa-flag top" data-guide="flag band top"><div class="pa-track"></div></div><div class="pa-trim top"></div>
+      <div class="pa-flag bottom" data-guide="flag band bottom"><div class="pa-track"></div></div><div class="pa-trim bottom"></div>
+      <div class="sparkles" data-sparkles></div><div class="pa-vig"></div>${standIn}</div>`;
+  }
+
   function bgStickers(f, e) {
     const copies = Math.ceil(f.w / 1280) + 2; let uses = '';
     for (let i = -1; i < copies; i++) if (i !== 0) uses += `<use href="#sheet-tile" x="${i * 1280}"/>`;
@@ -307,5 +323,5 @@ window.MK = (function () {
   }
 
   return { P, param, FORMATS, SAMPLE, TITLE_SIZES, lowfx, esc, lowerThirdSlots, trackCardSlots, medallion, lowerThird, trackCard, titleLockup, heading,
-           bgSky, bgPattern, bgStickers, camera, page };
+           bgSky, bgPattern, bgStickers, bgPlayer, camera, page };
 })();
