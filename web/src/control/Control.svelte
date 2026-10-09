@@ -5,7 +5,7 @@
   import { activeStack, editRundown, page, undo } from './ui'
   import TopBar from './TopBar.svelte'
   import MasterBar from './MasterBar.svelte'
-  import Toasts from './ui/Toasts.svelte'
+  import Notice from './ui/Notice.svelte'
   import Live from './live/Live.svelte'
   import Race from './race/Race.svelte'
   import Workspace from './tournament/Workspace.svelte'
@@ -47,7 +47,7 @@
 {#if !$control.connected}
   <div class="banner" role="alert">Disconnected — reconnecting…</div>
 {/if}
-<Toasts />
+<Notice />
 
 <fieldset class="bare shell" disabled={!$control.connected}>
   <TopBar />

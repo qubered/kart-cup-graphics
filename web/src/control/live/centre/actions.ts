@@ -1,9 +1,9 @@
 // Operations on looks (saved presets) for the Live page. Every one is undoable: it sends commands, remembers the commands that put
-// things back (see ui.ts act / pushUndo) and confirms with a toast. A load goes to Preview only, never to air.
+// things back (see ui.ts act / pushUndo) A load goes to Preview only, never to air.
 import { control, send } from '../../store'
-import { act, currentState, previewSnapshot, pushUndo, restoreCommand, toast } from '../../ui'
+import { act, currentState, previewSnapshot, pushUndo, reportError, restoreCommand } from '../../ui'
 import type { Command, Cue, Preset, PresetScope, ShowState, TakeMode } from '../../../../../shared/types'
-import { cuesOf, cueWord, deleteUndoCommands, isModified } from './looks'
+import { cuesOf, cueWord, deleteUndoCommands } from './looks'
 
 /** Resolve with the first server state (from now on) that satisfies `pred`, or null after `ms`. Call it BEFORE sending the command. */
 function nextState(pred: (st: ShowState) => boolean, ms = 4000): Promise<ShowState | null> {
@@ -38,10 +38,7 @@ export function loadLook(id: string): void {
   const st = currentState()
   const p = presetOf(st, id)
   if (!st || !p) return
-  const loaded = presetOf(st, st.lastPreset)
-  const discards = !!loaded && isModified(loaded, st)
-  act(`load “${p.name}”`, [{ type: 'recallPreset', id }], [restoreCommand(previewSnapshot(st))],
-    `Loaded “${p.name}” into Preview${discards ? ' — unsaved Preview changes replaced' : ''}`)
+  act(`load “${p.name}”`, [{ type: 'recallPreset', id }], [restoreCommand(previewSnapshot(st))])
 }
 
 /** ↺ Revert: load the look Preview was based on again, discarding the changes. */
@@ -49,7 +46,7 @@ export function revertToLook(): void {
   const st = currentState()
   const p = presetOf(st, st?.lastPreset)
   if (!st || !p) return
-  act(`revert to “${p.name}”`, [{ type: 'recallPreset', id: p.id }], [restoreCommand(previewSnapshot(st))], `Preview reverted to “${p.name}”`)
+  act(`revert to “${p.name}”`, [{ type: 'recallPreset', id: p.id }], [restoreCommand(previewSnapshot(st))])
 }
 
 /** Overwrite a look with what Preview shows now. Undo puts the old look back. */
@@ -57,9 +54,7 @@ export function updateLook(id: string): void {
   const st = currentState()
   const p = presetOf(st, id)
   if (!st || !p) return
-  const n = cuesOf(st.stacks, id).length
-  act(`update “${p.name}”`, [{ type: 'updatePreset', id, from: 'pvw' }], [{ type: 'setPreset', preset: structuredClone(p) }],
-    `Updated “${p.name}”${n ? ` — used by ${cueWord(n)}` : ''}`)
+  act(`update “${p.name}”`, [{ type: 'updatePreset', id, from: 'pvw' }], [{ type: 'setPreset', preset: structuredClone(p) }])
 }
 
 export function renameLook(id: string, name: string): void {
@@ -67,7 +62,7 @@ export function renameLook(id: string, name: string): void {
   const p = presetOf(st, id)
   const next = name.trim().slice(0, 100)
   if (!st || !p || !next || next === p.name) return
-  act(`rename “${p.name}”`, [{ type: 'updatePreset', id, name: next }], [{ type: 'updatePreset', id, name: p.name }], `Renamed “${p.name}” to “${next}”`)
+  act(`rename “${p.name}”`, [{ type: 'updatePreset', id, name: next }], [{ type: 'updatePreset', id, name: p.name }])
 }
 
 export async function duplicateLook(id: string): Promise<void> {
@@ -79,9 +74,8 @@ export async function duplicateLook(id: string): Promise<void> {
   send({ type: 'duplicatePreset', id })
   const s = await wait
   const copy = s && newPreset(s, before)
-  if (!copy) return toast('Could not duplicate the look', { kind: 'error' })
+  if (!copy) return reportError('Could not duplicate the look')
   pushUndo(`duplicate “${p.name}”`, [{ type: 'deletePreset', id: copy.id }])
-  toast(`Duplicated “${p.name}” as “${copy.name}”`, { undoable: true })
 }
 
 /** Delete a look and the cues that use it. Undo restores the look at its old position and a cue for each removed one (new ids). */
@@ -92,8 +86,7 @@ export function deleteLook(id: string): void {
   const refs = cuesOf(st.stacks, id)
   const n = refs.length
   act(`delete “${p.name}” — restored the look${n ? ` and ${cueWord(n)}` : ''}`,
-    [{ type: 'deletePreset', id }], deleteUndoCommands(structuredClone(p), st.presets.indexOf(p), refs),
-    `Deleted “${p.name}”${n ? ` and ${cueWord(n)}` : ''}`)
+    [{ type: 'deletePreset', id }], deleteUndoCommands(structuredClone(p), st.presets.indexOf(p), refs))
 }
 
 /** Change what a recall of this look restores (just the parts in `patch`). Quiet: the switch itself shows the change; undo with Ctrl/Cmd+Z. */
@@ -124,15 +117,13 @@ export async function saveLook(req: SaveRequest): Promise<boolean> {
   const name = req.name.trim().slice(0, 100)
   const before = presetIds(st)
   const cuesBefore = cueIds(st)
-  const stack = req.cue ? st.stacks.find((k) => k.id === req.cue!.stackId) : undefined
   const wait = nextState((s) => !!newPreset(s, before))
   if (req.cue && req.from === 'pvw') send({ type: 'addCueFromPreview', stackId: req.cue.stackId, name, take: req.cue.take, scope: req.scope })
   else send({ type: 'savePreset', name, from: req.from, scope: req.scope })
   const s = await wait
   const preset = s && newPreset(s, before)
-  if (!s || !preset) { toast('Could not save the look', { kind: 'error' }); return false }
+  if (!s || !preset) { reportError('Could not save the look'); return false }
   const undo: Command[] = []
-  let cueNo = 0
   if (req.cue) {
     let after: ShowState | null = s
     let cue = newCue(s, req.cue.stackId, preset.id, cuesBefore)
@@ -144,11 +135,9 @@ export async function saveLook(req: SaveRequest): Promise<boolean> {
     }
     if (cue && after) {
       undo.push({ type: 'removeCue', stackId: req.cue.stackId, cueId: cue.id })
-      cueNo = (after.stacks.find((k) => k.id === req.cue!.stackId)?.cues.findIndex((c) => c.id === cue!.id) ?? 0) + 1
     }
   }
   undo.push({ type: 'deletePreset', id: preset.id })
   pushUndo(`save “${preset.name}”`, undo)
-  toast(`Saved look “${preset.name}”${cueNo && stack ? ` and added it as cue ${cueNo} of “${stack.name}”` : ''}`, { undoable: true })
   return true
 }

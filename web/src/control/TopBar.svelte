@@ -1,7 +1,7 @@
 <script lang="ts">
   import { light, lightTitle } from './presence'
   import { control } from './store'
-  import { PAGES, page, goto } from './ui'
+  import { PAGES, page, goto, undo, undoDepth, undoLabel } from './ui'
 
   let now = $state(Date.now())
   $effect(() => {
@@ -37,6 +37,7 @@
     {/each}
   </nav>
   <span class="now" data-now>Now: <b>{nowText}</b></span>
+  <button type="button" class="undo" data-undo disabled={$undoDepth === 0} title={$undoLabel ? `Undo: ${$undoLabel} (Ctrl/Cmd+Z)` : 'Nothing to undo'} onclick={() => undo()}>↶ Undo</button>
   <div class="stat">
     {#each st?.outputs ?? [] as o (o.id)}
       {@const lt = light(presence[o.id], o.format)}

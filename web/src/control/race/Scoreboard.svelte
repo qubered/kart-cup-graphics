@@ -21,7 +21,7 @@
 
   function nextMatch() {
     if (!upNext || !matchId) return
-    act('Next match', [{ type: 'nextMatch' }], [{ type: 'setActiveMatch', matchId }], `Live match is now ${upNext.label}. Nothing changes on air until you Take.`)
+    act('Next match', [{ type: 'nextMatch' }], [{ type: 'setActiveMatch', matchId }])
   }
 </script>
 

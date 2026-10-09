@@ -156,7 +156,6 @@ test('next race: disabled until the race is complete, then steps to the next map
   await page.locator('[data-next-race]').click()
   await expect.poll(async () => (await state()).draft.race).toMatchObject({ raceIndex: 1, trackId: 'water-park', raceNo: 2 })
   await expect(page.locator('[data-race-tile="1"]')).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.locator('[data-toast]')).toContainText('Race 2 of 4 · Water Park')
   await expect(page.locator('[data-next-race]')).toBeDisabled()
   await page.locator('[data-undo]').last().click()
   await expect.poll(async () => (await state()).draft.race.raceIndex).toBe(0)
@@ -174,11 +173,11 @@ test('next race: disabled until the race is complete, then steps to the next map
 test('change the map for the live race and go back to the cup order', async ({ page }) => {
   await openRace(page)
   await page.locator('[data-race-tile="2"]').click()
+  await expect(page.locator('[data-race-tile="2"]')).toHaveAttribute('aria-pressed', 'true') // the page shows race 3 as live before its map is changed
   await expect(page.locator('[data-map-reset]')).toHaveCount(0)
   await page.locator('[data-map-select]').selectOption('toad-harbor')
   await expect.poll(async () => (await state()).draft.race).toMatchObject({ raceIndex: 2, trackId: 'toad-harbor', trackOverrides: [null, null, 'toad-harbor', null] })
   await expect(page.locator('[data-race-tile="2"]')).toContainText('Toad Harbor')
-  await expect(page.locator('[data-toast]')).toContainText('Race 3 is now on Toad Harbor')
   await page.locator('[data-map-reset]').click()
   await expect.poll(async () => (await state()).draft.race.trackId).toBe('sweet-sweet-canyon')
   expect((await state()).draft.race.trackOverrides).toBeUndefined()
@@ -192,6 +191,7 @@ test('a saved race follows its map', async ({ page }) => {
   await openRace(page)
   await tapRace(page, [1, 2, 3, 4])
   await expect.poll(races).toHaveLength(1)
+  await expect(page.locator('[data-race-tile="0"]')).toHaveAttribute('data-state', 'done') // the page has the saved result before the map changes
   await page.locator('[data-map-select]').selectOption('shy-guy-falls')
   await expect.poll(async () => (await races())[0].trackId).toBe('shy-guy-falls')
   await page.locator('[data-undo]').last().click()
@@ -236,6 +236,7 @@ test('single-track mode: race number, track, results and next race', async ({ pa
   await expect.poll(races).toEqual([{ raceNo: 1, trackId: 'water-park', positions: [3, 1, 2, 4] }])
   await page.locator('[data-next-race]').click()
   await expect.poll(async () => (await state()).draft.race).toMatchObject({ mode: 'track', raceNo: 2, raceTotal: 2, trackId: 'water-park' })
+  await expect(page.locator('[data-race-tile="1"]')).toHaveAttribute('aria-pressed', 'true') // the page is on race 2 before its track is changed
   await page.locator('[data-map-select]').selectOption('toad-harbor')
   await expect.poll(async () => (await state()).draft.race.trackId).toBe('toad-harbor')
   await tapRace(page, [1, 2, 3, 4])
@@ -265,7 +266,6 @@ test('clear this race takes two taps and Undo brings it back (free play)', async
   await expect.poll(async () => (await races()).map((r) => r.raceNo)).toEqual([1])
   expect((await state()).draft.scores.adjustments).toEqual([0, 0, 2, 0])
   await expect(page.locator('[data-race-tile="1"]')).toHaveAttribute('data-state', 'upcoming')
-  await expect(page.locator('[data-toast]')).toContainText('Cleared race 2')
   await page.locator('[data-undo]').last().click()
   await expect.poll(async () => (await races()).map((r) => r.raceNo)).toEqual([1, 2])
   expect((await races())[1].positions).toEqual([2, 1, 3, 4])
@@ -306,7 +306,6 @@ test('winner and Next match in a tournament', async ({ page }) => {
   await expect.poll(async () => { const s = await state(); return s.tournaments.find((t) => t.id === s.activeTournamentId)!.activeMatchId }).not.toBe(first)
   await expect(page.locator('[data-context]')).toContainText('Semi 2')
   await expect(page.locator('[data-winner]')).toHaveCount(0)
-  await expect(page.locator('[data-toast]')).toContainText('Live match is now Semi 2')
   expect((await state()).draft.scores.races).toEqual([])
   // Undo goes back to the match with its results
   await page.locator('[data-undo]').last().click()
