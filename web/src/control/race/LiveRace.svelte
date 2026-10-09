@@ -172,7 +172,7 @@
 </section>
 
 <style>
-  .live { min-width: 0; }
+  .live { min-width: 0; overflow-y: auto; }
   .rn { color: #fff; font-weight: 700; }
   .steps { margin-left: auto; display: flex; gap: 6px; }
   .step { width: 44px; padding: 0; height: 44px; }
@@ -185,7 +185,7 @@
   .count { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--ui-line); flex: none; }
   .num { width: 76px; text-align: center; }
 
-  .tiles { padding: 10px; display: grid; gap: 8px; align-content: start; }
+  .tiles { padding: 10px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; flex: 1 1 0; min-height: 190px; }
   .tile { display: grid; grid-template-columns: 30px 72px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 76px; padding: 8px 10px; border: 1px solid var(--ui-line); border-radius: 10px; background: var(--ui-panel-2); text-align: left; width: 100%; touch-action: manipulation; }
   .no { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--ui-field); display: grid; place-items: center; font-weight: 700; color: var(--ui-muted); }
   .th { width: 72px; height: 41px; border-radius: 6px; border: 1px solid rgba(255,255,255,.12); object-fit: cover; background: #0b0d11; display: block; }
@@ -199,8 +199,8 @@
   .tile.cur .nm small { color: #93c5fd; font-weight: 700; }
   .tile.cur:hover:not(:disabled) { border-color: #3b82f6; background: #14233f; }
 
-  .map { padding: 12px; border-top: 1px solid var(--ui-line); background: #101319; display: grid; gap: 8px; flex: none; }
-  .map label, .cupfield { display: grid; gap: 6px; }
+  .map { padding: 12px; border-top: 1px solid var(--ui-line); background: #101319; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; flex: none; }
+  .map label, .cupfield { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .hint { font-size: 12px; line-height: 1.35; }
 
   .settings { border-top: 1px solid var(--ui-line); flex: none; }
@@ -208,7 +208,7 @@
   .settings summary::-webkit-details-marker { display: none; }
   .settings summary::after { content: '▾'; margin-left: auto; color: var(--ui-muted); }
   .settings[open] summary::after { content: '▴'; }
-  .settings .body { padding: 0 12px 12px; display: grid; gap: 10px; }
-  .warnbox { display: grid; gap: 8px; padding: 10px; border: 1px solid #b45309; border-radius: 8px; background: #2a1d08; color: #fde68a; font-size: 12.5px; }
+  .settings .body { padding: 0 12px 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .warnbox { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px; border: 1px solid #b45309; border-radius: 8px; background: #2a1d08; color: #fde68a; font-size: 12.5px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 </style>

@@ -121,8 +121,8 @@
         </div>
         <div class="places" role="group" aria-label="{p.name} finishing place">
           {#each PLACES as pl (pl)}
-            {@const by = view.row.indexOf(pl)}
-            {@const mine = by === i}
+            {@const mine = view.row[i] === pl}
+            {@const by = mine ? -1 : view.row.findIndex((p, j) => j !== i && p === pl)}
             <button type="button" class="place" class:sel={mine} class:staged={mine && view.staged} class:taken={by >= 0 && !mine}
               data-place={pl} aria-pressed={mine} aria-label="{p.name} {ORD[pl - 1]}, {POINTS[pl - 1]} points{by >= 0 && !mine ? `, taken by ${draft.players[by].name}` : ''}"
               onclick={() => tap(i, pl)}>
@@ -199,7 +199,7 @@
   .rpts.on { color: #4ade80; }
   .adj { display: grid; grid-template-columns: 44px 56px 44px; gap: 4px; align-items: center; }
   .adj .u-btn { width: 44px; padding: 0; font-size: 20px; touch-action: manipulation; }
-  .val { width: 100%; padding: 0 2px; text-align: center; font-family: var(--ui-mono); color: var(--ui-muted); -moz-appearance: textfield; }
+  .val { width: 100%; padding: 0 2px; text-align: center; font-family: var(--ui-mono); color: var(--ui-muted); -moz-appearance: textfield; appearance: textfield; }
   .val.nz { color: #fff; }
   .val::-webkit-outer-spin-button, .val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 

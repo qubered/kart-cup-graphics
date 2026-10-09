@@ -121,6 +121,9 @@ test('a result saved elsewhere with a duplicate shows the warning and can be rep
   await openRace(page)
   await expect(page.getByText('Duplicate position: 1')).toBeVisible()
   await expect(page.locator('[data-race-tile="0"]')).toHaveAttribute('data-state', 'partial')
+  // both players show the place they hold
+  await expect(place(page, 0, 1)).toHaveAttribute('aria-pressed', 'true')
+  await expect(place(page, 1, 1)).toHaveAttribute('aria-pressed', 'true')
   // P2 leaves 1st for 2nd (P1 keeps it), P4 takes 4th: now every place is held once and the race saves
   await place(page, 1, 2).click()
   await expect(page.getByText('Duplicate position: 1')).toHaveCount(0)
