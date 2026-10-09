@@ -1,6 +1,8 @@
 <script lang="ts">
   // Player announcement: the winner hero (medallion, heading, name, character) on a player-coloured field framed by checkered flag bands.
   // Self-contained (draws its own background), so it needs no background layer. Reference: docs/mockups/scenes/player-announce.html.
+  import { fade } from 'svelte/transition'
+  import { cubicIn } from 'svelte/easing'
   import type { SceneView, ViewModel } from '../../../../shared/types'
   import { mixHex } from '../../../../shared/palette'
   import { fitText } from '../../lib/fit-text'
@@ -46,9 +48,10 @@
   </div>
   <div class="vig"></div>
 
+  {#if scene.card}
   {#each lay.heroes as h, i (i)}
     {@const K = h.design}
-    <div class="hero" class:h={h.horizontal} data-announce-hero style:left="{h.left}px" style:top="{h.top}px" style:width="{K.dw}px" style:height="{K.dh}px"
+    <div class="hero" class:h={h.horizontal} data-announce-hero out:fade|global={{ duration: Math.round(enter * 0.6), easing: cubicIn }} style:left="{h.left}px" style:top="{h.top}px" style:width="{K.dw}px" style:height="{K.dh}px"
       style:transform="scale({h.scale})" style:--gap="{K.gap}px">
       <div class="hrays" style:left="{h.horizontal ? K.med / 2 : K.dw / 2}px" style:top="{K.med / 2}px"></div>
       <div class="medal" style:width="{K.med}px" style:height="{K.med}px" in:pop|global={{ duration: enter }}>
@@ -82,6 +85,7 @@
       </div>
     </div>
   {/each}
+  {/if}
 </div>
 
 <style>

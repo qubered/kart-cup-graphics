@@ -52,6 +52,8 @@ describe('announce helpers', () => {
     expect(layersKey(L())).toBe(layersKey(L({ announceSlot: 0 })))
     expect(layersKey(L({ announceSlot: 2 }))).not.toBe(layersKey(L()))
     expect(layersKey(L({ scene: 'lineup', announceSlot: 2 }))).toBe(layersKey(L({ scene: 'lineup' }))) // ignored by other scenes
-    expect(sceneVariant({ kind: 'announce', player: pv(1) })).not.toBe(sceneVariant({ kind: 'announce', player: pv(2) }))
+    expect(layersKey(L({ announceBare: false }))).toBe(layersKey(L()))
+    expect(layersKey(L({ announceBare: true }))).not.toBe(layersKey(L()))
+    expect(sceneVariant({ kind: 'announce', player: pv(1), card: true })).not.toBe(sceneVariant({ kind: 'announce', player: pv(2), card: true }))
   })
 })

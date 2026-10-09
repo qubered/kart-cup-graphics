@@ -60,10 +60,12 @@
             <rect x={c * 10} y={r === 0 ? 5 : 85} width="10" height="5" fill={(c + r) % 2 ? '#0a0f1c' : '#fff'} />
           {/each}
         {/each}
+        {#if scene.card}
         <circle cx="38" cy="45" r="20" fill="#ffd21f" stroke="#4a3300" stroke-width="2" />
         <text x="68" y="30" class="s" font-size="7" fill="#fff">PLAYER {scene.player.slot + 1}</text>
         <text x="68" y="48" class="s big" font-size="14" fill="#fff" textLength={tl(scene.player.name || '—', 14, 80)} lengthAdjust="spacingAndGlyphs">{clip(scene.player.name || '—', 9)}</text>
-        {#if scene.player.subtitle}<text x="68" y="59" class="s" font-size="5.5" fill="#fff" textLength={tl(scene.player.subtitle, 5.5, 80)} lengthAdjust="spacingAndGlyphs">{clip(scene.player.subtitle, 24)}</text>{/if}
+        {/if}
+        {#if scene.card && scene.player.subtitle}<text x="68" y="59" class="s" font-size="5.5" fill="#fff" textLength={tl(scene.player.subtitle, 5.5, 80)} lengthAdjust="spacingAndGlyphs">{clip(scene.player.subtitle, 24)}</text>{/if}
       {:else if scene?.kind === 'nextRace'}
         {@const [a, b] = words(scene.trackName)}
         <rect x="10" y="18" width="64" height="54" rx="4" fill="#2a7bff" stroke="#fff" stroke-width="1" />

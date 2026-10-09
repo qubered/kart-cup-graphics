@@ -32,6 +32,8 @@ describe('deriveView', () => {
     expect([who(9)?.slot, who(-2)?.slot]).toEqual([3, 0])
     expect(who(2, twin)?.slot).toBe(2)
     expect(who(2, wide)?.slot).toBe(2)
+    const card = (bare?: boolean) => { const s = deriveView(d, { ...EMPTY_LAYERS, scene: 'announce', announceBare: bare }, hd, idx).scene; return s?.kind === 'announce' ? s.card : null }
+    expect([card(undefined), card(false), card(true)]).toEqual([true, true, false])
   })
   it('track card cup mode', () => {
     const d2 = { ...st.draft, race: { ...st.draft.race, raceIndex: 1 as const, raceNo: 2 } }
