@@ -21,7 +21,7 @@
   const formOpen = $derived($tourNav.newTemplate !== null || none)
 
   // Focus the name when the form is opened from a button (not when the page simply opens on an empty list).
-  let wasOpen = $state(false)
+  let wasOpen = false
   $effect(() => {
     const open = $tourNav.newTemplate !== null
     if (open && !wasOpen) nameInput?.focus()

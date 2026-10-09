@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   adjustmentForTotal, autoSource, choiceToRef, defaultTrackId, fillFromPreviousCommands, isPlaceholderName, matchesOfRound, matchStatusOf, newMatchLabel, nextMatchOf, nextRaceNo,
-  previousRound, raceDots, rangeSet, refToChoice, removeRace, removeRoundCommands, roundNumbers, setPosition, slotSourceChoices, slotSourceGroups, splitAcrossOutputs,
+  partForScene, previousRound, raceDots, rangeSet, refToChoice, removeRace, removeRoundCommands, roundNumbers, setPosition, slotSourceChoices, slotSourceGroups, splitAcrossOutputs,
   summariseRounds, toggleRound, trackOverridesWith, validateTournament,
 } from '../../web/src/control/tournament'
 import { indexCatalog } from '../../shared/catalog'
@@ -281,5 +281,24 @@ describe('slot sources, labels and order', () => {
   it('Next match is the one after the live match in tournament order', () => {
     expect(nextMatchOf(ms, 'b')?.id).toBe('f')
     expect(nextMatchOf(ms, 'z')).toBeNull()
+  })
+})
+
+describe('Send to Preview: the part of a win screen an output can show', () => {
+  it('keeps the current part when the output can show it', () => {
+    expect(partForScene('wide', 'raceWin')).toBe('full')
+    expect(partForScene('wide', 'cupWin', 'board')).toBe('board')
+    expect(partForScene('hd', 'raceWin', 'hero')).toBe('hero')
+    expect(partForScene('twin', 'cupWin', 'board')).toBe('board')
+  })
+  it('a twin cannot show a whole win screen, so it gets the hero half', () => {
+    expect(partForScene('twin', 'raceWin')).toBe('hero')
+    expect(partForScene('twin', 'cupWin', 'full')).toBe('hero')
+  })
+  it('the matches and bracket scenes do not care about the part, and an unsupported scene is null', () => {
+    expect(partForScene('twin', 'matches')).toBe('full')
+    expect(partForScene('twin', 'bracket', 'hero')).toBe('hero')
+    expect(partForScene('twin', 'lineup')).toBeNull()
+    expect(partForScene('twin', 'standings', 'board')).toBeNull()
   })
 })

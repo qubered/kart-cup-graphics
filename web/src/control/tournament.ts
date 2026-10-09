@@ -3,7 +3,7 @@ import type { CatalogIndex } from '../../../shared/catalog'
 import { effectiveTrackId, matchWinnerSlot } from '../../../shared/tournament'
 import { isSceneSupported } from '../../../shared/view'
 import { totals } from '../../../shared/scoring'
-import type { Command, Layers, Match, MatchRef, MatchSet, MatchStatus, OutputConfig, RaceResult, RaceState, SceneId, ScenePart } from '../../../shared/types'
+import type { Command, Layers, Match, MatchRef, MatchSet, MatchStatus, OutputConfig, OutputFormat, RaceResult, RaceState, SceneId, ScenePart } from '../../../shared/types'
 
 /** Cup mode: the Nth race of the cup (a hand-picked map for that race wins); single-track mode: the chosen track. */
 export function defaultTrackId(catalog: CatalogIndex, race: RaceState, raceNo: number): string {
@@ -242,4 +242,11 @@ export function slotSourceGroups(matches: readonly { id: string; label: string; 
 export function newMatchLabel(matches: readonly { round: number }[], round: number): string {
   const first = matches.length ? Math.min(...matches.map((m) => m.round)) : 0
   return round === first ? `Match ${matches.length + 1}` : `R${round + 1} Match ${matchesOfRound(matches, round).length + 1}`
+}
+
+/** The part that makes `scene` valid on an output of `format`: the current one when it already is, else the first that is (a twin only shows a win screen as a half).
+ *  Null when the format cannot show the scene at all. */
+export function partForScene(format: OutputFormat, scene: SceneId, current: ScenePart = 'full'): ScenePart | null {
+  const order: ScenePart[] = [current, ...(['full', 'hero', 'board'] as ScenePart[]).filter((p) => p !== current)]
+  return order.find((p) => isSceneSupported(format, scene, p)) ?? null
 }

@@ -61,7 +61,7 @@
 </script>
 
 <div class="u-ph rph">
-  <input class="u-input rname" type="text" name="roundName" data-round-name value={name} maxlength="100" aria-label="Round name" onchange={renameRound} />
+  <input class="u-input rname" type="text" name="roundName" data-round-name value={name} maxlength="40" aria-label="Round name" onchange={renameRound} />
   <span class="u-dim count">{ms.length} match{ms.length === 1 ? '' : 'es'}</span>
   <span class="sp"></span>
   {#if prev !== null}

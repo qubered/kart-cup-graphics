@@ -48,7 +48,7 @@
 
 <section class="sec" aria-label="Match settings" data-setup={match.id}>
   <div class="row">
-    <input class="u-input" type="text" name="matchLabel" value={match.label} maxlength="100" aria-label="Match label" oninput={setLabel} onblur={restoreLabel} />
+    <input class="u-input" type="text" name="matchLabel" value={match.label} maxlength="40" aria-label="Match label" oninput={setLabel} onblur={restoreLabel} />
     <select class="u-select round" name="matchRound" aria-label="Round" value={String(match.round)} onchange={(e) => moveToRound(e.currentTarget.value)}>
       {#each rounds as r (r)}<option value={String(r)}>{roundLabel(t, r)}</option>{/each}
     </select>
@@ -72,7 +72,7 @@
     {#if race.mode === 'cup'}
       <div class="cupf">
         {#if cup}<img src={cup.emblem} alt="" width="28" height="28" />{/if}
-        <select name="matchCup" aria-label="Cup" value={race.cupId} onchange={(e) => setRace({ cupId: e.currentTarget.value, raceIndex: 0 })}>
+        <select class="u-select" class:emb={!!cup} name="matchCup" aria-label="Cup" value={race.cupId} onchange={(e) => setRace({ cupId: e.currentTarget.value, raceIndex: 0 })}>
           {#each catalog.cups as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
         </select>
       </div>
@@ -93,7 +93,7 @@
           {#each [0, 1, 2, 3] as i (i)}
             {@const over = race.trackOverrides?.[i] ?? null}
             <div class="map" class:over>
-              <span class="rn">Race {i + 1}{over ? ' · changed' : ''}</span>
+              <span class="rn">Race {i + 1}</span>
               <MapSelect label="Map for race {i + 1}" {catalog} value={over ?? ''} noneLabel="{cupTrack(i)} · cup order"
                 onchange={(id) => setRace({ trackOverrides: trackOverridesWith(race.trackOverrides, i, id) })} />
               {#if over}
@@ -123,10 +123,9 @@
   .livetag { padding: 8px 10px; font-size: 11px; }
   .mode { flex: none; }
   .sec :global(.u-seg > button) { height: 44px; }
-  .cupf { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px; border: 1px solid var(--ui-field); border-radius: 8px; background: var(--ui-bg); }
-  .cupf img { width: 28px; height: 28px; object-fit: contain; flex: none; }
-  .cupf select { flex: 1; min-width: 0; height: 42px; border: 0; background: transparent; color: #fff; font-size: 14px; }
-  .cupf select option { background: var(--ui-panel); }
+  .cupf { position: relative; flex: 1; min-width: 0; }
+  .cupf img { position: absolute; left: 10px; top: 8px; width: 28px; height: 28px; object-fit: contain; pointer-events: none; }
+  .cupf .emb { padding-left: 46px; }
   .trackf { flex: 1; min-width: 0; }
   .maps { display: grid; gap: 8px; }
   .mtoggle { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; border-radius: 8px; border: 1px dashed var(--ui-field); background: transparent; text-align: left; }
@@ -135,9 +134,10 @@
   .mtoggle .car { margin-left: auto; }
   .mtoggle.mod { border-style: solid; border-color: #b45309; background: #2a1e07; }
   .mtoggle.mod span:not(.car) { color: #fde68a; }
-  .mgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; align-items: start; }
-  .map { display: grid; gap: 4px; min-width: 0; }
-  .map .rn { font-size: 11.5px; color: var(--ui-muted); }
+  .mgrid { display: grid; gap: 8px; }
+  .map { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 8px; align-items: center; min-width: 0; }
+  .map.over { grid-template-columns: 52px minmax(0, 1fr) auto; }
+  .map .rn { font-size: 12.5px; color: var(--ui-muted); }
   .map.over .rn { color: #fbbf24; }
   .map.over :global(.u-select) { border-color: #b45309; background: #2a1e07; }
   .count { display: flex; align-items: center; gap: 8px; }

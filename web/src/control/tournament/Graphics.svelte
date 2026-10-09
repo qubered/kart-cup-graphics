@@ -3,9 +3,10 @@
   // and Send to Preview, which puts that scene into the Preview of the output chosen on the Live page.
   import type { CatalogIndex } from '../../../../shared/catalog'
   import type { Layers, MatchesDetail, MatchesLayout, OutputConfig, OutputFormat, SceneId, ShowState, Tournament, WinScreenConfig } from '../../../../shared/types'
-  import { deriveView, isSceneSupported } from '../../../../shared/view'
+  import { deriveView } from '../../../../shared/view'
   import { control, send } from '../store'
   import { goto, toast } from '../ui'
+  import { partForScene } from '../tournament'
   import ScenePreview from './ScenePreview.svelte'
 
   let { show, t, catalog }: { show: ShowState; t: Tournament; catalog: CatalogIndex } = $props()
@@ -40,12 +41,8 @@
   const matchesView = $derived(view('matches', out?.format ?? 'wide'))
   const bracketView = $derived(view('bracket', 'hd'))
 
-  /** The part that makes `scene` valid on the selected output (keeps the current one when it already is), or null when it cannot show the scene. */
-  function partFor(scene: SceneId): Layers['part'] | null {
-    if (!out) return null
-    const cur = show.layers[out.id]?.part ?? 'full'
-    return (['full', 'hero', 'board'] as const).find((p) => p === cur && isSceneSupported(out.format, scene, p)) ?? (['hero', 'board', 'full'] as const).find((p) => isSceneSupported(out.format, scene, p)) ?? null
-  }
+  /** The part that makes `scene` valid on the selected output, or null when it cannot show the scene. */
+  const partFor = (scene: SceneId) => (out ? partForScene(out.format, scene, show.layers[out.id]?.part) : null)
   const canSend = (scene: SceneId) => partFor(scene) !== null
   function sendToPreview(scene: 'raceWin' | 'cupWin' | 'matches' | 'bracket') {
     const part = partFor(scene)
