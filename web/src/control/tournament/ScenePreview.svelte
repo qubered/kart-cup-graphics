@@ -5,7 +5,7 @@
 
   let { scene }: { scene: SceneView | null } = $props()
 
-  const MAX_CARDS = 8
+  const MAX_CARDS = 4
   const dash = (n: number | null | undefined) => (n === null || n === undefined ? '' : `+${n}`)
 </script>
 
@@ -56,7 +56,7 @@
           {#each rd.nodes as n (n.matchId)}
             <div class="node" class:live={n.live && scene.config.showStatus}>
               <b>{n.label}{#if scene.config.showStatus && n.live} <i class="dot"></i>{/if}{#if scene.config.showStatus && n.status === 'done'} <small>done</small>{/if}</b>
-              <span>{#if n.winner}{n.winner.name}{#if scene.config.showScores} · {n.slots.find((s) => s.winner)?.total ?? 0}{/if}{:else}TBD{/if}</span>
+              <span>{#if n.winner}{n.winner.name}{#if scene.config.showScores}{` · ${n.slots.find((s) => s.winner)?.total ?? 0}`}{/if}{:else}TBD{/if}</span>
             </div>
           {/each}
         </div>
@@ -68,7 +68,7 @@
 </div>
 
 <style>
-  .pv { aspect-ratio: 16 / 9; width: 100%; overflow: hidden; border: 1px solid var(--ui-field); border-radius: 8px; background: linear-gradient(135deg, #1b1747, #0d0b24); padding: 8px; display: grid; align-items: stretch; color: #fff; font-size: 11px; }
+  .pv { position: relative; aspect-ratio: 16 / 9; width: 100%; overflow: hidden; border: 1px solid var(--ui-field); border-radius: 8px; background: linear-gradient(135deg, #1b1747, #0d0b24); padding: 8px; display: grid; align-items: stretch; color: #fff; font-size: 11px; }
   .none { place-self: center; color: var(--ui-muted); font-size: 12px; }
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #22c55e; vertical-align: middle; }
   b { font-weight: 700; }
@@ -103,7 +103,7 @@
   .mr .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mr em { font-style: normal; font-family: var(--ui-mono); }
   .wl { color: #86efac; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .more { color: #cbd5e1; align-self: center; }
+  .more { position: absolute; right: 8px; bottom: 5px; color: #cbd5e1; font-size: 10.5px; }
 
   .br { display: flex; gap: 14px; align-items: center; justify-content: center; }
   .br .col { display: grid; gap: 5px; min-width: 0; }

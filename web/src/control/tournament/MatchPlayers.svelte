@@ -42,21 +42,21 @@
       <input class="u-input name" class:ph={waiting !== null} name="name" type="text" maxlength="40" aria-label="Player {i + 1} name"
         value={waiting !== null ? '' : p.name} placeholder={waiting !== null ? `Winner of ${waiting}` : 'Name'} disabled={src !== null}
         oninput={(e) => setPlayer(i, { name: e.currentTarget.value })} />
-      {#if src !== null}<span class="autotag" data-auto-tag>AUTO</span>{/if}
-      <div class="look">
-        <CharacterPicker value={p.characterId} {catalog} label="Player {i + 1} character" disabled={src !== null} onchange={(id) => setPlayer(i, { characterId: id })} />
-        <ColourPicker value={p.colour} label="Player {i + 1} colour" disabled={src !== null} onchange={(c) => setPlayer(i, { colour: c })} />
-      </div>
+      <CharacterPicker value={p.characterId} {catalog} label="Player {i + 1} character" disabled={src !== null} onchange={(id) => setPlayer(i, { characterId: id })} />
+      <ColourPicker value={p.colour} label="Player {i + 1} colour" disabled={src !== null} onchange={(c) => setPlayer(i, { colour: c })} />
       {#if hasChoices}
-        <select class="u-select src" name="slotSource" data-slot-source={i} aria-label="Player {i + 1} comes from" value={src ?? ''} onchange={(e) => setSource(i, e.currentTarget.value)}>
-          <option value="">Hand-set{match.slotSources?.[i] && !match.slotSources[i]?.auto ? ' (auto off)' : ''}</option>
-          {#if groups.earlier.length}
-            <optgroup label="Earlier rounds">{#each groups.earlier as c (c.matchId)}<option value={c.matchId}>Winner of {c.label}</option>{/each}</optgroup>
-          {/if}
-          {#if groups.other.length}
-            <optgroup label="Other matches">{#each groups.other as c (c.matchId)}<option value={c.matchId}>Winner of {c.label}</option>{/each}</optgroup>
-          {/if}
-        </select>
+        <div class="srcrow">
+          {#if src !== null}<span class="autotag" data-auto-tag>AUTO</span>{/if}
+          <select class="u-select src" name="slotSource" data-slot-source={i} aria-label="Player {i + 1} comes from" value={src ?? ''} onchange={(e) => setSource(i, e.currentTarget.value)}>
+            <option value="">Hand-set{match.slotSources?.[i] && !match.slotSources[i]?.auto ? ' (auto off)' : ''}</option>
+            {#if groups.earlier.length}
+              <optgroup label="Earlier rounds">{#each groups.earlier as c (c.matchId)}<option value={c.matchId}>Winner of {c.label}</option>{/each}</optgroup>
+            {/if}
+            {#if groups.other.length}
+              <optgroup label="Other matches">{#each groups.other as c (c.matchId)}<option value={c.matchId}>Winner of {c.label}</option>{/each}</optgroup>
+            {/if}
+          </select>
+        </div>
       {/if}
     </div>
   {/each}
@@ -65,15 +65,14 @@
 
 <style>
   .sec { display: grid; gap: 10px; padding: 14px 16px; }
-  .prow { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--ui-line); border-radius: 10px; background: var(--ui-panel-2); }
+  .prow { display: grid; grid-template-columns: 36px minmax(80px, 1fr) minmax(120px, 170px) 112px; gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--ui-line); border-radius: 10px; background: var(--ui-panel-2); }
   .prow.auto { border-color: #2f56b8; background: #0f1a36; }
   .prow .n { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; font-weight: 700; font-size: 12.5px; }
-  .name { grid-column: 2; }
   .name.ph::placeholder { font-style: italic; color: #93c5fd; opacity: .85; }
   .prow.auto .name:disabled { opacity: 1; color: #fff; }
-  .autotag { grid-column: 3; grid-row: 1; font: 700 10px/1 var(--ui-font); letter-spacing: .08em; padding: 5px 7px; border-radius: 4px; background: #1e3a8a; color: #bfdbfe; }
-  .look { grid-column: 2 / 4; display: grid; grid-template-columns: minmax(0, 1fr) 128px; gap: 8px; }
-  .src { grid-column: 2 / 4; }
+  .srcrow { grid-column: 2 / -1; display: flex; align-items: center; gap: 8px; }
+  .srcrow .src { flex: 1; }
+  .autotag { flex: none; font: 700 10px/1 var(--ui-font); letter-spacing: .08em; padding: 6px 8px; border-radius: 4px; background: #1e3a8a; color: #bfdbfe; }
   .prow.auto .src { border-color: #2f56b8; }
   .note { margin: 0; font-size: 11.5px; color: var(--ui-muted); }
 </style>

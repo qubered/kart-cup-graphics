@@ -17,6 +17,10 @@
   const cup = $derived(catalog.cup(race.cupId))
   const isLive = $derived(match.id === t.activeMatchId)
   const rounds = $derived(roundNumbers(matches))
+  const changed = $derived([0, 1, 2, 3].filter((i) => race.trackOverrides?.[i]).length)
+  // The maps are an exception, so they start folded away unless one is already changed.
+  let mapsPick = $state<boolean | null>(null)
+  const mapsOpen = $derived(mapsPick ?? changed > 0)
 
   const setRace = (patch: Partial<RaceState>) => send({ type: 'updateMatch', matchId: match.id, patch: { race: patch } })
   const clampRace = (v: string) => Math.max(1, Math.min(99, Math.round(+v) || 1))
@@ -60,34 +64,46 @@
     </button>
   </div>
 
-  <div class="u-seg blue" role="group" aria-label="Race mode">
-    <button type="button" class:sel={race.mode === 'cup'} data-mode="cup" aria-pressed={race.mode === 'cup'} onclick={() => setRace({ mode: 'cup' })}>Cup</button>
-    <button type="button" class:sel={race.mode === 'track'} data-mode="track" aria-pressed={race.mode === 'track'} onclick={() => setRace({ mode: 'track' })}>Single track</button>
+  <div class="row">
+    <div class="u-seg blue mode" role="group" aria-label="Race mode">
+      <button type="button" class:sel={race.mode === 'cup'} data-mode="cup" aria-pressed={race.mode === 'cup'} onclick={() => setRace({ mode: 'cup' })}>Cup</button>
+      <button type="button" class:sel={race.mode === 'track'} data-mode="track" aria-pressed={race.mode === 'track'} onclick={() => setRace({ mode: 'track' })}>Single track</button>
+    </div>
+    {#if race.mode === 'cup'}
+      <div class="cupf">
+        {#if cup}<img src={cup.emblem} alt="" width="28" height="28" />{/if}
+        <select name="matchCup" aria-label="Cup" value={race.cupId} onchange={(e) => setRace({ cupId: e.currentTarget.value, raceIndex: 0 })}>
+          {#each catalog.cups as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
+        </select>
+      </div>
+    {:else}
+      <div class="trackf"><MapSelect label="Track" {catalog} value={race.trackId} onchange={(id) => id && setRace({ trackId: id })} /></div>
+    {/if}
   </div>
 
   {#if race.mode === 'cup'}
-    <div class="cupf">
-      {#if cup}<img src={cup.emblem} alt="" width="28" height="28" />{/if}
-      <select name="matchCup" aria-label="Cup" value={race.cupId} onchange={(e) => setRace({ cupId: e.currentTarget.value, raceIndex: 0 })}>
-        {#each catalog.cups as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
-      </select>
-    </div>
     <div class="maps" data-maps>
-      <div class="u-lab">Maps <span class="u-dim tip">· follows the cup order; pick another map for a race played elsewhere</span></div>
-      {#each [0, 1, 2, 3] as i (i)}
-        {@const over = race.trackOverrides?.[i] ?? null}
-        <div class="map" class:over>
-          <span class="rn">Race {i + 1}</span>
-          <MapSelect label="Map for race {i + 1}" {catalog} value={over ?? ''} noneLabel="Cup order: {cupTrack(i)}"
-            onchange={(id) => setRace({ trackOverrides: trackOverridesWith(race.trackOverrides, i, id) })} />
-          {#if over}
-            <button type="button" class="u-btn" data-map-reset={i} onclick={() => setRace({ trackOverrides: trackOverridesWith(race.trackOverrides, i, null) })}>↺ Cup order</button>
-          {/if}
+      <button type="button" class="mtoggle" class:mod={changed > 0} data-maps-toggle aria-expanded={mapsOpen} onclick={() => (mapsPick = !mapsOpen)}>
+        <b>Maps</b>
+        <span>{changed ? `${changed} changed from the cup order` : 'Follow the cup order'}</span>
+        <span class="car">{mapsOpen ? '▴' : '▾'}</span>
+      </button>
+      {#if mapsOpen}
+        <div class="mgrid">
+          {#each [0, 1, 2, 3] as i (i)}
+            {@const over = race.trackOverrides?.[i] ?? null}
+            <div class="map" class:over>
+              <span class="rn">Race {i + 1}{over ? ' · changed' : ''}</span>
+              <MapSelect label="Map for race {i + 1}" {catalog} value={over ?? ''} noneLabel="{cupTrack(i)} · cup order"
+                onchange={(id) => setRace({ trackOverrides: trackOverridesWith(race.trackOverrides, i, id) })} />
+              {#if over}
+                <button type="button" class="u-btn" data-map-reset={i} onclick={() => setRace({ trackOverrides: trackOverridesWith(race.trackOverrides, i, null) })}>↺ Cup order</button>
+              {/if}
+            </div>
+          {/each}
         </div>
-      {/each}
+      {/if}
     </div>
-  {:else}
-    <MapSelect label="Track" {catalog} value={race.trackId} onchange={(id) => id && setRace({ trackId: id })} />
   {/if}
 
   <div class="count">
@@ -101,21 +117,29 @@
 <style>
   .sec { display: grid; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--ui-line); }
   .row { display: flex; gap: 10px; align-items: center; }
-  .row .u-input { flex: 1; }
-  .round { flex: 0 0 170px; width: 170px; }
+  .row > .u-input { flex: 1; }
+  .round { flex: 0 0 160px; width: 160px; }
   .end { margin-left: auto; }
   .livetag { padding: 8px 10px; font-size: 11px; }
-  .cupf { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px; border: 1px solid var(--ui-field); border-radius: 8px; background: var(--ui-bg); }
+  .mode { flex: none; }
+  .sec :global(.u-seg > button) { height: 44px; }
+  .cupf { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px; border: 1px solid var(--ui-field); border-radius: 8px; background: var(--ui-bg); }
   .cupf img { width: 28px; height: 28px; object-fit: contain; flex: none; }
   .cupf select { flex: 1; min-width: 0; height: 42px; border: 0; background: transparent; color: #fff; font-size: 14px; }
   .cupf select option { background: var(--ui-panel); }
+  .trackf { flex: 1; min-width: 0; }
   .maps { display: grid; gap: 8px; }
-  .tip { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 11.5px; }
-  .map { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; align-items: center; }
-  .map.over { grid-template-columns: 56px minmax(0, 1fr) auto; }
-  .map .rn { font-size: 12.5px; color: var(--ui-muted); }
+  .mtoggle { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; border-radius: 8px; border: 1px dashed var(--ui-field); background: transparent; text-align: left; }
+  .mtoggle b { color: #cbd5e1; }
+  .mtoggle span { color: var(--ui-muted); font-size: 12.5px; }
+  .mtoggle .car { margin-left: auto; }
+  .mtoggle.mod { border-style: solid; border-color: #b45309; background: #2a1e07; }
+  .mtoggle.mod span:not(.car) { color: #fde68a; }
+  .mgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; align-items: start; }
+  .map { display: grid; gap: 4px; min-width: 0; }
+  .map .rn { font-size: 11.5px; color: var(--ui-muted); }
+  .map.over .rn { color: #fbbf24; }
   .map.over :global(.u-select) { border-color: #b45309; background: #2a1e07; }
   .count { display: flex; align-items: center; gap: 8px; }
   .count .u-input { width: 72px; }
-  .sec :global(.u-seg > button) { height: 44px; }
 </style>

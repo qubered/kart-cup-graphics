@@ -59,7 +59,7 @@
 <div class="u-ph">
   <span class="u-lab">Graphics</span>
   <span class="u-dim sub">What the tournament scenes show. Previews use the live data.</span>
-  <span class="target" data-target={out?.id}>Sends to <b>{out?.name ?? 'no output'}</b> <button type="button" class="u-link" onclick={() => goto('live')}>Change on Live ›</button></span>
+  <span class="target" data-target={out?.id}>Sends to <b>{out?.name ?? 'no output'}</b> <button type="button" class="u-btn" data-change-output onclick={() => goto('live')}>Change on Live ›</button></span>
 </div>
 <div class="u-grow cards">
   <section class="gc" aria-label="Win screen" data-config="winScreen">
