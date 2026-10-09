@@ -625,6 +625,10 @@ test.describe('scene editor', () => {
     await expect.poll(async () => (await wideLayers()).announceSlot).toBe(3)
     await opts('announce').locator('[data-next-announce]').click()
     await expect.poll(async () => (await wideLayers()).announceSlot).toBe(0)
+    await opts('announce').locator('[data-announce-card]').click()
+    await expect.poll(async () => (await wideLayers()).announceBare).toBe(true)
+    await opts('announce').locator('[data-announce-card]').click()
+    await expect.poll(async () => (await wideLayers()).announceBare).toBe(false)
     // a scene with none says so
     await page.locator('[data-scene=standings]').click()
     await expect(page.locator('[data-no-options]')).toHaveText('No extra options for this scene.')

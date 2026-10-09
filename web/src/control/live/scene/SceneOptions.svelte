@@ -28,6 +28,7 @@
   const ps = $derived(prog?.scene ?? null)
   const progLineup = $derived(ps?.kind === 'lineup' ? ps.players.length : null)
   const progAnnounce = $derived(ps?.kind === 'announce' ? ps.player.slot : null)
+  const progCard = $derived(ps?.kind === 'announce' ? ps.card : null)
   const progQr = $derived(ps?.kind === 'qr' ? ps.style : null)
   const progNoticeQr = $derived(ps?.kind === 'notice' && !!ps.qr)
   const progLogo = $derived(ps?.kind === 'title' ? ps.logo : null)
@@ -57,6 +58,10 @@
       {/each}
     </div>
     <button type="button" class="u-btn" data-next-announce onclick={() => patch({ announceSlot: nextAnnounce(layers) })}>Next player</button>
+    <button type="button" class="u-tgl" class:on={!layers.announceBare} class:u-livedot={progCard === false} data-announce-card aria-pressed={!layers.announceBare}
+      onclick={() => patch({ announceBare: !layers.announceBare })}>
+      <span class="u-tt"><b>Show player card</b><small>Off: just the player colour and flags</small></span><span class="u-sw"></span>
+    </button>
   </div>
 {/if}
 

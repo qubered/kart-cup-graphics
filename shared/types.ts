@@ -51,6 +51,8 @@ export interface Layers {
   background: BackgroundId; scene: SceneId; trackCard: boolean; lowerThirds: { on: boolean; players: number[] }; lineupShown?: number
   /** Announce scene: which player (slot 0-3) is announced. Absent = 0. */
   announceSlot?: number
+  /** Announce scene: hide the player card (medallion, name, subtitle) and show only the player-coloured field and flag bands. Absent = false. */
+  announceBare?: boolean
   part?: ScenePart; matchRef?: MatchRef; matchSet?: MatchSet
   /** Where the logo sits on the title scene. Absent = 'corner'. */
   logo?: LogoMode
@@ -139,7 +141,7 @@ export interface TrackCardView { raceLabel: string; cupName: string; cupEmblem: 
 export type SceneView =
   | { kind: 'title'; title: TitleView; logo: LogoMode }
   | { kind: 'lineup'; players: PlayerView[] }
-  | { kind: 'announce'; player: PlayerView }
+  | { kind: 'announce'; player: PlayerView; card: boolean }
   | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; single: boolean; cupTracks: { name: string; thumb: string; current: boolean }[] }
   | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[] }
   | { kind: 'winner'; player: PlayerView; total: number }
