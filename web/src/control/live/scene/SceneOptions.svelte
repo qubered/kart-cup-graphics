@@ -3,7 +3,7 @@
   import { send } from '../../store'
   import { choiceToRef, rangeSet, refToChoice, toggleRound } from '../../tournament'
   import type { Command, Layers, OutputConfig, Tournament, ViewModel } from '../../../../../shared/types'
-  import { availableParts, LOGO_MODES, nextReveal, qrStyles, qrStyleSelected, REVEAL_STEPS, revealLabel } from './scenes'
+  import { availableParts, LOGO_MODES, nextAnnounce, nextReveal, qrStyles, qrStyleSelected, REVEAL_STEPS, revealLabel } from './scenes'
 
   interface Props {
     out: OutputConfig
@@ -27,6 +27,7 @@
   // on air, for the red dots
   const ps = $derived(prog?.scene ?? null)
   const progLineup = $derived(ps?.kind === 'lineup' ? ps.players.length : null)
+  const progAnnounce = $derived(ps?.kind === 'announce' ? ps.player.slot : null)
   const progQr = $derived(ps?.kind === 'qr' ? ps.style : null)
   const progNoticeQr = $derived(ps?.kind === 'notice' && !!ps.qr)
   const progLogo = $derived(ps?.kind === 'title' ? ps.logo : null)
@@ -43,6 +44,19 @@
       {/each}
     </div>
     <button type="button" class="u-btn" data-next-player onclick={() => patch({ lineupShown: nextReveal(layers) })}>Next player</button>
+  </div>
+{/if}
+
+{#if layers.scene === 'announce'}
+  <div class="optrow" data-announce-controls>
+    <span class="u-lab">Player</span>
+    <div class="u-seg seg44" role="group" aria-label="Announced player">
+      {#each [0, 1, 2, 3] as i (i)}
+        <button type="button" data-announce-slot={i} class:sel={(layers.announceSlot ?? 0) === i} class:u-livedot={progAnnounce === i} aria-pressed={(layers.announceSlot ?? 0) === i}
+          onclick={() => patch({ announceSlot: i })}>P{i + 1}</button>
+      {/each}
+    </div>
+    <button type="button" class="u-btn" data-next-announce onclick={() => patch({ announceSlot: nextAnnounce(layers) })}>Next player</button>
   </div>
 {/if}
 

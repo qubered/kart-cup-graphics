@@ -7,6 +7,7 @@ export const SCENES: { id: SceneId; label: string }[] = [
   { id: 'none', label: 'None' },
   { id: 'title', label: 'Title' },
   { id: 'lineup', label: 'Line-up' },
+  { id: 'announce', label: 'Announce' },
   { id: 'nextRace', label: 'Next race' },
   { id: 'standings', label: 'Standings' },
   { id: 'winner', label: 'Winner' },
@@ -67,7 +68,7 @@ export function qrStyleSelected(format: OutputFormat, layers: Pick<Layers, 'qrSt
 /** Does the scene have options of its own (reveal, QR layout, part, matches set, logo...)? Otherwise the editor says so. */
 export function hasSceneOptions(scene: SceneId, format: OutputFormat, hasTournament: boolean): boolean {
   switch (scene) {
-    case 'lineup': case 'notice': case 'title': case 'raceWin': case 'cupWin': return true
+    case 'lineup': case 'announce': case 'notice': case 'title': case 'raceWin': case 'cupWin': return true
     case 'qr': return qrStyles(format).length > 0
     case 'matches': return hasTournament
     default: return false
@@ -78,6 +79,9 @@ export function hasSceneOptions(scene: SceneId, format: OutputFormat, hasTournam
 export const REVEAL_STEPS = [0, 1, 2, 3, 4]
 export const revealLabel = (n: number): string => (n === 4 ? 'All' : n === 0 ? 'None' : n === 1 ? 'P1' : `P1–${n}`)
 export const nextReveal = (layers: Pick<Layers, 'lineupShown'>): number => Math.min(4, (layers.lineupShown ?? 4) + 1)
+
+/** The next player to announce (wraps from P4 back to P1). */
+export const nextAnnounce = (layers: Pick<Layers, 'announceSlot'>): number => ((layers.announceSlot ?? 0) + 1) % 4
 
 /** Toggle one player in the lower-thirds selection, keeping the list sorted. */
 export function togglePlayer(players: number[], i: number): number[] {

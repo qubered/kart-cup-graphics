@@ -13,6 +13,7 @@ export function sceneVariant(scene: SceneView): string {
     case 'cupWin': return `${JSON.stringify(scene.config)}|${scene.part}|${scene.races.length > 0}|${scene.rows.length}`
     case 'matches': return `${JSON.stringify(scene.config)}|${scene.layout}|${scene.detail}|${scene.cards.length}`
     case 'bracket': return `${JSON.stringify(scene.config)}|${scene.rounds.map((r) => r.nodes.length).join(',')}`
+    case 'announce': return String(scene.player.slot) // another player = another colour: crossfade the whole scene
     case 'notice': return String(!!scene.qr)
     case 'qr': return scene.style
     default: return ''

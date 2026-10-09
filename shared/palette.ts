@@ -19,3 +19,11 @@ export function colourHex(id: ColourId): string {
 export function textOn(id: ColourId): '#ffffff' | '#14213d' {
   return id === 'yellow' || id === 'cyan' ? '#14213d' : '#ffffff'
 }
+
+/** Mix a #rrggbb colour toward another (`t` 0..1) and return #rrggbb. Chromium 103 (Millumin) has no color-mix(), so shades are computed. */
+export function mixHex(hex: string, to: string, t: number): string {
+  const a = parseInt(hex.slice(1), 16)
+  const b = parseInt(to.slice(1), 16)
+  const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t)
+  return `#${[16, 8, 0].map((sh) => ch(sh).toString(16).padStart(2, '0')).join('')}`
+}

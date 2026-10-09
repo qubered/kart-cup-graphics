@@ -4,6 +4,7 @@
   import type { SceneView, ViewModel } from '../../../shared/types'
   import TitleScene from './scenes/TitleScene.svelte'
   import LineupScene from './scenes/LineupScene.svelte'
+  import AnnounceScene from './scenes/AnnounceScene.svelte'
   import NextRaceScene from './scenes/NextRaceScene.svelte'
   import StandingsScene from './scenes/StandingsScene.svelte'
   import WinnerScene from './scenes/WinnerScene.svelte'
@@ -24,6 +25,8 @@
       <TitleScene title={scene.title} logo={scene.logo} {logoSrc} {view} {enter} />
     {:else if scene.kind === 'lineup'}
       <LineupScene {scene} {view} {enter} />
+    {:else if scene.kind === 'announce'}
+      <AnnounceScene {scene} {view} {enter} {lowfx} />
     {:else if scene.kind === 'nextRace'}
       <NextRaceScene {scene} {view} {enter} />
     {:else if scene.kind === 'standings'}

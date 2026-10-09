@@ -14,10 +14,10 @@ export const FORMAT_CANVAS: Record<OutputFormat, { w: number; h: number }> = {
 }
 
 export const SUPPORTED_SCENES: Record<OutputFormat, SceneId[]> = {
-  wide: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
-  hd: ['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  wide: ['none', 'title', 'lineup', 'announce', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  hd: ['none', 'title', 'lineup', 'announce', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
   // twin: win screens only as a hero or board half (not both in one 1920 wide canvas)
-  twin: ['none', 'title', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
+  twin: ['none', 'title', 'announce', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'],
 }
 
 /** Can this format show the scene (with this part, for the win screens)? */
@@ -176,6 +176,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
     switch (layers.scene) {
       case 'title': scene = { kind: 'title', title, logo: layers.logo ?? 'corner' }; break
       case 'lineup': scene = { kind: 'lineup', players: data.players.slice(0, Math.min(4, Math.max(0, layers.lineupShown ?? 4))).map((_, i) => pv(i)) }; break
+      case 'announce': scene = { kind: 'announce', player: pv(Math.min(3, Math.max(0, layers.announceSlot ?? 0))) }; break
       case 'nextRace':
         scene = {
           kind: 'nextRace', raceLabel: info.raceLabel, cupName: info.cupName, cupEmblem: info.cupEmblem,
