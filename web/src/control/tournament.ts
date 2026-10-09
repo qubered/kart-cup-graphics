@@ -1,9 +1,9 @@
-// Pure helpers for the Tournament tab (no Svelte, no store) so they can be unit tested.
+// Pure helpers for the Tournament workspace (no Svelte, no store) so they can be unit tested.
 import type { CatalogIndex } from '../../../shared/catalog'
-import { effectiveTrackId } from '../../../shared/tournament'
+import { effectiveTrackId, matchWinnerSlot } from '../../../shared/tournament'
 import { isSceneSupported } from '../../../shared/view'
 import { totals } from '../../../shared/scoring'
-import type { Command, Layers, MatchRef, MatchSet, OutputConfig, RaceResult, RaceState, SceneId, ScenePart } from '../../../shared/types'
+import type { Command, Layers, Match, MatchRef, MatchSet, MatchStatus, OutputConfig, OutputFormat, RaceResult, RaceState, SceneId, ScenePart } from '../../../shared/types'
 
 /** Cup mode: the Nth race of the cup (a hand-picked map for that race wins); single-track mode: the chosen track. */
 export function defaultTrackId(catalog: CatalogIndex, race: RaceState, raceNo: number): string {
@@ -93,4 +93,160 @@ export function splitAcrossOutputs(outputs: OutputConfig[], selectedId: string, 
     { type: 'setLayers', outputId: selectedId, patch: { scene, part: 'hero', ...shared } },
     { type: 'setLayers', outputId: other.id, patch: { scene, part: 'board', ...shared } },
   ]
+}
+
+// ---- Tournament workspace: rounds, readiness, fill-from-previous, map overrides ----
+
+/** The round numbers in use, ascending. A round exists because it has matches; numbers are stable ids (scenes refer to them), so a gap is allowed. */
+export function roundNumbers(matches: readonly { round: number }[]): number[] {
+  return [...new Set(matches.map((m) => m.round))].sort((a, b) => a - b)
+}
+
+/** The matches of one round, in tournament order. */
+export function matchesOfRound<T extends { round: number }>(matches: readonly T[], round: number): T[] {
+  return matches.filter((m) => m.round === round)
+}
+
+/** The round before `round` that has matches, or null for the first round. */
+export function previousRound(matches: readonly { round: number }[], round: number): number | null {
+  const rs = roundNumbers(matches)
+  const at = rs.indexOf(round)
+  return at > 0 ? rs[at - 1] : null
+}
+
+/** The status shown for a match: only the active match is live, the others are done or pending as the server computed. */
+export function matchStatusOf(m: Pick<Match, 'id' | 'status'>, activeMatchId: string): MatchStatus {
+  return m.id === activeMatchId ? 'live' : m.status === 'done' ? 'done' : 'pending'
+}
+
+/** True for a name nobody has filled in: empty, or the default "Player 1" ... "Player 4". */
+export function isPlaceholderName(name: string): boolean {
+  const n = name.trim()
+  return n === '' || /^player\s*\d{1,2}$/i.test(n)
+}
+
+/** The match a slot takes its winner from, or null for a hand-set slot (a source with auto off counts as hand-set). */
+export function autoSource(m: Pick<Match, 'slotSources'>, slot: number): string | null {
+  const s = m.slotSources?.[slot]
+  return s?.auto ? s.matchId : null
+}
+
+export type IssueKind = 'label' | 'name' | 'map'
+export interface TournamentIssue { kind: IssueKind; round: number; matchId: string; slot?: number; text: string }
+export interface Readiness {
+  issues: TournamentIssue[]
+  /** Rounds and matches: labels and maps. */
+  matches: { ok: boolean; warn: number }
+  /** Player slots that are neither named nor filled from a winner. */
+  players: { ok: boolean; warn: number }
+  warn: number
+  ok: boolean
+}
+
+/** What still needs doing before the tournament can run: a match without a label, a hand-set player still called "Player n" (or empty; in a later
+ *  round the text also says to pick a winner source), and a single-track match without a known track.
+ *  Pass `liveMatches(t, draft)` so the live match is read from the draft. `catalog` is optional (the track check is skipped without it). */
+export function validateTournament(matches: readonly Match[], catalog?: { track(id: string): unknown }): Readiness {
+  const issues: TournamentIssue[] = []
+  const first = matches.length ? Math.min(...matches.map((m) => m.round)) : 0
+  for (const m of matches) {
+    const label = m.label.trim() || 'A match'
+    if (!m.label.trim()) issues.push({ kind: 'label', round: m.round, matchId: m.id, text: 'A match has no label' })
+    m.data.players.forEach((p, slot) => {
+      if (autoSource(m, slot) !== null || !isPlaceholderName(p.name)) return
+      const what = p.name.trim() ? `is still “${p.name.trim()}”` : 'has no name'
+      issues.push({ kind: 'name', round: m.round, matchId: m.id, slot, text: `${label}: P${slot + 1} ${what}${m.round > first ? ', pick a winner source or type a name' : ''}` })
+    })
+    if (catalog && m.data.race.mode === 'track' && !catalog.track(m.data.race.trackId)) issues.push({ kind: 'map', round: m.round, matchId: m.id, text: `${label}: no map chosen` })
+  }
+  const count = (kinds: IssueKind[]) => issues.filter((i) => kinds.includes(i.kind)).length
+  const mw = count(['label', 'map'])
+  const pw = count(['name'])
+  return { issues, matches: { ok: mw === 0, warn: mw }, players: { ok: pw === 0, warn: pw }, warn: issues.length, ok: issues.length === 0 }
+}
+
+export interface RoundSummary { round: number; matchIds: string[]; statuses: MatchStatus[]; done: number; total: number; live: boolean; warn: number }
+
+/** One entry per round for the outline: progress per match, how many are done, whether the live match is in it and how many issues it has. */
+export function summariseRounds(matches: readonly Pick<Match, 'id' | 'round' | 'status'>[], activeMatchId: string, issues: readonly TournamentIssue[]): RoundSummary[] {
+  return roundNumbers(matches).map((round) => {
+    const ms = matchesOfRound(matches, round)
+    const statuses = ms.map((m) => matchStatusOf(m, activeMatchId))
+    return {
+      round, matchIds: ms.map((m) => m.id), statuses, done: statuses.filter((s) => s === 'done').length, total: ms.length,
+      live: statuses.includes('live'), warn: issues.filter((i) => i.round === round).length,
+    }
+  })
+}
+
+/** Progress of a match's races: complete (every player placed), partly entered, or not started. One entry per race of the match (at most 12). */
+export function raceDots(m: Pick<Match, 'data'>): ('done' | 'part' | 'empty')[] {
+  const { races } = m.data.scores
+  const n = Math.max(1, Math.min(12, m.data.race.raceTotal))
+  return Array.from({ length: n }, (_, i) => {
+    const placed = races.find((r) => r.raceNo === i + 1)?.positions.filter((p) => p > 0).length ?? 0
+    return placed >= m.data.players.length ? 'done' : placed > 0 ? 'part' : 'empty'
+  })
+}
+
+/** The winning slot so far (hand-picked, else the leader), or null while the match has no results. */
+export function winnerSlotOf(m: Pick<Match, 'winnerOverride' | 'data'>): number | null {
+  return matchWinnerSlot(m.winnerOverride, m.data)
+}
+
+/** "Fill players from the previous round": slot N of every match in `round` takes the winner of the Nth match of the previous round
+ *  (one setSlotSource per slot). Slots with no matching earlier match are left as they are. */
+export function fillFromPreviousCommands(matches: readonly Match[], round: number): Command[] {
+  const prev = previousRound(matches, round)
+  if (prev === null) return []
+  const from = matchesOfRound(matches, prev)
+  const out: Command[] = []
+  for (const m of matchesOfRound(matches, round)) {
+    for (const slot of [0, 1, 2, 3] as const) {
+      const src = from[slot]
+      if (src) out.push({ type: 'setSlotSource', matchId: m.id, slot, source: { matchId: src.id, auto: true } })
+    }
+  }
+  return out
+}
+
+/** Commands that remove a whole round: every match in it, then its name. Null when it is the only round (a tournament keeps at least one match).
+ *  Matches that took a player from a removed match fall back to hand-set (the reducer clears those sources). */
+export function removeRoundCommands(t: { matches: readonly Match[]; roundNames?: Record<string, string> }, round: number): Command[] | null {
+  const ms = matchesOfRound(t.matches, round)
+  if (!ms.length || ms.length >= t.matches.length) return null
+  const cmds: Command[] = ms.map((m) => ({ type: 'removeMatch', matchId: m.id }))
+  if (t.roundNames?.[String(round)] !== undefined) cmds.push({ type: 'setRoundName', round, name: null })
+  return cmds
+}
+
+/** The match "Next match" moves to: the one after the active match in tournament order (what the nextMatch command does). */
+export function nextMatchOf<T extends { id: string }>(matches: readonly T[], activeMatchId: string): T | null {
+  return matches[matches.findIndex((m) => m.id === activeMatchId) + 1] ?? null
+}
+
+/** The four hand-picked maps with race `raceIndex` set to `trackId` (null = back to the cup's own order). */
+export function trackOverridesWith(overrides: RaceState['trackOverrides'], raceIndex: number, trackId: string | null): (string | null)[] {
+  return Array.from({ length: 4 }, (_, i) => (i === raceIndex ? trackId || null : overrides?.[i] ?? null))
+}
+
+/** Matches a slot can take its winner from, split into earlier rounds (the usual case) and every other match. */
+export function slotSourceGroups(matches: readonly { id: string; label: string; round: number }[], matchId: string): { earlier: SlotSourceChoice[]; other: SlotSourceChoice[] } {
+  const me = matches.find((m) => m.id === matchId)
+  const rest = matches.filter((m) => m.id !== matchId)
+  const pick = (list: typeof rest): SlotSourceChoice[] => list.map((m) => ({ matchId: m.id, label: m.label }))
+  return me ? { earlier: pick(rest.filter((m) => m.round < me.round)), other: pick(rest.filter((m) => m.round >= me.round)) } : { earlier: [], other: pick(rest) }
+}
+
+/** Default label for a match added to `round`: the first round numbers matches across the tournament, later rounds count within the round. */
+export function newMatchLabel(matches: readonly { round: number }[], round: number): string {
+  const first = matches.length ? Math.min(...matches.map((m) => m.round)) : 0
+  return round === first ? `Match ${matches.length + 1}` : `R${round + 1} Match ${matchesOfRound(matches, round).length + 1}`
+}
+
+/** The part that makes `scene` valid on an output of `format`: the current one when it already is, else the first that is (a twin only shows a win screen as a half).
+ *  Null when the format cannot show the scene at all. */
+export function partForScene(format: OutputFormat, scene: SceneId, current: ScenePart = 'full'): ScenePart | null {
+  const order: ScenePart[] = [current, ...(['full', 'hero', 'board'] as ScenePart[]).filter((p) => p !== current)]
+  return order.find((p) => isSceneSupported(format, scene, p)) ?? null
 }

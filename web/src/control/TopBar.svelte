@@ -17,7 +17,7 @@
     const cat = $control.catalog
     const track = cat.track(r.trackId)?.name ?? '?'
     if (r.mode === 'cup') return `Race ${r.raceIndex + 1} / 4 · ${cat.cup(r.cupId)?.name ?? '?'} · ${track}`
-    return `Race ${st.draft.scores.races.length + 1} · ${track}`
+    return `Race ${r.raceNo} · ${track}`
   })
   const clock = $derived(new Date(now).toLocaleTimeString([], { hour12: false }))
   const onAir = $derived.by(() => {

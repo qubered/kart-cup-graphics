@@ -40,7 +40,7 @@
 
 /* segmented control. Green = what Preview has, red dot = what Program has (add class u-livedot to that button). */
 .u-seg { display: flex; border: 1px solid var(--ui-field); border-radius: 8px; overflow: hidden; }
-.u-seg > button { flex: 1; height: 42px; padding: 0 12px; text-align: center; border: 0; border-right: 1px solid var(--ui-field); border-radius: 0; background: transparent; color: #cbd5e1; font-weight: 600; font-size: 13px; white-space: nowrap; position: relative; cursor: pointer; }
+.u-seg > button { flex: 1; height: 44px; padding: 0 12px; text-align: center; border: 0; border-right: 1px solid var(--ui-field); border-radius: 0; background: transparent; color: #cbd5e1; font-weight: 600; font-size: 13px; white-space: nowrap; position: relative; cursor: pointer; }
 .u-seg > button:last-child { border-right: 0; }
 .u-seg > button:hover:not(:disabled) { background: #1b2030; }
 .u-seg.s36 > button { height: 34px; font-size: 12px; }
