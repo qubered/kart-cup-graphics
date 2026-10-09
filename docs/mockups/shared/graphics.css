@@ -204,3 +204,70 @@
 .cam .ppl::before { content: ''; position: absolute; left: 50%; top: 0; width: 150px; height: 180px; margin-left: -75px; border-radius: 50%; background: #0f1317; }
 .cam .ppl::after { content: ''; position: absolute; left: 0; right: 0; top: 170px; bottom: 0; border-radius: 150px 150px 0 0; background: #0f1317; }
 .seam { position: absolute; left: 959px; top: 0; width: 2px; height: 100%; background: repeating-linear-gradient(#fff 0 14px, transparent 14px 28px); opacity: .35; z-index: 20; }
+
+/* ============ BACKGROUND D · Player Announce ============ */
+/* Per-player background for player announcements. Colour comes from three custom properties set on .bg-player:
+   --pc (player colour) · --pc-d (55% toward black) · --pc-l (38% toward white) · --pc-ink (readable text on --pc).
+   Checkered flag bands top + bottom scroll in opposite directions (translateX only). Square = 5.2% of canvas height (60px @1152). */
+.bg-player { --sq: calc(var(--h) * .052); --trim: calc(var(--h) * .012);
+  background: radial-gradient(ellipse 62% 85% at 50% 52%, var(--pc-l) 0%, var(--pc) 42%, var(--pc-d) 100%); overflow: hidden; }
+.bg-player .pa-rays { position: absolute; left: 50%; top: 52%; width: calc(var(--w) * 1.6); height: calc(var(--w) * 1.6); margin: calc(var(--w) * -.8) 0 0 calc(var(--w) * -.8);
+  background: repeating-conic-gradient(rgba(255,255,255,.11) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 38%); animation: pa-spin 120s linear infinite; }
+@keyframes pa-spin { to { transform: rotate(360deg); } }
+.bg-player .pa-stripes i { position: absolute; top: -10%; height: 120%; transform: skewX(-22deg); background: linear-gradient(90deg, var(--pc-d), transparent); opacity: .5; }
+.bg-player .pa-stripes i:nth-child(1) { left: 2%;  width: 5%;  }
+.bg-player .pa-stripes i:nth-child(2) { left: 9%;  width: 2%;  }
+.bg-player .pa-stripes i:nth-child(3) { right: 9%; width: 5%; background: linear-gradient(270deg, var(--pc-d), transparent); }
+.bg-player .pa-stripes i:nth-child(4) { right: 2%; width: 2%; background: linear-gradient(270deg, var(--pc-d), transparent); }
+.bg-player .pa-slot { position: absolute; font: 400 calc(var(--h) * .5)/1 var(--font-event); color: rgba(255,255,255,.07); transform: rotate(-8deg); white-space: nowrap; letter-spacing: -.02em; }
+.bg-player .pa-slot.s1 { left: 1%;  bottom: 1%; }
+.bg-player .pa-slot.s2 { right: 1%; top: 1%; transform: rotate(-8deg); }
+/* flag bands */
+.bg-player .pa-flag { position: absolute; left: 0; right: 0; height: calc(var(--sq) * 2); overflow: hidden; z-index: 3; }
+.bg-player .pa-flag.top { top: 0; } .bg-player .pa-flag.bottom { bottom: 0; }
+.bg-player .pa-track { position: absolute; top: 0; left: calc(var(--sq) * -2); width: calc(100% + var(--sq) * 4); height: 100%;
+  background: conic-gradient(var(--mk-ink) 25%, #fff 0 50%, var(--mk-ink) 0 75%, #fff 0); background-size: calc(var(--sq) * 2) calc(var(--sq) * 2);
+  animation: pa-flag-l 5s linear infinite; }
+.bg-player .pa-flag.bottom .pa-track { animation-name: pa-flag-r; }
+@keyframes pa-flag-l { to { transform: translateX(calc(var(--sq) * 2)); } }
+@keyframes pa-flag-r { from { transform: translateX(calc(var(--sq) * 2)); } to { transform: translateX(0); } }
+/* trim under each band: white rule + ink rule + soft shadow, so the band reads as a physical banner */
+.bg-player .pa-trim { position: absolute; left: 0; right: 0; height: calc(var(--trim) * 2); z-index: 3;
+  background: linear-gradient(#fff 0 50%, var(--mk-ink) 50%); box-shadow: 0 0 calc(var(--h) * .03) rgba(0,0,0,.45); }
+.bg-player .pa-trim.top { top: calc(var(--sq) * 2); } .bg-player .pa-trim.bottom { bottom: calc(var(--sq) * 2); transform: scaleY(-1); }
+/* checker that dissolves out of each band into the colour field */
+.bg-player .pa-fade { position: absolute; left: 0; right: 0; height: calc(var(--sq) * 4); z-index: 2; opacity: .16;
+  background: conic-gradient(#fff 25%, transparent 0 50%, #fff 0 75%, transparent 0); background-size: calc(var(--sq) * 2) calc(var(--sq) * 2); }
+.bg-player .pa-fade.top { top: calc(var(--sq) * 2); -webkit-mask-image: linear-gradient(#000, transparent); }
+.bg-player .pa-fade.bottom { bottom: calc(var(--sq) * 2); -webkit-mask-image: linear-gradient(transparent, #000); }
+.bg-player .pa-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,.38)); z-index: 2; }
+.bg-player .sparkles { z-index: 2; }
+/* stand-in content for the mockup only (the real overlay is drawn by the announcement scene, not the background) */
+.bg-player .pa-demo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 4; text-align: center; white-space: nowrap; }
+.bg-player .pa-demo img { display: block; margin: 0 auto; height: calc(var(--h) * .4); filter: drop-shadow(0 calc(var(--h) * .02) calc(var(--h) * .02) rgba(0,0,0,.45)); }
+.bg-player .pa-pre { display: inline-block; margin-top: calc(var(--h) * .012); background: var(--mk-pill); color: var(--mk-navy); font: italic 800 calc(var(--h) * .036)/1 var(--font-label);
+  padding: .28em .97em; transform: skewX(-14deg); border-radius: .2em; box-shadow: 0 .17em 0 var(--mk-pill-shadow); letter-spacing: 2px; }
+.bg-player .pa-name { margin: calc(var(--h) * .012) auto 0; width: max-content; max-width: 100%; font: italic 900 calc(var(--h) * .11)/1.05 var(--font-name); color: #fff;
+  -webkit-text-stroke: calc(var(--h) * .012) var(--mk-ink); paint-order: stroke fill; text-shadow: 0 calc(var(--h) * .01) 0 rgba(0,0,0,.35); text-transform: uppercase; }
+.bg-player .pa-char { font: italic 800 calc(var(--h) * .04)/1 var(--font-label); color: #fff; letter-spacing: 6px; text-transform: uppercase; opacity: .9; margin-top: calc(var(--h) * .006); }
+
+/* ============ SCENE · Player Announce (winner-hero layout on background D) ============ */
+.pa-hero { position: absolute; transform-origin: 0 0; display: flex; align-items: center; justify-content: center; flex-direction: column; justify-content: flex-start; gap: var(--gap); }
+.pa-hero.h { flex-direction: row; gap: var(--gap); }
+.pa-hrays { position: absolute; width: 2600px; height: 2600px; margin: -1300px 0 0 -1300px; pointer-events: none;
+  background: repeating-conic-gradient(rgba(255,255,255,.14) 0 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 12%, transparent 55%); animation: spin 40s linear infinite; }
+.pa-medal { position: relative; z-index: 2; flex: none; }
+.pa-medal .medallion { border-width: 6px; }
+.pa-bob { width: 100%; height: 100%; position: relative; animation: bob 2.4s ease-in-out infinite alternate; }
+.pa-txt { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
+.pa-hero.h .pa-txt { align-items: flex-start; }
+.pa-nm { font: italic 900 1em/1.05 var(--font-name); color: #fff; margin-top: 10px; white-space: nowrap; overflow: hidden; text-shadow: 0 8px 0 var(--mk-navy); text-align: center; text-transform: uppercase; }
+.pa-hero.h .pa-nm { text-align: left; }
+.pa-nm > span { display: inline-block; white-space: nowrap; }
+.pa-sub { margin-top: 22px; display: flex; gap: 28px; align-items: center; justify-content: center; }
+.pa-hero.h .pa-sub { justify-content: flex-start; }
+.pa-ch { font: 800 1em/1 var(--font-label); color: #fff; text-transform: uppercase; }
+.pa-job { font: italic 800 1em/1.2 var(--font-label); color: #fff; margin-top: 6px; white-space: nowrap; overflow: hidden; text-shadow: 0 4px 0 var(--pc-d); letter-spacing: .02em; }
+.pa-hero.h .pa-job { text-align: left; } .pa-hero:not(.h) .pa-job { text-align: center; }
+.pa-job > span { display: inline-block; white-space: nowrap; }

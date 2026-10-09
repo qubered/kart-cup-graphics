@@ -45,6 +45,11 @@ describe('deriveView', () => {
     expect(v.canvas).toEqual({ w: 1920, h: 1080 })
     expect(v.headingUpright).toBe(false)
   })
+  it('player subtitle reaches the player view', () => {
+    const players = st.draft.players.map((p, i) => (i === 0 ? { ...p, subtitle: 'Producer · Events Team' } : p))
+    const v = deriveView({ ...st.draft, players }, { ...EMPTY_LAYERS, lowerThirds: { on: true, players: [0, 1] } }, hd, idx)
+    expect(v.lowerThirds.map((p) => p.subtitle)).toEqual(['Producer · Events Team', ''])
+  })
   it('unknown character never throws', () => {
     const bad = { ...st.draft, players: st.draft.players.map((p, i) => (i ? p : { ...p, characterId: 'ghost' })) }
     expect(deriveView(bad, { ...EMPTY_LAYERS, lowerThirds: { on: true, players: [0] } }, hd, idx).lowerThirds[0]).toMatchObject({ icon: '', character: '?' })

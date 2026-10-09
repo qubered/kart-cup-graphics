@@ -81,6 +81,11 @@
     saveName(i, value)
     drafts[i] = undefined
   }
+  // Subtitle (job title · group, shown on the player announcement): saved on Enter or blur, so a state update never rewrites it mid-typing.
+  function subKey(e: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+    if (!(e.shiftKey && e.key === 'Escape')) e.stopPropagation()
+    if (e.key === 'Enter') e.currentTarget.blur()
+  }
   function nameKey(i: 0 | 1 | 2 | 3, e: KeyboardEvent & { currentTarget: HTMLInputElement }) {
     // Typing a capital B must not fade the outputs to black: only the emergency Shift+Esc still reaches the show shortcuts from here.
     if (!(e.shiftKey && e.key === 'Escape')) e.stopPropagation()
@@ -118,6 +123,8 @@
             onblur={(e) => nameCommit(i, e.currentTarget.value)}
             onkeydown={(e) => nameKey(i, e)} />
           <CharacterPicker value={p.characterId} {catalog} label="Player {i + 1} character" onchange={(id) => setPlayer(i, { characterId: id })} />
+          <input name="subtitle" type="text" class="u-input sub" maxlength="80" autocomplete="off" placeholder="Subtitle: job title · group" aria-label="Player {i + 1} subtitle"
+            value={p.subtitle ?? ''} onchange={(e) => setPlayer(i, { subtitle: e.currentTarget.value })} onkeydown={subKey} />
         </div>
         <div class="places" role="group" aria-label="{p.name} finishing place">
           {#each PLACES as pl (pl)}
@@ -185,6 +192,7 @@
   .player { min-height: 104px; padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #1c1f26; }
   .who { display: grid; gap: 6px; min-width: 0; }
   .nm { font-weight: 700; }
+  .sub { font-size: 12.5px; }
   .places { display: grid; grid-template-columns: repeat(4, minmax(58px, 80px)); gap: 6px; }
   .place { height: 64px; padding: 0; border: 1px solid var(--ui-field); border-radius: 9px; background: #161a22; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; touch-action: manipulation; min-width: 0; }
   .place b { font-size: 16px; color: #fff; }
@@ -219,6 +227,7 @@
     .player { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: 'chip who who' 'places places adj'; row-gap: 8px; min-height: 0; }
     .chipc { grid-area: chip; }
     .who { grid-area: who; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .who .sub { grid-column: 1 / -1; }
     .places { grid-area: places; grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .adj { grid-area: adj; }
     .rcol { display: none; }

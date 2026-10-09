@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scene · Player Announce</title>
+  <link rel="stylesheet" href="../shared/tokens.css"><link rel="stylesheet" href="../shared/graphics.css">
+</head>
+<body>
+<script src="../shared/mockup.js"></script>
+<script>
+  /* Player announcement = winner hero (WinHero.svelte) on background D · Player Announce.
+     Same hero structure and sizes: medallion beside the text on wide (design 1640×640: medallion 480, heading 110, name 210 / max 1100,
+     subtitle 60, character 52) or stacked on hd/twin (design 900×880: medallion 340, heading 90, name 150 / max 860, subtitle 44, character 40). The hero is uniformly scaled
+     (max 1.35×) into the area between the flag bands. Heading text is "PLAYER n". Subtitle (player profile field `subtitle`: job title · group) sits under the name; empty = hidden. ?sub=Job%20Title%20%C2%B7%20Group
+     ?slot=0..3  ?colour=red|blue|…  ?format=wide|hd|twin  ?look=classic|chrome|plain */
+  const HEX = { red: '#e60012', blue: '#1e6cff', green: '#22b14c', yellow: '#ffc400', pink: '#ff5fa2', orange: '#ff8a00', purple: '#8b5cf6', cyan: '#06b6d4' };
+  const ART = ['mario', 'peach', 'yoshi', 'bowser'].map((n) => `../../../assets/characters/${n}.png`);
+  const DESIGN = { h: { dw: 1640, dh: 640, med: 480, head: 110, nm: 210, nmw: 1100, ch: 52, chs: 10, sub: 60, gap: 60 },
+                   v: { dw: 900,  dh: 880, med: 340, head: 90, nm: 150, nmw: 860,  ch: 40, chs: 8,  sub: 44, gap: 6 } };
+  const format = MK.param('format', 'wide');
+  MK.page(format, (f, S) => {
+    const slot = +MK.param('slot', 0), p = Object.assign({}, S.players[slot], { art: ART[slot] });
+    const c = MK.param('colour', ''); if (HEX[c]) { p.colour = HEX[c]; p.text = (c === 'yellow' || c === 'cyan') ? '#14213d' : '#ffffff'; }
+    const look = MK.param('look', 'classic'), sub = MK.param('sub', ['Race Director · Events Team', 'Lead Engineer · Platform Group', 'Account Manager · Sales', 'Head of Design · Creative Studio'][slot]);
+    /* area between the flag bands (band = 2 squares + trim ≈ 12% of height each side) */
+    const band = Math.round(f.h * .052 * 2 + f.h * .024), region = { x: 40, y: band + 20, w: (format === 'twin' ? 960 : f.w) - 80, h: f.h - 2 * band - 40 };   /* twin: one hero per 960 half */
+    const horizontal = region.w / region.h > 2.2, K = DESIGN[horizontal ? 'h' : 'v'];
+    const scale = Math.min(region.w / K.dw, region.h / K.dh, 1.35);
+    const left = region.x + (region.w - K.dw * scale) / 2, top = region.y + (region.h - K.dh * scale) / 2;
+    const rayX = horizontal ? K.med / 2 : K.dw / 2;
+    const heroAt = (dx) => `<div class="pa-hero${horizontal ? ' h' : ''}" data-guide="hero" style="left:${left + dx}px;top:${top}px;width:${K.dw}px;height:${K.dh}px;transform:scale(${scale});--med:${K.med}px;--gap:${K.gap}px">
+      <div class="pa-hrays" style="left:${rayX}px;top:${K.med / 2}px"></div>
+      <div class="pa-medal" style="width:${K.med}px;height:${K.med}px"><div class="pa-bob">${MK.medallion(p.art, 'pa-m', true).replace('class="medallion pa-m"', `class="medallion pa-m" style="--s:${K.med}px;position:relative"`)}</div></div>
+      <div class="pa-txt" style="width:${horizontal ? K.nmw : K.dw}px">${MK.heading('PLAYER ' + (p.slot + 1), look, K.head)}
+        <div class="pa-nm" data-fit="${K.nmw}" style="font-size:${K.nm}px;width:${K.nmw}px"><span>${MK.esc(p.name)}</span></div>
+        ${sub ? `<div class="pa-job" data-fit="${K.nmw}" style="font-size:${K.sub}px;width:${K.nmw}px"><span>${MK.esc(sub)}</span></div>` : ''}
+        <div class="pa-sub"><span class="pa-ch" style="font-size:${K.ch}px;letter-spacing:${K.chs}px">${MK.esc(p.character)}</span></div></div></div>`;
+    return MK.bgPlayer(f, p, false) + `<div class="layer" data-layer="scene" style="z-index:5">${(format === 'twin' ? [0, 960] : [0]).map(heroAt).join('')}</div>`;
+  }, 'Scene · Player Announce');
+</script>
+</body>
+</html>

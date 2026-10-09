@@ -11,7 +11,8 @@ export type TransitionSpeed = 'fast' | 'normal' | 'slow'
 export type TakeMode = 'cut' | 'auto'
 export interface SafeArea { top: number; right: number; bottom: number; left: number }
 export interface OutputConfig { id: string; name: string; format: OutputFormat; safeArea: SafeArea; graphicsScale: number }
-export interface Player { name: string; characterId: string; colour: ColourId }
+/** subtitle: free text under the name on the player announcement (job title and group, e.g. "Producer · Events Team"). */
+export interface Player { name: string; characterId: string; colour: ColourId; subtitle: string }
 export interface RaceState {
   mode: 'cup' | 'track'; cupId: string; raceIndex: 0 | 1 | 2 | 3; trackId: string; raceNo: number; raceTotal: number
   /** Cup mode: a hand-picked track per race, aligned to `raceIndex` (length 4). null / absent = the cup's own order. `trackId` always mirrors the effective track of `raceIndex`. */
@@ -131,7 +132,7 @@ export interface BracketSlot { player: PlayerView; total: number; winner: boolea
 export interface BracketNode { matchId: string; label: string; status: MatchStatus; live: boolean; hasResults: boolean; slots: BracketSlot[]; winner: PlayerView | null; overridden: boolean }
 export interface BracketRound { round: number; nodes: BracketNode[] }
 export interface BracketView { kind: 'bracket'; config: BracketConfig; rounds: BracketRound[]; tournamentName: string }
-export interface PlayerView { slot: number; name: string; character: string; icon: string; art: string; colour: string; textColour: string }
+export interface PlayerView { slot: number; name: string; character: string; icon: string; art: string; colour: string; textColour: string; subtitle: string }
 export interface TrackCardView { raceLabel: string; cupName: string; cupEmblem: string; trackName: string }
 export type SceneView =
   | { kind: 'title'; title: TitleView; logo: LogoMode }

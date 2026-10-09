@@ -44,6 +44,8 @@
         oninput={(e) => setPlayer(i, { name: e.currentTarget.value })} />
       <CharacterPicker value={p.characterId} {catalog} label="Player {i + 1} character" disabled={src !== null} onchange={(id) => setPlayer(i, { characterId: id })} />
       <ColourPicker value={p.colour} label="Player {i + 1} colour" disabled={src !== null} onchange={(c) => setPlayer(i, { colour: c })} />
+      <input class="u-input sub" name="subtitle" type="text" maxlength="80" placeholder="Subtitle: job title · group" aria-label="Player {i + 1} subtitle"
+        value={waiting !== null ? '' : (p.subtitle ?? '')} disabled={src !== null} oninput={(e) => setPlayer(i, { subtitle: e.currentTarget.value })} />
       {#if hasChoices}
         <div class="srcrow">
           {#if src !== null}<span class="autotag" data-auto-tag>AUTO</span>{/if}
@@ -70,6 +72,7 @@
   .prow .n { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; font-weight: 700; font-size: 12.5px; }
   .name.ph::placeholder { font-style: italic; color: #93c5fd; opacity: .85; }
   .prow.auto .name:disabled { opacity: 1; color: #fff; }
+  .sub { grid-column: 2 / -1; }
   .srcrow { grid-column: 2 / -1; display: flex; align-items: center; gap: 8px; }
   .srcrow .src { flex: 1; }
   .autotag { flex: none; font: 700 10px/1 var(--ui-font); letter-spacing: .08em; padding: 6px 8px; border-radius: 4px; background: #1e3a8a; color: #bfdbfe; }

@@ -27,11 +27,11 @@ export function isSceneSupported(format: OutputFormat, scene: SceneId, part: Sce
 }
 
 function playerView(p: Player | undefined, slot: number, catalog: CatalogIndex): PlayerView {
-  if (!p) return { slot, name: '', character: '?', icon: '', art: '', colour: colourHex('red'), textColour: textOn('red') }
+  if (!p) return { slot, name: '', character: '?', icon: '', art: '', colour: colourHex('red'), textColour: textOn('red'), subtitle: '' }
   const c = catalog.character(p.characterId)
   return {
     slot, name: p.name, character: c?.name ?? '?', icon: c?.icon ?? '', art: '', // headshots only: every character shows its icon, never full-body art
-    colour: colourHex(p.colour), textColour: textOn(p.colour),
+    colour: colourHex(p.colour), textColour: textOn(p.colour), subtitle: p.subtitle ?? '',
   }
 }
 
