@@ -37,3 +37,7 @@ Top bar: **Live · Race · Tournament · Setup**. The transport (arm outputs, CU
 - **Race results save when the row is complete** (all four places distinct), in one `saveResults`, so half a race never flashes on air. Until then the selected places show amber.
 - The Looks library has no "Overwrite ← PGM" button any more (`updatePreset` with `from: 'pgm'` still exists); save a new Look from *On air now* instead.
 - Undo limits: restoring a deleted Look brings back its cues with new ids and without the on-air / standby marker; undoing "Add cue from Preview" clears the *loaded Look* marker.
+
+## Screenshots
+
+`docs/screenshots/control/`: `live.png`, `live-modified.png` (Preview changed: MODIFIED, Update / Save as new), `live-edit.png` (Edit mode: drag grips, ＋ on Looks, locked GO), `race.png`, `tournament.png`, `setup.png`. Captured from the running app at 1920×1080 with a seeded show.
