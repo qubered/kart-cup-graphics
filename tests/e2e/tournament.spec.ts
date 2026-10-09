@@ -419,7 +419,20 @@ test('graphics: configs write through, previews follow, Send to Preview targets 
   expect((await state()).program.wide.view.scene?.kind).not.toBe('raceWin')
 })
 
-test('scene controls: cup win part, split across outputs, matches set; cue action', async ({ page }) => {
+test('the nextMatch cue action moves the live match (driven through the model, not the rundown page)', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await command({ type: 'savePreset', name: 'Look' })
+  await command({ type: 'createStack', name: 'Run' })
+  await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: null, action: 'nextMatch' })
+  await expect.poll(async () => (await state()).stacks[0].cues[0].action).toBe('nextMatch')
+  await openTour(page)
+  await expect(page.locator('[data-live-footer]')).toContainText('Semi 1')
+  await command({ type: 'fireCue', stackId: 'stack-1', cueId: 'cue-1' })
+  await expect.poll(async () => (await T()).activeMatchId).toBe('match-2')
+  await expect(page.locator('[data-live-footer]')).toContainText('Semi 2')
+})
+
+test('scene controls on the Live page: cup win part, split across outputs, matches set', async ({ page }) => {
   await command({ type: 'createTournament', name: 'T' })
   await page.goto('/control')
   await openPage(page, 'live')
@@ -434,10 +447,4 @@ test('scene controls: cup win part, split across outputs, matches set; cue actio
   await page.locator('[data-scene=matches]').click()
   await page.locator('[data-set-round="0"]').click()
   await expect.poll(async () => (await state()).layers.wide.matchSet).toEqual({ rounds: [0] })
-
-  // the nextMatch cue action (set through the model, not the rundown UI)
-  await command({ type: 'savePreset', name: 'Look' })
-  await command({ type: 'createStack', name: 'Run' })
-  await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: null, action: 'nextMatch' })
-  await expect.poll(async () => (await state()).stacks[0].cues[0].action).toBe('nextMatch')
 })

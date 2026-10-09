@@ -56,11 +56,14 @@
 <div class="u-ph">
   <span class="u-lab">Graphics</span>
   <span class="u-dim sub">What the tournament scenes show. Previews use the live data.</span>
-  <span class="target" data-target={out?.id}>Sends to <b>{out?.name ?? 'no output'}</b> <button type="button" class="u-btn" data-change-output onclick={() => goto('live')}>Change on Live ›</button></span>
+  <span class="target" data-target={out?.id}>Sends to <b>{out?.name ?? 'no output'}</b> <button type="button" class="u-btn" data-change-output title="Choose the output and see its Preview on the Live page" onclick={() => goto('live')}>Live page ›</button></span>
 </div>
 <div class="u-grow cards">
   <section class="gc" aria-label="Win screen" data-config="winScreen">
-    <div class="gch"><b>Win screens</b><span class="u-dim">race win · cup win</span></div>
+    <div class="gch">
+      <span class="gt"><b>Win screens</b><small class="u-dim">race win · cup win</small></span>
+      <button type="button" class="u-btn acc send" data-send={winKind} disabled={!canSend(winKind)} onclick={() => sendToPreview(winKind)}>Send {LABELS[winKind].toLowerCase()} to Preview</button>
+    </div>
     <div class="u-seg blue" role="group" aria-label="Win screen to preview">
       <button type="button" class:sel={winKind === 'raceWin'} data-win-kind="raceWin" aria-pressed={winKind === 'raceWin'} onclick={() => (winKind = 'raceWin')}>Race win</button>
       <button type="button" class:sel={winKind === 'cupWin'} data-win-kind="cupWin" aria-pressed={winKind === 'cupWin'} onclick={() => (winKind = 'cupWin')}>Cup win</button>
@@ -81,11 +84,13 @@
         {/each}
       </div>
     </div>
-    <button type="button" class="u-btn" data-send={winKind} disabled={!canSend(winKind)} onclick={() => sendToPreview(winKind)}>Send {LABELS[winKind].toLowerCase()} to Preview</button>
   </section>
 
   <section class="gc" aria-label="Matches scene" data-config="matchesScene">
-    <div class="gch"><b>Matches scene</b><span class="u-dim">all matches at a glance</span></div>
+    <div class="gch">
+      <span class="gt"><b>Matches scene</b><small class="u-dim">all matches at a glance</small></span>
+      <button type="button" class="u-btn acc send" data-send="matches" disabled={!canSend('matches')} onclick={() => sendToPreview('matches')}>Send to Preview</button>
+    </div>
     <ScenePreview scene={matchesView} />
     <div class="opt"><span class="u-lab">Layout</span>
       <div class="u-seg blue" role="group" aria-label="Matches layout">
@@ -111,11 +116,13 @@
       </div>
       <button type="button" class="u-tgl" class:on={ms.liveMarker} aria-pressed={ms.liveMarker} data-live-marker onclick={() => send({ type: 'setMatchesSceneConfig', patch: { liveMarker: !ms.liveMarker } })}><span class="u-tt">Live marker</span><span class="u-sw"></span></button>
     </div>
-    <button type="button" class="u-btn" data-send="matches" disabled={!canSend('matches')} onclick={() => sendToPreview('matches')}>Send matches to Preview</button>
   </section>
 
   <section class="gc" aria-label="Bracket" data-config="bracket">
-    <div class="gch"><b>Bracket scene</b><span class="u-dim">rounds feeding the final</span></div>
+    <div class="gch">
+      <span class="gt"><b>Bracket scene</b><small class="u-dim">rounds feeding the final</small></span>
+      <button type="button" class="u-btn acc send" data-send="bracket" disabled={!canSend('bracket')} onclick={() => sendToPreview('bracket')}>Send to Preview</button>
+    </div>
     <ScenePreview scene={bracketView} />
     <div class="opt"><span class="u-lab">Show</span>
       <div class="tgrid">
@@ -123,7 +130,6 @@
         <button type="button" class="u-tgl" class:on={br.showStatus} aria-pressed={br.showStatus} data-bracket-status onclick={() => send({ type: 'setBracketConfig', patch: { showStatus: !br.showStatus } })}><span class="u-tt">Status</span><span class="u-sw"></span></button>
       </div>
     </div>
-    <button type="button" class="u-btn" data-send="bracket" disabled={!canSend('bracket')} onclick={() => sendToPreview('bracket')}>Send bracket to Preview</button>
   </section>
 </div>
 
@@ -133,9 +139,11 @@
   .target b { color: #fff; }
   .cards { padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 14px; align-items: start; }
   .gc { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--ui-line); border-radius: 12px; background: var(--ui-panel-2); min-width: 0; }
-  .gch { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-  .gch b { color: #fff; font-size: 15px; }
-  .gch .u-dim { font-size: 12px; }
+  .gch { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .gt { display: grid; gap: 1px; min-width: 0; }
+  .gt b { color: #fff; font-size: 15px; }
+  .gt small { font-size: 12px; }
+  .send { flex: none; }
   .opt { display: grid; gap: 6px; }
   .tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
   .u-tgl { width: 100%; }
