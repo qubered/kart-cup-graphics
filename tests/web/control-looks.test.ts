@@ -4,7 +4,7 @@ import { createDefaultState } from '../../shared/defaults'
 import { reduce } from '../../shared/reducer'
 import type { Command, Layers, Preset, ShowState } from '../../shared/types'
 import {
-  cueCount, cueCounts, cuesOf, defaultSaveScope, deleteUndoCommands, groupPatch, groupsFromScope, isModified, layersKey, onAirLook, plural, scopeFromGroups, scopeSummary, suggestName, toggleGroup,
+  cueCount, cueCounts, cuesOf, deleteUndoCommands, groupPatch, groupsFromScope, isModified, layersKey, onAirLook, plural, scopeFromGroups, scopeSummary, suggestName, toggleGroup,
 } from '../../web/src/control/live/centre/looks'
 import { presetView, recalledDraft, sceneView, thumbOutput } from '../../web/src/control/live/centre/thumbs'
 import {
@@ -22,6 +22,8 @@ const withLook = (scope?: Partial<Preset['scope']>) => run(base,
   { type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } }, { type: 'arm', outputIds: ['wide', 'twins'] },
   { type: 'setPlayer', index: 0, patch: { name: 'SAM' } },
   { type: 'savePreset', name: 'A', ...(scope ? { scope } : {}) })
+/** The recall options a new look gets from the UI (ui.ts DEFAULT_LOOK_SCOPE): Look and Outputs armed on, Race & players and Scores off. */
+const defaultSaveScope = () => scopeFromGroups({ look: true, outputs: true, race: false, scores: false })
 const look = (s: ShowState) => s.presets[0]
 
 describe('isModified', () => {

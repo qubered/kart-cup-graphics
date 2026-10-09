@@ -37,10 +37,6 @@ export const groupsFromScope = (scope: PresetScope): GroupState =>
 export const scopeFromGroups = (groups: GroupState): PresetScope =>
   Object.fromEntries(SCOPE_PARTS.map(({ key }) => [key, GROUPS.some((g) => g.keys.includes(key) && groups[g.key])])) as unknown as PresetScope
 
-/** New looks restore the design and the arming, never the race, the players or the live scores. */
-export const DEFAULT_SAVE_GROUPS: GroupState = { look: true, outputs: true, race: false, scores: false }
-export const defaultSaveScope = (): PresetScope => scopeFromGroups(DEFAULT_SAVE_GROUPS)
-
 /** The patch that flips one group: every part in it goes on, or (when it was fully on) off. Only that group's parts, so two quick taps never undo each other. */
 export function groupPatch(scope: PresetScope, group: GroupKey): Partial<PresetScope> {
   const g = GROUPS.find((x) => x.key === group)!

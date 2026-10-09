@@ -3,11 +3,11 @@
   // the switches only choose what comes back when it is recalled. Defaults: Look and Outputs armed on, Race & players and Scores off.
   import { untrack } from 'svelte'
   import { control } from '../../store'
-  import { activeStack } from '../../ui'
+  import { activeStack, DEFAULT_LOOK_SCOPE } from '../../ui'
   import { activeTournament } from '../../../../../shared/tournament'
   import type { PresetScope, TakeMode } from '../../../../../shared/types'
   import { saveLook } from './actions'
-  import { defaultSaveScope, suggestName } from './looks'
+  import { suggestName } from './looks'
   import RecallOptions from './RecallOptions.svelte'
   import { saveOpen } from './saveForm'
 
@@ -18,7 +18,8 @@
   // The form opens fresh each time it is shown, so the suggestion is read once.
   let name = $state(untrack(() => (st ? suggestName(st.layers, st.outputs, $control.selectedOutput, st.presets.map((p) => p.name)) : '')))
   let from = $state<'pvw' | 'pgm'>('pvw')
-  let scope = $state<PresetScope>(defaultSaveScope())
+  // New looks restore the design and the arming, never race, players or live scores; always sent in full.
+  let scope = $state<PresetScope>({ ...DEFAULT_LOOK_SCOPE })
   let addCue = $state(false)
   let take = $state<'cut' | 'auto' | 'none'>('auto')
   let busy = $state(false)

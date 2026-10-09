@@ -32,7 +32,7 @@ async function seedTwoLooks() {
 test.describe('library', () => {
   test('empty state, then a tile per saved look with its cue count', async ({ page }) => {
     await page.goto('/control')
-    await expect(page.locator('[data-empty]')).toContainText('No looks yet')
+    await expect(page.locator('[data-looks-empty]')).toContainText('No looks yet')
     await expect(page.locator('[data-look-count]')).toHaveText('0')
     await command({ type: 'savePreset', name: 'A' })
     await command({ type: 'savePreset', name: 'B' })
@@ -95,7 +95,7 @@ test.describe('library', () => {
     await expect(tile(page, 'preset-3')).toBeVisible()
     await f.fill('zzz')
     await expect(page.locator('[data-look-tile]')).toHaveCount(0)
-    await expect(page.locator('[data-empty]')).toContainText('No looks match')
+    await expect(page.locator('[data-looks-empty]')).toContainText('No looks match')
     await f.fill('')
     await expect(page.locator('[data-look-tile]')).toHaveCount(3)
   })
@@ -396,7 +396,7 @@ test.describe('manage', () => {
     await command({ type: 'savePreset', name: 'A' }) // server default: Race and Players on, Scores off
     await page.goto('/control')
     await manage(page, 'preset-1')
-    await page.locator('[data-recalls]').click()
+    await page.locator('[data-manage-bar] [data-recalls]').click()
     const ed = page.locator('[data-recall-editor]')
     await expect(ed).toContainText('When “A” is recalled it restores')
     await expect(ed.locator('[data-group=race]')).toHaveAttribute('aria-pressed', 'true')
@@ -425,7 +425,7 @@ test.describe('manage', () => {
     await expect(tile(page, 'preset-1')).toBeVisible()
     expect((await state()).presets[0].draft.players[0].name).toBe('SAM')
     await manage(page, 'preset-1')
-    await page.locator('[data-recalls]').click()
+    await page.locator('[data-manage-bar] [data-recalls]').click()
     const ed = page.locator('[data-recall-editor]')
     await ed.locator('[data-advanced]').click()
     await expect(ed.locator('[data-scope=scores]')).toHaveAttribute('aria-pressed', 'false')
@@ -452,7 +452,7 @@ test.describe('manage', () => {
     await page.locator('[data-add-cue]').click()
     await expect.poll(async () => (await state()).stacks[0].cues.map((c) => [c.presetId, c.take])).toEqual([['preset-1', 'auto']])
     await expect(page.locator('[data-manage-bar]')).toContainText('in 1 cue')
-    await expect(page.locator('[data-toast]').last()).toContainText('Added “A” as cue 1 of “Run”')
+    await expect(page.locator('[data-toast]').last()).toContainText('Added “A” as cue 1')
     await undoLast(page)
     await expect.poll(async () => (await state()).stacks[0].cues.length).toBe(0)
   })
@@ -478,6 +478,58 @@ test.describe('manage', () => {
     expect(more!.height).toBeGreaterThanOrEqual(44)
     // the ＋ button exists only while the rundown is being edited
     await expect(page.locator('[data-add-as-cue]')).toHaveCount(0)
+  })
+})
+
+test.describe('with the rundown', () => {
+  async function seed() {
+    for (const name of ['A', 'B', 'C']) await command({ type: 'savePreset', name })
+    await command({ type: 'createStack', name: 'Run' })
+    await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: 'cut' })
+    await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-2', take: 'auto' })
+  }
+  const cues = async () => (await state()).stacks[0].cues.map((c) => c.presetId)
+
+  test('the ＋ on a tile exists only while the rundown is in Edit; it appends a cue (Take: auto), undoable', async ({ page }) => {
+    await seed()
+    await page.goto('/control')
+    await expect(page.locator('[data-add-as-cue]')).toHaveCount(0)
+    await page.locator('[data-edit-toggle=edit]').click()
+    await expect(page.locator('[data-add-as-cue]')).toHaveCount(3)
+    const plus = (await page.locator('[data-add-as-cue=preset-3]').boundingBox())!
+    expect(plus.width).toBeGreaterThanOrEqual(44)
+    expect(plus.height).toBeGreaterThanOrEqual(44)
+    await page.locator('[data-add-as-cue=preset-3]').click()
+    await expect.poll(cues).toEqual(['preset-1', 'preset-2', 'preset-3'])
+    expect((await state()).stacks[0].cues[2].take).toBe('auto')
+    await expect(page.locator('[data-toast]').last()).toContainText('Added “C” as cue 3')
+    await undoLast(page)
+    await expect.poll(cues).toEqual(['preset-1', 'preset-2'])
+    await page.locator('[data-edit-toggle=run]').click()
+    await expect(page.locator('[data-add-as-cue]')).toHaveCount(0)
+  })
+
+  test('dragging a tile grip onto the rundown adds the look as a cue where it is dropped', async ({ page }) => {
+    await seed()
+    await page.goto('/control')
+    await page.locator('[data-edit-toggle=edit]').click()
+    const grip = page.locator('[data-look=preset-3] .u-grip')
+    const g = (await grip.boundingBox())!
+    const row = (await page.locator('[data-cue=cue-1]').boundingBox())!
+    await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(row.x + 120, row.y + row.height - 4, { steps: 12 })
+    await page.mouse.up()
+    await expect.poll(cues).toEqual(['preset-1', 'preset-3', 'preset-2'])
+    // the drag ended over the tile it started from, but did not also tap it (no "Loaded ..." toast)
+    await expect(page.locator('[data-toast]').filter({ hasText: 'Loaded' })).toHaveCount(0)
+  })
+
+  test('the new-look form offers to add the look to the rundown on show as the next cue', async ({ page }) => {
+    await seed()
+    await page.goto('/control')
+    await page.locator('[data-save-open]').click()
+    await expect(page.locator('[data-save-add-cue]')).toContainText('Also add to “Run” as cue 3')
   })
 })
 

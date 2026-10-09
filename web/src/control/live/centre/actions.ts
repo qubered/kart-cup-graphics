@@ -1,8 +1,7 @@
 // Operations on looks (saved presets) for the Live page. Every one is undoable: it sends commands, remembers the commands that put
 // things back (see ui.ts act / pushUndo) and confirms with a toast. A load goes to Preview only, never to air.
-import { get } from 'svelte/store'
 import { control, send } from '../../store'
-import { act, activeStack, currentState, previewSnapshot, pushUndo, restoreCommand, toast } from '../../ui'
+import { act, currentState, previewSnapshot, pushUndo, restoreCommand, toast } from '../../ui'
 import type { Command, Cue, Preset, PresetScope, ShowState, TakeMode } from '../../../../../shared/types'
 import { cuesOf, cueWord, deleteUndoCommands, isModified } from './looks'
 
@@ -95,23 +94,6 @@ export function deleteLook(id: string): void {
   act(`delete “${p.name}” — restored the look${n ? ` and ${cueWord(n)}` : ''}`,
     [{ type: 'deletePreset', id }], deleteUndoCommands(structuredClone(p), st.presets.indexOf(p), refs),
     `Deleted “${p.name}”${n ? ` and ${cueWord(n)}` : ''}`)
-}
-
-/** Append a look to a rundown as a cue (default Take: auto). */
-export async function addLookAsCue(id: string, take: TakeMode | null = 'auto'): Promise<void> {
-  const st = currentState()
-  const p = presetOf(st, id)
-  const stack = get(activeStack)
-  if (!st || !p || !stack) return toast('There is no rundown to add a cue to', { kind: 'error' })
-  const before = cueIds(st)
-  const wait = nextState((s) => !!newCue(s, stack.id, id, before))
-  send({ type: 'addCue', stackId: stack.id, presetId: id, take })
-  const s = await wait
-  const cue = s && newCue(s, stack.id, id, before)
-  if (!s || !cue) return toast('Could not add the cue', { kind: 'error' })
-  const at = (s.stacks.find((k) => k.id === stack.id)?.cues.findIndex((c) => c.id === cue.id) ?? 0) + 1
-  pushUndo(`add cue ${at}`, [{ type: 'removeCue', stackId: stack.id, cueId: cue.id }])
-  toast(`Added “${p.name}” as cue ${at} of “${stack.name}”`, { undoable: true })
 }
 
 /** Change what a recall of this look restores (just the parts in `patch`). Quiet: the switch itself shows the change; undo with Ctrl/Cmd+Z. */

@@ -6,7 +6,8 @@
   import { dragSource } from '../../ui/drag'
   import { twoTap } from '../../ui/twotap.svelte'
   import { activeTournament } from '../../../../../shared/tournament'
-  import { addLookAsCue, deleteLook, duplicateLook, loadLook, renameLook, setLookScope, updateLook } from './actions'
+  import { addCueFromLook } from '../rail/actions'
+  import { deleteLook, duplicateLook, loadLook, renameLook, setLookScope, updateLook } from './actions'
   import { cueCounts, cueWord, scopeSummary } from './looks'
   import RecallOptions from './RecallOptions.svelte'
   import { saveOpen } from './saveForm'
@@ -52,6 +53,10 @@
   }
 
   const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s)
+  /** Add a Look to the end of the rundown on show (the rail's own undoable add; Take: auto). */
+  function appendCue(id: string, name: string) {
+    if (stack) void addCueFromLook(stack.id, id, stack.cues.length, name)
+  }
 </script>
 
 <section class="u-panel libp" aria-label="Looks library" data-library>
@@ -69,7 +74,7 @@
         <button type="button" class="u-btn" class:sel={recalls} data-recalls aria-expanded={recalls} onclick={() => (recalls = !recalls)}>Recalls…</button>
         <button type="button" class="u-btn" data-rename onclick={() => (renaming ? commitRename() : startRename())}>{renaming ? 'Save name' : 'Rename'}</button>
         <button type="button" class="u-btn" data-duplicate onclick={() => void duplicateLook(managed.id)}>Duplicate</button>
-        <button type="button" class="u-btn" data-add-cue disabled={!stack} title={stack ? `Add as a cue to “${stack.name}”` : 'There is no rundown'} onclick={() => void addLookAsCue(managed.id)}>＋ Cue</button>
+        <button type="button" class="u-btn" data-add-cue disabled={!stack} title={stack ? `Add as a cue to “${stack.name}”` : 'There is no rundown'} onclick={() => appendCue(managed.id, managed.name)}>＋ Cue</button>
         <button type="button" class="u-btn" class:confirm={guard.armed === `del:${managed.id}`} class:danger={guard.armed !== `del:${managed.id}`} data-delete
           onclick={() => guard.tap(`del:${managed.id}`, () => { deleteLook(managed.id); closeManage() })}>
           {guard.armed === `del:${managed.id}` ? `Tap again${n ? ` · removes ${cueWord(n)}` : ' to delete'}` : 'Delete'}
@@ -113,8 +118,9 @@
       {@const pvw = loaded?.id === p.id}
       {@const air = $onAirLookId === p.id}
       {@const n = counts.get(p.id) ?? 0}
-      <div class="ltile" class:inpvw={pvw} class:air class:managing={managing === p.id} data-look-tile={p.id}>
-        <button type="button" class="ltb" data-look={p.id} aria-label="Load {p.name} into Preview" onclick={() => loadLook(p.id)}>
+      <!-- data-look on the tile: the rundown's drag test (and any hook) finds the grip inside it -->
+      <div class="ltile" class:inpvw={pvw} class:air class:managing={managing === p.id} data-look={p.id} data-look-tile={p.id}>
+        <button type="button" class="ltb" data-look-load={p.id} aria-label="Load {p.name} into Preview" onclick={() => loadLook(p.id)}>
           <span class="thw">
             <Thumb view={presetView(p, st!, $control.catalog, tour)} />
             {#if air || pvw}
@@ -131,11 +137,11 @@
         <span class="u-grip gripc" role="button" tabindex="-1" aria-label="Drag {p.name} onto the rundown" use:dragSource={{ kind: 'look', id: p.id, label: p.name }}><i></i></span>
         <button type="button" class="lmore" data-manage={p.id} aria-label="Manage {p.name}" aria-expanded={managing === p.id} onclick={() => (managing === p.id ? closeManage() : openManage(p.id))}>⋯</button>
         {#if $editRundown && stack}
-          <button type="button" class="ladd" data-add-as-cue={p.id} aria-label="Add {p.name} as a cue" onclick={() => void addLookAsCue(p.id)}>＋</button>
+          <button type="button" class="ladd" data-add-as-cue={p.id} aria-label="Add {p.name} as a cue" onclick={() => appendCue(p.id, p.name)}>＋</button>
         {/if}
       </div>
     {:else}
-      <div class="u-empty wide" data-empty>
+      <div class="u-empty wide" data-looks-empty>
         {#if presets.length}
           <b>No looks match “{filter}”</b><span>Clear the filter to see all {presets.length}.</span>
         {:else}
