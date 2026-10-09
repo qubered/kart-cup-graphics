@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Control page v2 — Option A · Rundown-first</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="control-v2/common.css">
+</head>
+<body>
+<div class="ui" id="ui"></div>
+<script src="control-v2/common.js"></script>
+<script>
+  const S = { view: 'live', rtab: 'look', edit: false, save: false, open: null, drag: false, pgm: 3, pvw: 4, scene: 'raceWin', bg: 'B', track: true, lt: false, part: 'hero', mod: true, out: 'wide', toast: '', snav: 'Outputs' }
+
+  const cueStatus = (i) => (i === S.pgm ? 'pgm' : i === S.pvw ? 'pvw' : i < S.pgm ? 'done' : '')
+  const takeLbl = (t) => (t === 'cut' ? 'CUT' : t === 'auto' ? 'AUTO' : 'RECALL')
+  const pgmScene = () => LOOKS[CUES[S.pgm][0]].scene
+
+  function rundown() {
+    const n = CUES.length
+    const head = `<div class="ph"><span class="lab">Rundown</span>
+        <button class="btn sm" style="height:34px;padding:0 9px">Main show <span class="dim">▾</span></button><span class="dim" style="font-size:12px;white-space:nowrap">${S.pvw + 1}/${n}</span>
+        <div class="seg s36 modeseg" style="margin-left:auto;width:112px"><button data-act="mode" data-m="run" class="${S.edit ? '' : 'sel'}">Run</button><button data-act="mode" data-m="edit" class="${S.edit ? 'sel e' : ''}">Edit</button></div></div>`
+    let body = ''
+    CUES.forEach((c, i) => {
+      const L = LOOKS[c[0]], st = cueStatus(i)
+      if (!S.edit) {
+        body += `<div class="cue ${st}" data-act="sel" data-i="${i}"><span class="bar"></span><span class="n">${i + 1}</span>
+          <div style="min-width:0"><div class="nm">${L.name}</div><div class="sub">${st === 'pgm' ? '<span class="tag pgm">ON AIR</span>' : st === 'pvw' ? '<span class="tag pvw">NEXT</span>' : ''}${c.after ? `<span class="then">↳ then ${c.after.toLowerCase()}</span>` : ''}</div></div>
+          <div class="rt"><span class="pill ${c.take}">${takeLbl(c.take)}</span></div></div>`
+      } else {
+        const open = S.open === i
+        body += `<div class="cue ed ${st} ${open ? 'open' : ''}" data-act="open" data-i="${i}" style="cursor:pointer"><span class="grip"><i></i></span><span class="n">${i + 1}</span>
+          <div style="min-width:0"><div class="nm">${L.name}</div><div class="sub">${st === 'pgm' ? '<span class="tag pgm">ON AIR</span>' : st === 'pvw' ? '<span class="tag pvw">NEXT</span>' : ''}${c.after ? `<span class="then">↳ then ${c.after.toLowerCase()}</span>` : ''}</div></div>
+          <div class="rt"><span class="pill ${c.take}">${takeLbl(c.take)}</span><span class="xbtn" title="Remove cue">✕</span></div></div>`
+        if (open) body += `<div class="ceditor">
+          <div class="r"><span>Look</span><div class="field">${L.name}<span class="car">▾</span></div></div>
+          <div class="warn"><span>⚠ Used by ${L.used} cues</span><button class="btn sm" style="height:32px;margin-left:auto">Make unique</button></div>
+          <div class="r"><span>Take</span><div class="seg blue"><button class="${c.take === 'cut' ? 'sel' : ''}">Cut</button><button class="${c.take === 'auto' ? 'sel' : ''}">Auto</button><button class="${!c.take ? 'sel' : ''}">Recall only</button></div></div>
+          <div class="r"><span>After</span><div class="field">${c.after ? 'Then ' + c.after.toLowerCase() : 'Nothing'}<span class="car">▾</span></div></div>
+          <div class="r"><span>Recalls</span><div class="field" style="color:#cbd5e1">All but scores<span class="car">Customise ›</span></div></div></div>`
+        if (S.drag && i === 6) body += `<div class="dropline"></div>`
+      }
+    })
+    const ghost = S.edit && S.drag ? `<div class="ghost-row" id="ghost"><span class="grip" style="height:auto"><i></i></span>Next race<span class="pill auto" style="margin-left:auto">AUTO</span></div>` : ''
+    const foot = !S.edit ? `<div class="gofoot"><button class="go" data-act="go"><span class="gl">GO</span><span class="gt"><small>Fires cue ${S.pvw + 1} · ${takeLbl(CUES[S.pvw][1])}</small><b>${LOOKS[CUES[S.pvw][0]].name}</b></span><kbd>G</kbd></button>
+        <div class="gnav"><button class="btn sm" data-act="prev">◀ Back</button><button class="btn sm" data-act="skip">Skip ▶</button><button class="btn sm" data-act="rewind">Rewind</button></div></div>`
+      : `<div class="gofoot"><button class="btn ghost" style="height:56px;flex-direction:column;gap:2px;border-color:var(--ui-accent);color:#bfdbfe" data-act="addprev"><span>＋ Add cue from Preview</span><span class="dim" style="font-weight:400;font-size:11px">${LOOKS[CUES[S.pvw][0]].name}${S.mod ? ' · modified' : ''}</span></button>
+        <div class="gnav" style="grid-template-columns:1fr 1fr"><button class="btn sm" data-act="rtab" data-t="library">＋ From Library</button><button class="btn sm">＋ New rundown</button></div>
+        <button class="go off" style="height:46px" disabled><span class="gl" style="font-size:20px">GO</span><span class="gt"><small>Disabled while editing</small></span></button></div>`
+    return `<section class="panel">${head}${S.edit ? '<div class="editbar">EDITING — GO is locked. Switch to Run to fire cues.</div>' : ''}<div class="grow" style="overflow:auto;position:relative">${body}${ghost}</div>${foot}</section>`
+  }
+
+  function centre() {
+    const cur = OUTS.find((o) => o.id === S.out)
+    const tabs = OUTS.map((o) => `<button class="otab ${o.id === S.out ? 'on' : ''}" data-act="out" data-o="${o.id}"><i class="led ${o.on ? 'on' : ''}"></i>${o.name}${o.pend ? `<span class="p">${o.pend}</span>` : ''}</button>`).join('')
+    const srcLook = LOOKS[CUES[S.pvw][0]]
+    const scenes = SCENES.map(([id, l]) => {
+      const sel = S.scene === id, live = pgmScene() === id
+      return `<button class="scn ${sel ? 'sel' : ''} ${live ? 'live' : ''}" data-act="scene" data-s="${id}"><div class="th">${gfx(id, id === 'none' ? 'none' : S.bg, { part: S.part })}</div><span class="lb">${l}</span></button>`
+    }).join('')
+    return `<section class="centre"><div class="otabs">${tabs}<span class="sp"></span><button class="otab">Multiview ↗</button></div>
+      <div class="mon pv"><div class="t">PREVIEW · ${cur.name.toUpperCase()}</div><div class="src">${S.mod ? '<span class="tag mod">MODIFIED</span>' : ''}Cue ${S.pvw + 1} · ${srcLook.name}</div>${gfx(S.scene, S.scene === 'none' ? 'none' : S.bg, { track: S.track, lt: S.lt, part: S.part })}</div>
+      <div class="mon pg"><div class="t">PROGRAM · ${cur.name.toUpperCase()}</div><div class="src">Cue ${S.pgm + 1} · ${LOOKS[CUES[S.pgm][0]].name}</div>${gfx(LOOKS[CUES[S.pgm][0]].scene, LOOKS[CUES[S.pgm][0]].bg, { track: true })}</div>
+      <div class="scenes-h"><span class="lab">Scene for ${cur.name} preview</span><span class="dim" style="margin-left:auto;font-size:12px">Tap = load into Preview · red = on air now</span></div>
+      <div class="scenes">${scenes}</div></section>`
+  }
+
+  function lookTab() {
+    const isWin = S.scene === 'raceWin' || S.scene === 'cupWin'
+    const BG = [['A', 'A · Sky'], ['B', 'B · Icons'], ['C', 'C · Stickers'], ['none', 'None']]
+    return `<div class="stat2"><div class="l1">Based on <b>Race win — hero</b>${S.mod ? '<span class="tag mod">● MODIFIED</span>' : '<span class="tag pvw">SAVED</span>'}</div>
+        <div class="l2"><button class="btn" data-act="revert">↺ Revert</button><button class="btn acc" data-act="save">Save look…</button></div></div>
+      <div class="grow" style="overflow:hidden">
+        ${isWin ? `<div class="sec"><div class="sh"><span class="lab">Race win options</span></div>
+          <div class="seg"><button class="${S.part === 'full' ? 'sel' : ''}" data-act="part" data-p="full">Full</button><button class="${S.part === 'hero' ? 'sel' : ''}" data-act="part" data-p="hero">Hero</button><button class="${S.part === 'board' ? 'sel' : ''}" data-act="part" data-p="board">Board</button></div>
+          <div class="grid2"><div class="field">Active match<span class="car">▾</span></div><button class="btn">Split across outputs</button></div></div>` : ''}
+        <div class="sec"><div class="sh"><span class="lab">Background</span><span class="sum">${S.bg === 'none' ? 'None' : 'Pattern ' + S.bg}</span></div>
+          <div class="grid2">${BG.map(([id, l]) => `<div class="seg" style="border:0"><button style="border:1px solid var(--ui-field);border-radius:8px" class="${S.bg === id ? 'sel' : ''} ${id === 'B' ? 'livedot' : ''}" data-act="bg" data-b="${id}">${l}</button></div>`).join('')}</div></div>
+        <div class="sec"><div class="sh"><span class="lab">Overlays</span><span class="sum">${[S.track && 'Track card', S.lt && 'Lower thirds'].filter(Boolean).join(' · ') || 'none'}</span></div>
+          <button class="tgl ${S.track ? 'on' : ''} livedot" data-act="track">Track card<span class="sw"></span></button>
+          <button class="tgl ${S.lt ? 'on' : ''}" data-act="lt">Lower thirds<span class="sw"></span></button>
+          <div class="chips4">${[0, 1, 2, 3].map((i) => `<button class="${S.lt ? 'sel' : 'dis'}">P${i + 1}</button>`).join('')}</div></div>
+      </div>`
+  }
+
+  function libTab() {
+    const ids = Object.keys(LOOKS), pvwId = CUES[S.pvw][0], pgmId = CUES[S.pgm][0]
+    const cards = ids.map((id) => { const L = LOOKS[id]
+      return `<div class="look ${id === pvwId ? 'inpvw' : ''} ${id === pgmId ? 'onair' : ''}"><button style="display:block;width:100%" data-act="load" data-l="${id}"><div class="th">${id === pgmId ? '<span class="tag pgm">ON AIR</span>' : id === pvwId ? '<span class="tag pvw">IN PREVIEW</span>' : ''}${gfx(L.scene, L.bg, { part: 'hero' })}</div>
+        <div class="lm"><b>${L.name}</b><small>${L.used ? `In ${L.used} cue${L.used > 1 ? 's' : ''}` : 'Not in a rundown'}</small></div></button>
+        <div class="la"><button class="btn" data-act="addlook">＋ Cue</button><button class="btn" aria-label="Rename, duplicate, delete">⋯</button></div></div>` }).join('')
+    return `<div class="curcard"><div class="r1"><div class="th">${gfx(S.scene, S.bg, { track: S.track, part: S.part })}</div><div><b>Preview now</b> <span class="tag mod">● MODIFIED</span><small>Based on “Race win — hero”<br>Used by 2 cues</small></div></div>
+        <div class="r2">${S.confirm ? '<button class="btn" style="background:#78350f;border-color:#b45309;color:#fde68a;font-size:12px;line-height:1.15" data-act="upd"><span style="text-align:center">Tap again to overwrite<br><span style="font-weight:400">affects 2 cues</span></span></button>' : '<button class="btn" data-act="upd">Update “Race win…”</button>'}<button class="btn acc" data-act="save">Save as new…</button></div></div>
+      <div class="search">Filter ${ids.length} looks…</div>
+      <div class="grow" style="overflow:auto"><div class="looks">${cards}</div></div>
+      <div class="hint">Tap a look to load it into Preview — nothing goes to air until you Take or GO.</div>`
+  }
+
+  function savePanel() {
+    return `<div class="ph"><button class="btn sm" data-act="cancel">← Back</button><b style="color:#fff">Save look</b></div>
+      <div class="savef">
+        <div><div class="lab" style="margin-bottom:6px">Name</div><div class="field">Race win — hero v2</div></div>
+        <div><div class="lab" style="margin-bottom:6px">Save from</div><div class="seg blue"><button class="sel">Preview</button><button>On air now</button></div></div>
+        <div style="display:grid;gap:8px"><div class="lab">Remember when recalled</div>
+          <button class="tgl on"><span class="tt"><b>Look</b><small>Scene, background, overlays, text, speed</small></span><span class="sw"></span></button>
+          <button class="tgl on"><span class="tt"><b>Outputs armed</b><small>Which outputs a Take goes to</small></span><span class="sw"></span></button>
+          <button class="tgl on"><span class="tt"><b>Race &amp; players</b><small>Cup, track, names, characters</small></span><span class="sw"></span></button>
+          <button class="tgl" style="border-color:#5c4410"><span class="tt"><b>Scores</b><small style="color:#d6b86a">Off by default: recall would overwrite live scores</small></span><span class="sw"></span></button>
+          <button class="linkb">Advanced: choose from all 8 parts ›</button></div>
+        <button class="tgl on"><span class="tt"><b>Also add to “Main show” as cue 10</b><small>Take: Auto · changeable later</small></span><span class="sw"></span></button>
+        <div class="row2"><button class="btn" data-act="cancel">Cancel</button><button class="btn acc" data-act="dosave">Save look</button></div>
+      </div>`
+  }
+
+  function right() {
+    if (S.save) return `<section class="panel">${savePanel()}</section>`
+    return `<section class="panel"><div class="tabs2"><button data-act="rtab" data-t="look" class="${S.rtab === 'look' ? 'on' : ''}">Look</button><button data-act="rtab" data-t="library" class="${S.rtab === 'library' ? 'on' : ''}">Library <span class="ct">${Object.keys(LOOKS).length}</span></button></div>
+      ${S.rtab === 'look' ? lookTab() : libTab()}</section>`
+  }
+
+  function dataView() {
+    const pr = [['ALEX', 'Mario', 0], ['PRIYA', 'Luigi', 1], ['TOM', 'Yoshi', 2], ['MEI', 'Peach', 3]]
+    const res = [['ALEX', 1, 15, 0], ['PRIYA', 2, 12, 0], ['TOM', 3, 10, 2], ['MEI', 4, 9, 0]]
+    return `<section class="panel"><div class="tabs2"><button class="on">Race &amp; players</button><button>Tournament</button></div><div class="grow" style="overflow:auto;padding-bottom:12px">
+        <div class="card"><div class="ch"><span class="lab">Race</span></div><div style="padding:12px;display:grid;gap:10px"><div class="seg blue"><button class="sel">Cup</button><button>Single</button></div>
+          <div class="grid2"><div class="field">Mushroom Cup<span class="car">▾</span></div><div class="field">Water Park<span class="car">▾</span></div></div>
+          <div class="grid2" style="grid-template-columns:44px 1fr 1fr 1fr 1fr 44px"><button class="btn sm" style="padding:0">◀</button>${[1, 2, 3, 4].map((n) => `<button class="btn sm ${n === 2 ? 'acc' : ''}" style="padding:0;opacity:${n < 2 ? .55 : 1}">${n}</button>`).join('')}<button class="btn sm" style="padding:0">▶</button></div></div></div>
+        <div class="card"><div class="ch"><span class="lab">Players</span></div>${pr.map(([n, c, i]) => `<div class="prow"><span class="n" style="background:${PC[i]}">P${i + 1}</span><div class="field" style="height:44px">${n}</div><div class="field" style="height:44px">${c}<span class="car">▾</span></div><span style="width:26px;height:26px;border-radius:5px;background:${PC[i]};display:block"></span></div>`).join('')}</div></div></section>`
+  }
+  function dataRight() {
+    const res = [['ALEX', 1, 15, 0], ['PRIYA', 2, 12, 0], ['TOM', 3, 10, 2], ['MEI', 4, 9, 0]]
+    return `<section class="panel"><div class="ph"><span class="lab">Results · Race 2</span></div><div class="grow" style="overflow:auto"><table class="res"><tr><th>PLAYER</th><th>POS</th><th>+/−</th><th>TOTAL</th></tr>
+      ${res.map(([n, p, t, a], i) => `<tr><td><i class="pc" style="background:${PC[i]}"></i>${n}</td><td><div class="field" style="height:40px;min-width:70px">${p}<span class="car">▾</span></div></td><td class="num ${a ? 'plus' : ''}">${a ? '+' + a : '0'}</td><td class="num">${t}</td></tr>`).join('')}</table>
+      <div style="padding:12px;display:grid;gap:8px"><button class="btn acc">Confirm results &amp; show standings →</button><span class="dim" style="font-size:12px">Loads the Standings look into Preview. Nothing goes to air.</span></div></div></section>`
+  }
+  function setupView() {
+    const rows = OUTS.map((o) => `<tr><td><i class="led ${o.on ? 'on' : ''}"></i> <b style="color:#fff">${o.name}</b></td><td class="dim">${o.fmt}</td><td>${o.on ? 'Connected' : 'Offline'}</td><td><code>/out/${o.id}</code></td><td><button class="btn sm">Copy</button> <button class="btn sm">Fill / key URLs</button></td></tr>`).join('')
+    return `<div class="setup"><section class="panel"><div class="ph"><span class="lab">Setup</span></div><div class="snav">${['Outputs', 'Text & fonts', 'Event & logo', 'Show file'].map((n) => `<button data-act="snav" data-n="${n}" class="${S.snav === n ? 'on' : ''}">${n}</button>`).join('')}</div></section>
+      <section class="panel"><div class="ph"><span class="lab">Outputs</span><span class="dim" style="font-size:12px;margin-left:8px">Where graphics are sent. Monitors and the transport stay visible below.</span><button class="btn sm acc" style="margin-left:auto">＋ Add output</button></div>
+        <table class="otbl"><tr><th>Output</th><th>Canvas</th><th>Status</th><th>Page</th><th></th></tr>${rows}</table></section></div>`
+  }
+
+
+  function render() {
+    const mid = S.view === 'setup' ? setupView() : `${S.view === 'data' ? dataView() : rundown()}${centre()}${S.view === 'data' ? dataRight() : right()}`
+    document.getElementById('ui').innerHTML = `${topBar([['Live', 'live'], ['Show data', 'data'], ['Setup', 'setup']], S.view)}<div class="main">${mid}</div>${transport()}${S.toast ? `<div class="toast">${S.toast}</div>` : ''}`
+    const g = document.getElementById('ghost'), anchor = document.querySelector('.cue[data-i="6"]')
+    if (g && anchor) g.style.top = anchor.offsetTop + anchor.offsetHeight - 22 + 'px'
+    fit()
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-act]'); if (!t) return
+    const a = t.dataset.act, d = t.dataset
+    if (a === 'view') { S.view = d.v; S.save = false }
+    else if (a === 'mode') { S.edit = d.m === 'edit'; S.open = null }
+    else if (a === 'sel') { S.pvw = +d.i; const L = LOOKS[CUES[S.pvw][0]]; S.scene = L.scene; S.bg = L.bg; S.mod = false; S.part = 'hero' }
+    else if (a === 'open') S.open = S.open === +d.i ? null : +d.i
+    else if (a === 'go') { S.pgm = S.pvw; S.pvw = Math.min(S.pvw + 1, CUES.length - 1); const L = LOOKS[CUES[S.pvw][0]]; S.scene = L.scene; S.bg = L.bg; S.mod = false }
+    else if (a === 'prev') S.pvw = Math.max(0, S.pvw - 1)
+    else if (a === 'skip') S.pvw = Math.min(CUES.length - 1, S.pvw + 1)
+    else if (a === 'rewind') { S.pgm = -1; S.pvw = 0 }
+    else if (a === 'cut' || a === 'auto') { S.toast = ''; }
+    else if (a === 'rtab') { S.rtab = d.t; S.save = false }
+    else if (a === 'scene') { S.scene = d.s; S.mod = true }
+    else if (a === 'bg') { S.bg = d.b; S.mod = true }
+    else if (a === 'part') { S.part = d.p; S.mod = true }
+    else if (a === 'track') { S.track = !S.track; S.mod = true }
+    else if (a === 'lt') { S.lt = !S.lt; S.mod = true }
+    else if (a === 'out') S.out = d.o
+    else if (a === 'save' || a === 'addprev') S.save = true
+    else if (a === 'cancel') S.save = false
+    else if (a === 'dosave') { S.save = false; S.mod = false; S.toast = 'Saved “Race win — hero v2” and added as cue 10 &nbsp; <b style="text-decoration:underline">Undo</b>' }
+    else if (a === 'revert') S.mod = false
+    else if (a === 'upd') { if (S.confirm) { S.confirm = false; S.mod = false; S.toast = 'Updated “Race win — hero” &nbsp; <b style="text-decoration:underline">Undo</b>' } else S.confirm = true }
+    else if (a === 'load') { const L = LOOKS[d.l]; S.scene = L.scene; S.bg = L.bg; S.mod = false }
+    else if (a === 'snav') S.snav = d.n
+    render()
+  })
+  addEventListener('keydown', (e) => { if (e.key === 'g' && !S.edit) document.querySelector('[data-act=go]')?.click(); if (e.key === 'Escape') { S.save = false; render() } })
+
+  // ?state= jumps straight to one screen (used for the screenshots).
+  const q = new URLSearchParams(location.search), st = q.get('state')
+  if (st === 'library') S.rtab = 'library'
+  if (st === 'libconfirm') { S.rtab = 'library'; S.confirm = true }
+  if (st === 'save') { S.save = true }
+  if (st === 'edit') { S.edit = true; S.open = 4 }
+  if (st === 'drag') { S.edit = true; S.drag = true }
+  if (st === 'data') S.view = 'data'
+  if (st === 'setup') S.view = 'setup'
+  if (st === 'run') { S.mod = false }
+  render()
+</script>
+</body>
+</html>

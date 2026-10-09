@@ -378,4 +378,15 @@ describe('reducer', () => {
       expect(r.success && r.data.presets).toEqual([]); expect(r.success && r.data.stacks).toEqual([])
     })
   })
+
+  it('clearRace removes one saved race, keeps the rest and the adjustments, and updates on-air standings', () => {
+    let s = reduce(base, { type: 'saveResults', raceNo: 1, trackId: 'mario-kart-stadium', positions: [1, 2, 3, 4] }, ctx)
+    s = reduce(s, { type: 'saveResults', raceNo: 2, trackId: 'water-park', positions: [2, 1, 4, 3], adjustments: [0, 3, 0, 0] }, ctx)
+    const after = reduce(s, { type: 'clearRace', raceNo: 1 }, ctx)
+    expect(after.draft.scores.races.map((r) => r.raceNo)).toEqual([2])
+    expect(after.draft.scores.adjustments).toEqual([0, 3, 0, 0])
+    expect(reduce(after, { type: 'clearRace', raceNo: 1 }, ctx)).toBe(after)
+    expect(commandSchema.safeParse({ type: 'clearRace', raceNo: 1 }).success).toBe(true)
+    expect(commandSchema.safeParse({ type: 'clearRace', raceNo: 0 }).success).toBe(false)
+  })
 })

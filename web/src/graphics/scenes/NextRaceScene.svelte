@@ -36,7 +36,7 @@
           {/if}
         {:else}
           <div class="grid">
-            {#each scene.cupTracks as t (t.name)}
+            {#each scene.cupTracks as t, i (i)}
               <div class="gtile"><img src={t.thumb} alt="" /><span style:font-family={view.fonts.labels}>{t.name}</span></div>
             {/each}
           </div>

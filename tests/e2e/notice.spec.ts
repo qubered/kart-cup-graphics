@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { command, state, resetShow } from './helpers'
+import { command, state, resetShow, openSetup } from './helpers'
 
 test.beforeEach(async () => { await resetShow() })
 
 test('type and format notice text in the editor, take it to air', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Text & Fonts' }).click()
+  await openSetup(page, 'Text & Fonts')
   const surface = page.getByRole('textbox', { name: 'Notice board text' })
   await surface.click()
   await page.keyboard.press('Control+a')

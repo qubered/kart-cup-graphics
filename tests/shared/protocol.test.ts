@@ -36,4 +36,22 @@ describe('protocol', () => {
     expect(clientMessageSchema.safeParse({ type: 'command', command: { type: 'bogus' } }).success).toBe(false)
     expect(clientMessageSchema.safeParse('hi').success).toBe(false)
   })
+  it('clientMessageSchema accepts the control overhaul commands', () => {
+    const snapshot = JSON.parse(JSON.stringify({ draft: s.draft, layers: s.layers, armed: s.armed, transition: s.transition, mattify: false, lastPreset: null }))
+    const preset = { id: 'preset-1', name: 'P', scope: { layers: true, armed: true, style: true, match: false, players: false, scores: false, transition: true, mattify: true }, layers: s.layers, armed: [], draft: s.draft, transition: 'normal', mattify: false }
+    const cmds: unknown[] = [
+      { type: 'addCueFromPreview', stackId: 'stack-1', name: 'N', take: 'cut', index: 0, scope: { scores: false }, action: 'nextRace' },
+      { type: 'duplicatePreset', id: 'preset-1', name: 'Copy' },
+      { type: 'makeCuePresetUnique', stackId: 'stack-1', cueId: 'cue-1' },
+      { type: 'setPreset', preset: JSON.parse(JSON.stringify(preset)), index: 0 },
+      { type: 'moveCueTo', stackId: 'stack-1', cueId: 'cue-1', index: 3 },
+      { type: 'restoreSnapshot', snapshot },
+      { type: 'setRoundName', round: 0, name: 'Semis' }, { type: 'setRoundName', round: 0, name: null },
+      { type: 'setRaceTrack', raceIndex: 3, trackId: 'water-park' }, { type: 'setRaceTrack', raceIndex: 0, trackId: null },
+      { type: 'setRace', patch: { trackOverrides: [null, 'water-park', null, null] } },
+    ]
+    for (const command of cmds) expect(clientMessageSchema.safeParse({ type: 'command', command }).success).toBe(true)
+    expect(clientMessageSchema.safeParse({ type: 'command', command: { type: 'moveCueTo', stackId: 'k', cueId: 'c' } }).success).toBe(false)
+    expect(clientMessageSchema.safeParse({ type: 'command', command: { type: 'restoreSnapshot', snapshot: {} } }).success).toBe(false)
+  })
 })

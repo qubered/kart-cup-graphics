@@ -15,6 +15,18 @@ describe('shortcutCommand', () => {
     expect(shortcutCommand(k('1'), s)).toEqual({ type: 'arm', outputIds: [] })
     expect(shortcutCommand(k('9'), s)).toBeNull()
   })
+  it('g fires GO on the current rundown, but not in Edit mode or in inputs', () => {
+    expect(shortcutCommand(k('g'), { ...s, goStackId: 'stack-1' })).toEqual({ type: 'goStack', stackId: 'stack-1' })
+    expect(shortcutCommand(k('G'), { ...s, goStackId: 'stack-1' })).toEqual({ type: 'goStack', stackId: 'stack-1' })
+    expect(shortcutCommand(k('g'), s)).toBeNull()
+    expect(shortcutCommand(k('g'), { ...s, goStackId: null })).toBeNull()
+    expect(shortcutCommand(k('g', 'INPUT'), { ...s, goStackId: 'stack-1' })).toBeNull()
+  })
+  it('Shift+B typed into a text field never fades to black', () => {
+    expect(shortcutCommand(k('B', 'INPUT', true), s)).toBeNull()
+    expect(shortcutCommand(k('B', 'TEXTAREA', true), s)).toBeNull()
+    expect(shortcutCommand(k('B', 'BODY', true), s)).toEqual({ type: 'ftb', on: true })
+  })
   it('hold ignored in inputs', () => {
     expect(shortcutCommand(k('h'), s)).toEqual({ type: 'hold', on: true })
     expect(shortcutCommand(k('h', 'INPUT'), s)).toBeNull()
@@ -22,7 +34,6 @@ describe('shortcutCommand', () => {
   })
   it('emergency shortcuts work in text fields', () => {
     expect(shortcutCommand(k('Escape', 'INPUT', true), s)).toEqual({ type: 'clear' })
-    expect(shortcutCommand(k('B', 'TEXTAREA', true), s)).toEqual({ type: 'ftb', on: true })
     expect(shortcutCommand(k('B', 'SELECT', true), { ...s, ftb: true })).toEqual({ type: 'ftb', on: false })
     expect(shortcutCommand(k('Escape'), s)).toBeNull()
   })

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { DEFAULT_QR } from './qr-default'
 import { DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN } from './tournament'
-import type { BracketConfig, Command, Cue, CueStack, Layers, Match, MatchesSceneConfig, OutputConfig, Preset, PresetScope, ShowData, ShowFile, ShowState, Tournament, ViewModel, WinScreenConfig } from './types'
+import type { BracketConfig, Command, Cue, CueStack, Layers, Match, MatchesSceneConfig, OutputConfig, Preset, PresetScope, PreviewSnapshot, ShowData, ShowFile, ShowState, Tournament, ViewModel, WinScreenConfig } from './types'
 
 export const colourIdSchema = z.enum(['red', 'blue', 'green', 'yellow', 'pink', 'orange', 'purple', 'cyan'])
 export const outputFormatSchema = z.enum(['wide', 'twin', 'hd'])
@@ -26,6 +26,7 @@ export const playerSchema = z.object({ name: z.string().max(200), characterId: z
 export const raceStateSchema = z.object({
   mode: z.enum(['cup', 'track']), cupId: z.string(), raceIndex: slotSchema, trackId: z.string(),
   raceNo: z.number().int().min(1).max(99).default(1), raceTotal: z.number().int().min(1).max(99).default(4),
+  trackOverrides: z.array(z.string().max(100).nullable()).length(4).optional(),
 })
 export const raceResultSchema = z.object({
   raceNo: z.number().int().min(1),
@@ -111,6 +112,16 @@ export const presetSchema: z.ZodType<Preset, z.ZodTypeDef, unknown> = z.object({
   mattify: z.boolean(),
 })
 
+/** The Preview side of the show (see PreviewSnapshot). */
+export const previewSnapshotSchema: z.ZodType<PreviewSnapshot, z.ZodTypeDef, unknown> = z.object({
+  draft: showDataSchema,
+  layers: z.record(layersSchema),
+  armed: z.array(z.string()),
+  transition: transitionSpeedSchema,
+  mattify: z.boolean(),
+  lastPreset: z.string().nullable(),
+})
+
 const cueScopeSchema = partialScopeSchema
 const cueScopePatchSchema = z.preprocess(migrateScope, z.object(Object.fromEntries(SCOPE_KEYS.map((k) => [k, z.boolean().nullable()]))).partial())
 const cueActionSchema = z.enum(['nextRace', 'nextMatch', 'resetStack'])
@@ -153,6 +164,7 @@ export const tournamentSchema: z.ZodType<Tournament, z.ZodTypeDef, unknown> = z.
   winScreen: winScreenConfigSchema.default(DEFAULT_WIN_SCREEN),
   matchesScene: matchesSceneConfigSchema.default(DEFAULT_MATCHES_SCENE),
   bracket: bracketConfigSchema.default(DEFAULT_BRACKET),
+  roundNames: z.record(z.string().regex(/^\d{1,2}$/), z.string().max(100)).optional(),
 })
 
 export const programFrameSchema = z.object({
@@ -198,12 +210,14 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setRace'), patch: raceStateSchema.partial() }),
   z.object({ type: z.literal('stepRace'), delta: z.union([z.literal(1), z.literal(-1)]) }),
   z.object({ type: z.literal('randomRace') }),
+  z.object({ type: z.literal('setRaceTrack'), raceIndex: slotSchema, trackId: z.string().min(1).max(100).nullable() }),
   z.object({
     type: z.literal('saveResults'), raceNo: z.number().int().min(1), trackId: z.string(),
     positions: z.array(z.number().int().min(0).max(12)).length(4),
     adjustments: z.array(z.number().finite()).length(4).optional(),
   }),
   z.object({ type: z.literal('setAdjustment'), index: slotSchema, value: z.number().finite() }),
+  z.object({ type: z.literal('clearRace'), raceNo: z.number().int().min(1) }),
   z.object({ type: z.literal('setEventText'), patch: eventTextSchema.partial() }),
   z.object({ type: z.literal('setNotice'), doc: noticeDocSchema }),
   z.object({ type: z.literal('setQr'), patch: z.object({ text: z.string().max(1000).optional(), items: z.tuple([qrItemSchema, qrItemSchema]).optional() }) }),
@@ -232,6 +246,12 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('savePreset'), name: z.string().trim().min(1).max(100), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('updatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), from: z.enum(['pvw', 'pgm']).optional(), scope: partialScopeSchema.optional() }),
   z.object({ type: z.literal('deletePreset'), id: z.string() }),
+  z.object({
+    type: z.literal('addCueFromPreview'), stackId: z.string(), name: z.string().trim().min(1).max(100), take: takeModeSchema.nullable(),
+    index: z.number().int().min(0).optional(), scope: partialScopeSchema.optional(), action: cueActionSchema.optional(),
+  }),
+  z.object({ type: z.literal('duplicatePreset'), id: z.string(), name: z.string().trim().min(1).max(100).optional() }),
+  z.object({ type: z.literal('setPreset'), preset: presetSchema, index: z.number().int().min(0).optional() }),
   z.object({ type: z.literal('recallPreset'), id: z.string(), take: takeModeSchema.optional() }),
   z.object({ type: z.literal('createStack'), name: z.string().trim().min(1).max(100) }),
   z.object({ type: z.literal('renameStack'), id: z.string(), name: z.string().trim().min(1).max(100) }),
@@ -241,6 +261,8 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('updateCue'), stackId: z.string(), cueId: z.string(), presetId: z.string().optional(), take: takeModeSchema.nullable().optional(), scope: cueScopePatchSchema.optional(), action: cueActionSchema.nullable().optional() }),
   z.object({ type: z.literal('removeCue'), stackId: z.string(), cueId: z.string() }),
   z.object({ type: z.literal('moveCue'), stackId: z.string(), cueId: z.string(), delta: z.union([z.literal(1), z.literal(-1)]) }),
+  z.object({ type: z.literal('moveCueTo'), stackId: z.string(), cueId: z.string(), index: z.number().int().min(0) }),
+  z.object({ type: z.literal('makeCuePresetUnique'), stackId: z.string(), cueId: z.string(), name: z.string().trim().min(1).max(100).optional() }),
   z.object({ type: z.literal('fireCue'), stackId: z.string(), cueId: z.string() }),
   z.object({ type: z.literal('selectCue'), stackId: z.string(), cueId: z.string() }),
   z.object({ type: z.literal('stepSelection'), stackId: z.string(), delta: z.union([z.literal(1), z.literal(-1)]) }),
@@ -267,11 +289,13 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('resetShow') }),
   z.object({ type: z.literal('resetOnAirClock') }),
   z.object({ type: z.literal('setMattify'), on: z.boolean() }),
+  z.object({ type: z.literal('restoreSnapshot'), snapshot: previewSnapshotSchema }),
   z.object({ type: z.literal('createTournament'), name: z.string().trim().min(1).max(100), template: z.enum(['bracket', 'empty']).optional() }),
   z.object({ type: z.literal('loadTournament'), id: z.string().nullable() }),
   z.object({ type: z.literal('renameTournament'), id: z.string(), name: z.string().trim().min(1).max(100) }),
   z.object({ type: z.literal('deleteTournament'), id: z.string() }),
   z.object({ type: z.literal('duplicateTournament'), id: z.string(), name: z.string().trim().min(1).max(100).optional(), resetScores: z.boolean().optional() }),
+  z.object({ type: z.literal('setRoundName'), round: z.number().int().min(0).max(20), name: z.string().trim().max(100).nullable() }),
   z.object({ type: z.literal('addMatch'), label: z.string().trim().min(1).max(100).optional(), round: z.number().int().min(0).max(20).optional() }),
   z.object({
     type: z.literal('updateMatch'), matchId: z.string(),

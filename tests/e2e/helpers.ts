@@ -1,8 +1,9 @@
 import WebSocket from 'ws'
+import type { Page } from '@playwright/test'
 import type { Command, ShowState } from '../../shared/types'
 import type { ServerMessage } from '../../shared/protocol'
 
-const WS_URL = process.env.E2E_WS ?? 'ws://localhost:8099/ws'
+const WS_URL = process.env.E2E_WS ?? `ws://localhost:${process.env.E2E_PORT ?? 8099}/ws`
 
 function open(): Promise<{ ws: WebSocket; next(type: ServerMessage['type']): Promise<ServerMessage> }> {
   return new Promise((resolve, reject) => {
@@ -54,3 +55,14 @@ export async function state(): Promise<ShowState> {
 }
 
 export async function resetShow(): Promise<void> { await command({ type: 'resetShow' }) }
+
+export type PageId = 'live' | 'race' | 'tour' | 'setup'
+/** Open a page of the control UI (top-bar navigation). Call after `page.goto('/control')`. */
+export async function openPage(page: Page, id: PageId): Promise<void> {
+  await page.locator(`[data-page=${id}]`).click()
+}
+/** Open Setup and one of its sections ('Text & Fonts' | 'Outputs' | 'Settings'). */
+export async function openSetup(page: Page, section: 'Text & Fonts' | 'Outputs' | 'Settings'): Promise<void> {
+  await openPage(page, 'setup')
+  await page.getByRole('tab', { name: section }).click()
+}

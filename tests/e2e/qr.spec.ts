@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { command, resetShow } from './helpers'
+import { command, resetShow, openSetup } from './helpers'
 
 test.beforeEach(async () => { await resetShow() })
 
@@ -27,7 +27,7 @@ for (const [out, style, path, codes] of CASES) {
 
 test('edit QR text and links on the Text & Fonts tab', async ({ page }) => {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Text & Fonts' }).click()
+  await openSetup(page, 'Text & Fonts')
   await page.locator('input[name=qrLabel0]').fill('Public')
   await page.locator('input[name=qrUrl1]').fill('https://internal.test/donate')
   await page.locator('textarea[name=qrText]').fill('Scan to donate')
