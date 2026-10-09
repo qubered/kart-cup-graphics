@@ -190,6 +190,7 @@ test('a saved race follows its map', async ({ page }) => {
   await openRace(page)
   await tapRace(page, [1, 2, 3, 4])
   await expect.poll(races).toHaveLength(1)
+  await expect(page.locator('[data-race-tile="0"]')).toHaveAttribute('data-state', 'done') // the page has the saved result before the map changes
   await page.locator('[data-map-select]').selectOption('shy-guy-falls')
   await expect.poll(async () => (await races())[0].trackId).toBe('shy-guy-falls')
   await page.locator('[data-undo]').last().click()

@@ -16,12 +16,12 @@
   let startY = 0
   let startH = 0
 
-  const current = () => value ?? natural()
+  // Everything starts from what is on screen: the stored value can be larger than the biggest useful pane.
+  const current = () => natural()
   function down(e: PointerEvent) {
     if (e.button !== 0) return
     e.preventDefault()
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-    ;(e.currentTarget as HTMLElement).focus()
     startY = e.clientY
     startH = current()
     dragging = true
@@ -54,6 +54,7 @@
 
 <style>
   .split { height: 14px; margin: -6px 0; display: grid; place-items: center; cursor: row-resize; touch-action: none; border-radius: 6px; flex: none; position: relative; z-index: 2; }
+  .split::before { content: ''; position: absolute; inset: -8px 0; }
   .split i { display: block; width: 56px; height: 4px; border-radius: 2px; background: #3a4455; }
   .split:hover i, .split:focus-visible i, .split.on i { background: var(--ui-accent); }
   .split:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 0; }

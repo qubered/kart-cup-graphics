@@ -5,23 +5,28 @@
   import Monitors from './centre/Monitors.svelte'
   import OutputTabs from './centre/OutputTabs.svelte'
   import Splitter from './centre/Splitter.svelte'
-  import { MIN_LOOKS, clampHeight, monitorsHeight } from './centre/layout'
+  import { MIN_LOOKS, clampHeight, monitorsHeight, monitorsStacked } from './centre/layout'
 
   let centre: HTMLElement
+  let centreH = $state(0)
+  let top = $state(0)
+  /** Tallest pane the column can spare while the Looks library keeps its minimum. */
+  const room = $derived(Math.max(0, centreH - top - MIN_LOOKS - 12 - 14))
+  /** Tallest useful pane (reported by the monitors: the biggest they can be at the full column width). */
+  let limit = $state(0)
   const pane = () => centre?.querySelector<HTMLElement>('[data-monitors-pane]') ?? null
-  /** Tallest monitors pane that still leaves the Looks library its minimum height. */
-  function max(): number {
-    const p = pane()
-    if (!centre || !p) return 600
-    const top = p.getBoundingClientRect().top - centre.getBoundingClientRect().top
-    return centre.clientHeight - top - MIN_LOOKS - 12 - 14
-  }
+  const max = () => (limit > 0 ? limit : room)
   const natural = () => pane()?.getBoundingClientRect().height ?? 200
   function set(v: number | null) { monitorsHeight.set(v === null ? null : clampHeight(v, max())) }
-
-  // A smaller window must not leave the Looks library squeezed: pull a too-tall pane back in.
+  function measure() {
+    const p = pane()
+    if (!centre || !p) return
+    top = p.offsetTop
+    centreH = centre.clientHeight
+  }
   onMount(() => {
-    const ro = new ResizeObserver(() => { if ($monitorsHeight !== null) set($monitorsHeight) })
+    measure()
+    const ro = new ResizeObserver(measure)
     ro.observe(centre)
     return () => ro.disconnect()
   })
@@ -29,7 +34,7 @@
 
 <section class="centre" aria-label="Monitors and Looks" bind:this={centre}>
   <OutputTabs />
-  <Monitors height={$monitorsHeight} />
+  <Monitors height={$monitorsHeight} stacked={$monitorsStacked} {room} onlimit={(n) => (limit = n)} />
   <Splitter value={$monitorsHeight} {max} {natural} onchange={set} />
   <LooksLibrary />
 </section>

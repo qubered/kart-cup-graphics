@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { command, resetShow, state } from './helpers'
 
-// The divider between the monitors and the Looks library: drag, keys, double-click, remembered.
+// The divider between the monitors and the Looks library, and the Side by side / Stacked switch: drag, keys, remembered.
 
 test.beforeEach(resetShow)
 
@@ -9,7 +9,14 @@ const pane = (page: Page) => page.locator('[data-monitors-pane]')
 const split = (page: Page) => page.locator('[data-splitter]')
 const height = async (page: Page) => (await pane(page).boundingBox())!.height
 const looksTop = async (page: Page) => (await page.locator('[data-library]').boundingBox())!.y
+const pv = (page: Page) => page.locator('[data-monitor=preview]').boundingBox().then((b) => b!)
+const pg = (page: Page) => page.locator('[data-monitor=program]').boundingBox().then((b) => b!)
 
+async function fresh(page: Page) {
+  await page.goto('/control')
+  await page.evaluate(() => { localStorage.removeItem('kcg.control.monitorsHeight'); localStorage.removeItem('kcg.control.monitorsStacked') })
+  await page.reload()
+}
 async function drag(page: Page, dy: number) {
   const b = (await split(page).boundingBox())!
   const x = b.x + b.width / 2, y = b.y + b.height / 2
@@ -18,63 +25,63 @@ async function drag(page: Page, dy: number) {
   await page.mouse.up()
 }
 
-test('dragging the divider down makes the monitors bigger and the Looks library smaller, and it is remembered', async ({ page }) => {
-  await page.goto('/control'); await page.evaluate(() => localStorage.removeItem('kcg.control.monitorsHeight'))
-  await page.reload()
+test('dragging up gives the Looks library the room, down gives it back but never past the full-width monitors; remembered', async ({ page }) => {
+  await fresh(page)
   const h0 = await height(page), l0 = await looksTop(page)
-  await drag(page, 120)
+  await drag(page, -70)
   const h1 = await height(page)
-  expect(h1).toBeGreaterThan(h0 + 100)
-  expect(await looksTop(page)).toBeGreaterThan(l0 + 100)
+  expect(h1).toBeLessThan(h0 - 50)
+  expect(await looksTop(page)).toBeLessThan(l0 - 50)
+  const a = await pv(page), b = await pg(page)
+  expect(Math.abs(a.y - b.y)).toBeLessThan(2) // still side by side
+  expect(a.width).toBeGreaterThan(200)
   await page.reload()
   expect(Math.abs((await height(page)) - h1)).toBeLessThan(2)
+  await drag(page, 600)
+  expect(Math.abs((await height(page)) - h0)).toBeLessThan(2) // no blank space below the monitors
 })
 
-test('dragging up shrinks the monitors, which stay in proportion and side by side', async ({ page }) => {
-  await page.goto('/control'); await page.evaluate(() => localStorage.removeItem('kcg.control.monitorsHeight'))
-  await page.reload()
+test('Stacked puts Preview above Program as big as the column allows, Side by side goes back', async ({ page }) => {
+  await fresh(page)
   const h0 = await height(page)
-  await drag(page, -60)
-  expect(await height(page)).toBeLessThan(h0 - 40)
-  const pv = (await page.locator('[data-monitor=preview]').boundingBox())!, pg = (await page.locator('[data-monitor=program]').boundingBox())!
-  expect(Math.abs(pv.y - pg.y)).toBeLessThan(2)
-  expect(pv.width).toBeGreaterThan(200)
+  await page.locator('[data-arrange=stack]').click()
+  const a = await pv(page), b = await pg(page)
+  expect(b.y).toBeGreaterThan(a.y + a.height - 2)
+  expect(await height(page)).toBeGreaterThan(h0 + 100)
+  expect(a.width).toBeGreaterThan(900)
+  expect((await page.locator('[data-library]').boundingBox())!.height).toBeGreaterThanOrEqual(140)
+  await page.reload()
+  expect((await pg(page)).y).toBeGreaterThan((await pv(page)).y + 100) // remembered
+  await page.locator('[data-arrange=side]').click()
+  const c = await pv(page), d = await pg(page)
+  expect(Math.abs(c.y - d.y)).toBeLessThan(2)
+  expect(Math.abs((await height(page)) - h0)).toBeLessThan(2)
 })
 
-test('a tall pane stacks the wide monitors, a short one puts them side by side again', async ({ page }) => {
-  await page.goto('/control'); await page.evaluate(() => localStorage.removeItem('kcg.control.monitorsHeight'))
-  await page.reload()
-  await drag(page, 400)
-  const pv = (await page.locator('[data-monitor=preview]').boundingBox())!, pg = (await page.locator('[data-monitor=program]').boundingBox())!
-  expect(pg.y).toBeGreaterThan(pv.y + pv.height - 2)
-  await split(page).dblclick()
-  const a = (await page.locator('[data-monitor=preview]').boundingBox())!, b = (await page.locator('[data-monitor=program]').boundingBox())!
-  expect(Math.abs(a.y - b.y)).toBeLessThan(2)
-})
-
-test('the Looks library always keeps room, whatever the drag', async ({ page }) => {
-  await page.goto('/control'); await page.evaluate(() => localStorage.removeItem('kcg.control.monitorsHeight'))
-  await page.reload()
+test('stacked monitors shrink with the divider and the Looks library always keeps room', async ({ page }) => {
+  await fresh(page)
+  await page.locator('[data-arrange=stack]').click()
+  const w0 = (await pv(page)).width
+  await drag(page, -150)
+  expect((await pv(page)).width).toBeLessThan(w0 - 100)
   await drag(page, 2000)
-  const looks = (await page.locator('[data-library]').boundingBox())!
-  expect(looks.height).toBeGreaterThanOrEqual(140)
+  expect((await page.locator('[data-library]').boundingBox())!.height).toBeGreaterThanOrEqual(140)
 })
 
-test('keys: arrows resize, Home and End jump, Esc resets to automatic; Enter is not swallowed', async ({ page }) => {
-  await page.goto('/control'); await page.evaluate(() => localStorage.removeItem('kcg.control.monitorsHeight'))
-  await page.reload()
+test('keys: arrows resize, Home and End jump, Esc resets; the divider swallows only those keys', async ({ page }) => {
+  await fresh(page)
   const auto = await height(page)
   await split(page).focus()
-  await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowUp'); await page.keyboard.press('ArrowUp')
   const h1 = await height(page)
-  expect(h1).toBeGreaterThan(auto + 30)
-  await page.keyboard.press('Shift+ArrowUp')
-  expect(await height(page)).toBeLessThan(h1 - 30)
+  expect(h1).toBeLessThan(auto - 30)
+  await page.keyboard.press('Shift+ArrowDown')
+  expect(await height(page)).toBeGreaterThan(h1 + 30)
   await page.keyboard.press('Home')
   expect(await height(page)).toBeLessThan(140)
   await page.keyboard.press('End')
-  expect(await height(page)).toBeGreaterThan(auto)
-  await page.keyboard.press('Escape')
+  expect(Math.abs((await height(page)) - auto)).toBeLessThan(2)
+  await page.keyboard.press('ArrowUp'); await page.keyboard.press('Escape')
   expect(Math.abs((await height(page)) - auto)).toBeLessThan(2)
 })
 
@@ -91,7 +98,8 @@ test('resizing never changes the show', async ({ page }) => {
   await page.goto('/control')
   const snap = async () => { const s = await state(); return JSON.stringify({ d: s.draft, l: s.layers, p: s.presets, a: s.armed, st: s.stacks }) }
   const before = await snap()
-  await drag(page, 80)
-  await split(page).focus(); await page.keyboard.press('ArrowDown')
+  await drag(page, -80)
+  await split(page).focus(); await page.keyboard.press('ArrowUp')
+  await page.locator('[data-arrange=stack]').click()
   expect(await snap()).toBe(before)
 })

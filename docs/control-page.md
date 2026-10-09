@@ -8,7 +8,7 @@ Top bar: **Live · Race · Tournament · Setup**. The transport (arm outputs, CU
 
 | Page | What it does |
 |---|---|
-| **Live** | Left: the **rundown** (cue list, Run / Edit lock, GO). Centre: output tabs, Preview and Program side by side, the **Looks library**. Right: the selected screen's scenes, then that scene's options, Background and Overlays. |
+| **Live** | Left: the **rundown** (cue list, Run / Edit lock, GO). Centre: output tabs, Preview and Program, the **Looks library**. Right: the selected screen's scenes, then that scene's options, Background and Overlays. |
 | **Race** | Operate the live race: the race tiles and map (per-race override), the players and finishing places, the scoreboard, Next race and (in a tournament) Next match. Never changes the graphics. |
 | **Tournament** | Set up and manage a tournament: outline of rounds on the left, one page per round (match tabs, settings, maps, players, results, winner override), Overview with readiness checks, Graphics config, and the tournament library. |
 | **Setup** | Text and fonts (event title, notice board, QR), Outputs, Settings. |
@@ -18,7 +18,8 @@ Top bar: **Live · Race · Tournament · Setup**. The transport (arm outputs, CU
 - A **Look** is a saved preset (the data model still calls it a preset). It captures everything: every screen's layers, arming, show data, scores, speed and Mattify. The recall options choose what comes back: **Look**, **Outputs armed**, **Race & players**, **Scores** (Advanced shows all 8 flags). New Looks default to Look + Outputs armed on, Race & players and Scores off; while a tournament is active race, players and scores are never recalled.
 - Tapping a Look loads it into **Preview only**. The header shows *Preview: X · MODIFIED / SAVED*; **Update "X"** needs two taps and says how many cues it affects; **Save as new…** opens the form in the right bar. ⋯ on a tile: Recalls…, Rename, Duplicate, ＋ Cue, Delete (two taps).
 - The **rundown** is a cue stack. Run mode: tap a cue to put it on standby (it loads into Preview), **GO** (or `G`) fires it with the cue's Cut / Auto and any *then next race / next match / reset* action. Edit mode locks GO and allows drag reorder, remove, per-cue Look / Take / After / Recalls, **Add cue from Preview** (saves a Look and adds the cue in one step), and adding Looks by drag or ＋.
-- **Undo** (toast button or Ctrl/Cmd+Z): loads into Preview, saves, overwrites, deletes, cue edits and the like. Takes and GO are never undoable. Destructive actions are two-tap, never `confirm()`.
+- **Undo** (the top-bar **Undo** button or Ctrl/Cmd+Z): loads into Preview, saves, overwrites, deletes, cue edits and the like. Takes and GO are never undoable. Destructive actions are two-tap, never `confirm()`. There are no confirmation toasts; the only pop-up is a red notice when the server refuses a command.
+- **Resizing the monitors:** drag the divider between Preview/Program and the Looks library (or focus it and use the arrow keys, Home, End; Esc or double-click resets). It stops where the monitors fill the column, so there is never blank space. **Side by side / Stacked** (next to the output tabs) puts Preview above Program for the biggest picture. Both choices are remembered in this browser.
 
 ## Keys
 
@@ -26,7 +27,7 @@ Top bar: **Live · Race · Tournament · Setup**. The transport (arm outputs, CU
 
 ## Code map
 
-- `web/src/control/Control.svelte` (shell), `TopBar.svelte`, `MasterBar.svelte`, `ui.ts` (page, Run/Edit, toasts, undo), `ui/` (`ui.css` primitives with a `u-` prefix, `drag.ts`, `twotap.svelte.ts`).
+- `web/src/control/Control.svelte` (shell), `TopBar.svelte`, `MasterBar.svelte`, `ui.ts` (page, Run/Edit, error notice, undo), `ui/` (`ui.css` primitives with a `u-` prefix, `drag.ts`, `twotap.svelte.ts`).
 - `live/RundownRail.svelte` + `live/rail/`, `live/Centre.svelte` + `live/centre/`, `live/SceneEditor.svelte` + `live/scene/`, `race/`, `tournament/`, `setup/`.
 - Commands added for this UI (all in `shared/types.ts`): `addCueFromPreview`, `duplicatePreset`, `makeCuePresetUnique`, `setPreset`, `moveCueTo`, `restoreSnapshot`, `setRoundName`, `setRaceTrack`, `clearRace`. Existing commands are unchanged, so Companion keeps working.
 
@@ -40,4 +41,4 @@ Top bar: **Live · Race · Tournament · Setup**. The transport (arm outputs, CU
 
 ## Screenshots
 
-`docs/screenshots/control/`: `live.png`, `live-modified.png` (Preview changed: MODIFIED, Update / Save as new), `live-edit.png` (Edit mode: drag grips, ＋ on Looks, locked GO), `race.png`, `tournament.png`, `setup.png`. Captured from the running app at 1920×1080 with a seeded show.
+`docs/screenshots/control/`: `live.png`, `live-modified.png` (Preview changed: MODIFIED, Update / Save as new), `live-edit.png` (Edit mode: drag grips, ＋ on Looks, locked GO), `live-stacked.png` and `live-resized.png` (Stacked, and the divider dragged up), `race.png`, `tournament.png`, `setup.png`. Captured from the running app at 1920×1080 with a seeded show.
