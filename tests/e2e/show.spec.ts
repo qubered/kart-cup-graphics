@@ -173,6 +173,7 @@ test('next race: disabled until the race is complete, then steps to the next map
 test('change the map for the live race and go back to the cup order', async ({ page }) => {
   await openRace(page)
   await page.locator('[data-race-tile="2"]').click()
+  await expect(page.locator('[data-race-tile="2"]')).toHaveAttribute('aria-pressed', 'true') // the page shows race 3 as live before its map is changed
   await expect(page.locator('[data-map-reset]')).toHaveCount(0)
   await page.locator('[data-map-select]').selectOption('toad-harbor')
   await expect.poll(async () => (await state()).draft.race).toMatchObject({ raceIndex: 2, trackId: 'toad-harbor', trackOverrides: [null, null, 'toad-harbor', null] })
@@ -235,6 +236,7 @@ test('single-track mode: race number, track, results and next race', async ({ pa
   await expect.poll(races).toEqual([{ raceNo: 1, trackId: 'water-park', positions: [3, 1, 2, 4] }])
   await page.locator('[data-next-race]').click()
   await expect.poll(async () => (await state()).draft.race).toMatchObject({ mode: 'track', raceNo: 2, raceTotal: 2, trackId: 'water-park' })
+  await expect(page.locator('[data-race-tile="1"]')).toHaveAttribute('aria-pressed', 'true') // the page is on race 2 before its track is changed
   await page.locator('[data-map-select]').selectOption('toad-harbor')
   await expect.poll(async () => (await state()).draft.race.trackId).toBe('toad-harbor')
   await tapRace(page, [1, 2, 3, 4])
