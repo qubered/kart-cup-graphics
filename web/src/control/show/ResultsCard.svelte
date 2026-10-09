@@ -3,6 +3,7 @@
   import type { ShowState } from '../../../../shared/types'
   import { colourHex } from '../../../../shared/palette'
   import { pointsFor, totals } from '../../../../shared/scoring'
+  import { effectiveTrackId } from '../../../../shared/tournament'
   import { duplicatePositions } from '../catalog'
   import { send } from '../store'
 
@@ -17,9 +18,7 @@
   const raceNo = $derived(picked ?? nextNo)
 
   const existing = $derived(scores.races.find((r) => r.raceNo === raceNo))
-  const trackId = $derived(
-    existing?.trackId ?? (race.mode === 'cup' ? (catalog.tracksOfCup(race.cupId)[race.raceIndex]?.id ?? '') : race.trackId),
-  )
+  const trackId = $derived(existing?.trackId ?? effectiveTrackId(catalog, race, race.raceIndex))
   const trackName = $derived(catalog.track(trackId)?.name ?? '?')
 
   let pos: number[] = $state([0, 0, 0, 0])

@@ -12,7 +12,11 @@ export type TakeMode = 'cut' | 'auto'
 export interface SafeArea { top: number; right: number; bottom: number; left: number }
 export interface OutputConfig { id: string; name: string; format: OutputFormat; safeArea: SafeArea; graphicsScale: number }
 export interface Player { name: string; characterId: string; colour: ColourId }
-export interface RaceState { mode: 'cup' | 'track'; cupId: string; raceIndex: 0 | 1 | 2 | 3; trackId: string; raceNo: number; raceTotal: number }
+export interface RaceState {
+  mode: 'cup' | 'track'; cupId: string; raceIndex: 0 | 1 | 2 | 3; trackId: string; raceNo: number; raceTotal: number
+  /** Cup mode: a hand-picked track per race, aligned to `raceIndex` (length 4). null / absent = the cup's own order. `trackId` always mirrors the effective track of `raceIndex`. */
+  trackOverrides?: (string | null)[]
+}
 export interface RaceResult { raceNo: number; trackId: string; positions: number[] }
 export interface EventText { preTitle: string; title: string; titleAccent: string; watermark: string; holdMessage: string }
 export interface Typography {
@@ -91,6 +95,8 @@ export interface Tournament {
   winScreen: WinScreenConfig
   matchesScene: MatchesSceneConfig
   bracket: BracketConfig
+  /** Optional display names per round, keyed by String(round). Absent = "Round n" (see roundLabel). Cosmetic only. */
+  roundNames?: Record<string, string>
 }
 
 export interface FontStacks { eventTitle: string; headings: string; names: string; labels: string }
@@ -156,6 +162,15 @@ export interface Preset {
   layers: Record<string, Layers>; armed: string[]
   draft: ShowData; transition: TransitionSpeed; mattify: boolean
 }
+/** The Preview side of the show, as one value: what a look load (recall) replaces. Used to undo a load. It never includes Program. */
+export interface PreviewSnapshot {
+  draft: ShowData
+  layers: Record<string, Layers>
+  armed: string[]
+  transition: TransitionSpeed
+  mattify: boolean
+  lastPreset: string | null
+}
 /** One step in a stack: recall a preset, then cut/auto it to air (take: null = recall only, take by hand). The same preset may appear in many cues. */
 export type CueAction = 'nextRace' | 'nextMatch' | 'resetStack'
 export interface Cue { id: string; presetId: string; take: TakeMode | null; scope?: Partial<PresetScope>; /** Runs after the cue fires: advance the race, advance the match (and reset the stacks), or reset this stack. */ action?: CueAction }
@@ -187,6 +202,8 @@ export type Command =
   | { type: 'setRace'; patch: Partial<RaceState> }
   | { type: 'stepRace'; delta: 1 | -1 }
   | { type: 'randomRace' }
+  /** Cup mode, live draft: set (or, with null, clear) the track for race `raceIndex`. Picking the cup's own track for that race also clears it. */
+  | { type: 'setRaceTrack'; raceIndex: 0 | 1 | 2 | 3; trackId: string | null }
   | { type: 'saveResults'; raceNo: number; trackId: string; positions: number[]; adjustments?: number[] }
   | { type: 'setAdjustment'; index: 0 | 1 | 2 | 3; value: number }
   | { type: 'setEventText'; patch: Partial<EventText> }
@@ -197,6 +214,12 @@ export type Command =
   | { type: 'savePreset'; name: string; from?: PresetSource; scope?: Partial<PresetScope> }
   | { type: 'updatePreset'; id: string; name?: string; from?: PresetSource; scope?: Partial<PresetScope> }
   | { type: 'deletePreset'; id: string }
+  /** Save Preview as a new preset and append (or insert at `index`) a cue for it, in one step. `scope` is the new preset's scope (default as for savePreset). The new preset becomes `lastPreset`. */
+  | { type: 'addCueFromPreview'; stackId: string; name: string; take: TakeMode | null; index?: number; scope?: Partial<PresetScope>; action?: CueAction }
+  /** Deep copy of a preset with a new id, placed right after the source. Default name `<name> copy` (then ` 2`, ` 3` ... while taken). lastPreset is unchanged. */
+  | { type: 'duplicatePreset'; id: string; name?: string }
+  /** Upsert a whole preset by id: replace in place if it exists, else insert at `index` (default end). Unknown outputs in `layers` / `armed` are dropped. Does not touch cues or lastPreset. */
+  | { type: 'setPreset'; preset: Preset; index?: number }
   | { type: 'recallPreset'; id: string; take?: TakeMode }
   | { type: 'createStack'; name: string }
   | { type: 'renameStack'; id: string; name: string }
@@ -206,6 +229,10 @@ export type Command =
   | { type: 'updateCue'; stackId: string; cueId: string; presetId?: string; take?: TakeMode | null; scope?: CueScopePatch; action?: CueAction | null }
   | { type: 'removeCue'; stackId: string; cueId: string }
   | { type: 'moveCue'; stackId: string; cueId: string; delta: 1 | -1 }
+  /** Move a cue so it ends up at `index` (clamped to the stack). `current` / `selected` follow the cue by id. */
+  | { type: 'moveCueTo'; stackId: string; cueId: string; index: number }
+  /** Duplicate the cue's preset (as duplicatePreset) and re-point only this cue at the copy. The cue keeps its position, take, action and scope override. */
+  | { type: 'makeCuePresetUnique'; stackId: string; cueId: string; name?: string }
   | { type: 'selectCue'; stackId: string; cueId: string }
   | { type: 'stepSelection'; stackId: string; delta: 1 | -1 }
   | { type: 'goStack'; stackId: string }
@@ -223,6 +250,8 @@ export type Command =
   | { type: 'resetScores' } | { type: 'resetShow' } | { type: 'resetOnAirClock' }
   | { type: 'registerFont'; family: string; file: string }
   | { type: 'setMattify'; on: boolean }
+  /** Put the Preview side back exactly as captured (never touches Program). Unknown output ids are ignored; a dangling lastPreset becomes null. */
+  | { type: 'restoreSnapshot'; snapshot: PreviewSnapshot }
   // tournaments. All except create/load/rename/delete act on the active tournament.
   | { type: 'createTournament'; name: string; template?: 'bracket' | 'empty' }
   | { type: 'loadTournament'; id: string | null }
@@ -230,6 +259,8 @@ export type Command =
   | { type: 'deleteTournament'; id: string }
   /** Deep copy with fresh tournament and match ids; the copy becomes active. resetScores clears races/adjustments/statuses/overrides but keeps players, cups and labels. */
   | { type: 'duplicateTournament'; id: string; name?: string; resetScores?: boolean }
+  /** Name a round (key String(round)). null or an empty string removes the name. Acts on the active tournament. */
+  | { type: 'setRoundName'; round: number; name: string | null }
   | { type: 'addMatch'; label?: string; round?: number }
   | { type: 'updateMatch'; matchId: string; patch: MatchPatch }
   | { type: 'removeMatch'; matchId: string }

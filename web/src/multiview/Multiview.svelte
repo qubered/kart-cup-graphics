@@ -6,6 +6,7 @@
   import { standings } from '../../../shared/scoring'
   import { indexCatalog, type Catalog, type CatalogIndex } from '../../../shared/catalog'
   import { colourHex } from '../../../shared/palette'
+  import { effectiveTrackId } from '../../../shared/tournament'
   import type { ControlPayload, ServerMessage } from '../../../shared/protocol'
   import { multiviewLayout, MV_W, MV_H, type Tile } from './layout'
   import { cueWindow } from './cues'
@@ -52,7 +53,7 @@
   const trackId = $derived.by(() => {
     if (!st) return ''
     const r = st.draft.race
-    return r.mode === 'cup' ? (catalog?.tracksOfCup(r.cupId)[r.raceIndex]?.id ?? '') : r.trackId
+    return catalog ? effectiveTrackId(catalog, r, r.raceIndex) : r.trackId
   })
   const trackName = $derived(catalog?.track(trackId)?.name ?? '')
   const raceNow = $derived.by(() => {
@@ -69,7 +70,7 @@
     if (!st) return '—'
     const r = st.draft.race
     if (r.mode !== 'cup' || r.raceIndex >= 3) return '—'
-    return catalog?.tracksOfCup(r.cupId)[r.raceIndex + 1]?.name ?? '—'
+    return catalog ? (catalog.track(effectiveTrackId(catalog, r, r.raceIndex + 1))?.name ?? '—') : '—'
   })
   const rows = $derived(st ? standings(st.draft.scores) : [])
 

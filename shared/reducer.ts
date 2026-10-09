@@ -1,8 +1,8 @@
 import type { CatalogIndex } from './catalog'
 import { createDefaultShowData, createDefaultState, DEFAULT_PRESET_SCOPE, emptyLayers, emptyProgram, LAYOUT_ONLY_PRESET_SCOPE } from './defaults'
-import { activeTournament, DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN, liveMatches, recalcTournament } from './tournament'
+import { activeTournament, DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN, effectiveTrackId, liveMatches, recalcTournament } from './tournament'
 import { FORMAT_CANVAS, deriveView, isSceneSupported } from './view'
-import type { Command, CueScopePatch, CueStack, Layers, Match, OutputConfig, Preset, PresetScope, PresetSource, ProgramFrame, RaceState, ShowData, ShowState, Tournament, Typography } from './types'
+import type { Command, Cue, CueAction, CueScopePatch, CueStack, Layers, Match, OutputConfig, Preset, PresetScope, PresetSource, ProgramFrame, RaceState, ShowData, ShowState, TakeMode, Tournament, Typography } from './types'
 
 export class CommandError extends Error {
   constructor(message: string) {
@@ -67,12 +67,35 @@ function liveScores(state: ShowState, ctx: ReduceContext): ShowState {
   return program === state.program ? state : { ...state, program }
 }
 
+/** Hand-picked tracks, tidied: always length 4, an entry equal to the cup's own track is dropped (null), and all-null (or undefined) means the property is absent. */
+function tidyOverrides(race: RaceState, ctx: ReduceContext): RaceState {
+  const cur = race.trackOverrides
+  const order = ctx.catalog.cup(race.cupId)?.tracks
+  const list = cur ? Array.from({ length: 4 }, (_, i) => (cur[i] && cur[i] !== order?.[i] ? cur[i] : null)) : []
+  const out: RaceState = { ...race }
+  if (list.some((x) => x !== null)) out.trackOverrides = list
+  else delete out.trackOverrides
+  return out
+}
+
+/** Cup mode: `trackId` mirrors the effective track of the current race (hand-picked or the cup's own). */
+function withEffectiveTrack(race: RaceState, ctx: ReduceContext): RaceState {
+  if (race.mode !== 'cup') return race
+  const t = effectiveTrackId(ctx.catalog, race, race.raceIndex)
+  return t && t !== race.trackId ? { ...race, trackId: t } : race
+}
+
 function racePatch(cur: RaceState, patch: Partial<RaceState>, ctx: ReduceContext): RaceState {
   let race: RaceState = { ...cur, ...patch }
+  // A different cup has different maps, so hand-picked ones no longer apply (unless the same patch sets them).
+  if ('cupId' in patch && patch.cupId !== cur.cupId && !('trackOverrides' in patch)) delete race.trackOverrides
+  race = tidyOverrides(race, ctx)
   if (race.mode === 'cup' && !('trackId' in patch)) {
-    const t = ctx.catalog.cup(race.cupId)?.tracks[race.raceIndex]
-    if (t) race = { ...race, trackId: t }
-    if (!('raceNo' in patch) && !('raceTotal' in patch)) {
+    race = withEffectiveTrack(race, ctx)
+    // Setting only the maps leaves the race counter alone.
+    const keys = Object.keys(patch)
+    const mapsOnly = keys.length > 0 && keys.every((k) => k === 'trackOverrides')
+    if (!('raceNo' in patch) && !('raceTotal' in patch) && !mapsOnly) {
       race = { ...race, raceNo: race.raceIndex + 1, raceTotal: ctx.catalog.cup(race.cupId)?.tracks.length ?? race.raceTotal }
     }
   }
@@ -184,6 +207,37 @@ function patchCueScope(cur: Partial<PresetScope> | undefined, patch: CueScopePat
 }
 const mergeScope = (base: PresetScope, patch: Partial<PresetScope> | undefined): PresetScope => ({ ...base, ...patch })
 
+/** Save Preview (or Program) as a new preset at the end of the list. During a tournament new presets default to layout-only (no match data), so one stack serves every match. */
+function savePresetFrom(state: ShowState, name: string, from: PresetSource, scopePatch: Partial<PresetScope> | undefined, ctx: ReduceContext): ShowState {
+  const scope = mergeScope(activeTournament(state) ? LAYOUT_ONLY_PRESET_SCOPE : DEFAULT_PRESET_SCOPE, scopePatch)
+  const preset: Preset = { id: nextId('preset', state.presets.map((p) => p.id)), name, scope, ...snapshot(state, from, scope, ctx) }
+  return { ...state, presets: [...state.presets, preset], lastPreset: preset.id }
+}
+
+const NAME_MAX = 100
+/** "<name> copy", then "<name> copy 2", "<name> copy 3" ... while a preset already has that name. Kept within the name limit. */
+function copyName(presets: Preset[], name: string): string {
+  const make = (suffix: string) => `${name.slice(0, NAME_MAX - suffix.length)}${suffix}`
+  let candidate = make(' copy')
+  for (let n = 2; presets.some((p) => p.name === candidate); n++) candidate = make(` copy ${n}`)
+  return candidate
+}
+/** Deep copy of a preset with a new id, inserted right after the source. */
+function duplicatePresetOf(state: ShowState, src: Preset, name: string | undefined): { state: ShowState; copy: Preset } {
+  const copy: Preset = { ...structuredClone(src), id: nextId('preset', state.presets.map((p) => p.id)), name: (name?.trim() || copyName(state.presets, src.name)).slice(0, NAME_MAX) }
+  const at = state.presets.findIndex((p) => p.id === src.id)
+  return { state: { ...state, presets: [...state.presets.slice(0, at + 1), copy, ...state.presets.slice(at + 1)] }, copy }
+}
+
+/** Insert a new cue (fresh id, unique across all stacks) at `index` (default end). */
+function insertCue(state: ShowState, stackId: string, presetId: string, take: TakeMode | null, index: number | undefined, scope: Partial<PresetScope> | undefined, action: CueAction | undefined): ShowState {
+  const cue: Cue = { id: nextId('cue', state.stacks.flatMap((k) => k.cues.map((c) => c.id))), presetId, take, ...(scope ? { scope } : {}), ...(action ? { action } : {}) }
+  return withStack(state, stackId, (k) => {
+    const at = Math.min(index ?? k.cues.length, k.cues.length)
+    return { ...k, cues: [...k.cues.slice(0, at), cue, ...k.cues.slice(at)] }
+  })
+}
+
 /** Apply the in-scope parts of a preset to the draft (Preview). Outputs that no longer exist are skipped; outputs added since keep their layers.
  *  Optionally take to air afterwards, using the preset's transition speed. */
 function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | undefined, ctx: ReduceContext, override?: Partial<PresetScope>): ShowState {
@@ -254,10 +308,11 @@ function editMatchData(state: ShowState, matchId: string, fn: (d: ShowData) => S
 /** A fresh match: the show's current players and race, no scores. */
 function newMatchData(draft: ShowData, ctx: ReduceContext): ShowData {
   const d = structuredClone(draft)
-  return { ...d, race: racePatch(d.race, { raceIndex: 0 }, ctx), scores: blankScores() }
+  // a new match starts on the cup's own maps
+  return { ...d, race: racePatch(d.race, { raceIndex: 0, trackOverrides: undefined }, ctx), scores: blankScores() }
 }
 /** Make `matchId` the active match: sync the draft into the old one (recalc does this), then load the new match's players, race and scores. */
-function switchMatch(state: ShowState, matchId: string, markDone: boolean): ShowState {
+function switchMatch(state: ShowState, matchId: string, markDone: boolean, ctx: ReduceContext): ShowState {
   const t0 = requireTournament(state)
   requireMatch(t0, matchId)
   const synced = recalcTournament(t0, state.draft)
@@ -265,7 +320,7 @@ function switchMatch(state: ShowState, matchId: string, markDone: boolean): Show
   if (markDone) t = withMatch(t, t.activeMatchId, (m) => (m.data.scores.races.length ? { ...m, status: 'done' } : m))
   t = { ...t, activeMatchId: matchId }
   const d = structuredClone(t.matches.find((m) => m.id === matchId)!.data)
-  return withTournament({ ...state, draft: { ...synced.draft, players: d.players, race: d.race, scores: d.scores } }, t)
+  return withTournament({ ...state, draft: { ...synced.draft, players: d.players, race: withEffectiveTrack(d.race, ctx), scores: d.scores } }, t)
 }
 /** Stacks that are in use go back to their first cue (standing by, Preview loaded with its layout). */
 function resetActiveStacks(state: ShowState, ctx: ReduceContext): ShowState {
@@ -308,13 +363,24 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
         if (!cands.length) cands = catalog.cups
         if (!cands.length) return state
         const cup = pick(cands, ctx.random)
-        return applyRace(state, { cupId: cup.id, raceIndex: 0, trackId: cup.tracks[0] }, ctx)
+        return applyRace(state, { cupId: cup.id, raceIndex: 0, trackId: cup.tracks[0], trackOverrides: undefined }, ctx)
       }
       let cands = catalog.tracks.filter((t) => !played.has(t.id))
       if (!cands.length) cands = catalog.tracks
       if (!cands.length) return state
       const t = pick(cands, ctx.random)
       return applyRace(state, { cupId: t.cupId, trackId: t.id }, ctx)
+    }
+    case 'setRaceTrack': {
+      const race = state.draft.race
+      if (race.mode !== 'cup') throw new CommandError('Per-race maps only apply in cup mode')
+      if (![0, 1, 2, 3].includes(cmd.raceIndex)) throw new CommandError(`Invalid race index: ${cmd.raceIndex}`)
+      if (cmd.trackId !== null && !ctx.catalog.track(cmd.trackId)) throw new CommandError(`Unknown track: ${cmd.trackId}`)
+      const overrides = Array.from({ length: 4 }, (_, i) => race.trackOverrides?.[i] ?? null)
+      overrides[cmd.raceIndex] = cmd.trackId
+      // racePatch tidies the list (the cup's own track counts as no override) and re-mirrors trackId
+      const next = racePatch(race, { trackOverrides: overrides }, ctx)
+      return JSON.stringify(next) === JSON.stringify(race) ? state : withDraft(state, { race: next })
     }
     case 'saveResults': {
       const entry = { raceNo: cmd.raceNo, trackId: cmd.trackId, positions: [...cmd.positions] }
@@ -351,11 +417,24 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       for (const [k, v] of Object.entries(cmd.patch)) if (v !== undefined) (patch as Record<string, unknown>)[k] = v
       return { ...state, layers: { ...state.layers, [cmd.outputId]: { ...cur, ...patch } } }
     }
-    case 'savePreset': {
-      // During a tournament new presets default to layout-only (no match data), so one stack serves every match.
-      const scope = mergeScope(activeTournament(state) ? LAYOUT_ONLY_PRESET_SCOPE : DEFAULT_PRESET_SCOPE, cmd.scope)
-      const preset: Preset = { id: nextId('preset', state.presets.map((p) => p.id)), name: cmd.name, scope, ...snapshot(state, cmd.from ?? 'pvw', scope, ctx) }
-      return { ...state, presets: [...state.presets, preset], lastPreset: preset.id }
+    case 'savePreset':
+      return savePresetFrom(state, cmd.name, cmd.from ?? 'pvw', cmd.scope, ctx)
+    case 'addCueFromPreview': {
+      requireStack(state, cmd.stackId)
+      const saved = savePresetFrom(state, cmd.name, 'pvw', cmd.scope, ctx)
+      return insertCue(saved, cmd.stackId, saved.lastPreset!, cmd.take, cmd.index, undefined, cmd.action)
+    }
+    case 'duplicatePreset':
+      return duplicatePresetOf(state, requirePreset(state, cmd.id), cmd.name).state
+    case 'setPreset': {
+      // Lenient like an import: outputs this show does not have are dropped rather than rejected.
+      const known = (id: string) => state.outputs.some((o) => o.id === id)
+      const src = structuredClone(cmd.preset)
+      const preset: Preset = { ...src, layers: Object.fromEntries(Object.entries(src.layers).filter(([id]) => known(id))), armed: [...new Set(src.armed)].filter(known) }
+      const at = state.presets.findIndex((p) => p.id === preset.id)
+      if (at !== -1) return { ...state, presets: state.presets.map((p, i) => (i === at ? preset : p)) }
+      const to = Math.max(0, Math.min(cmd.index ?? state.presets.length, state.presets.length))
+      return { ...state, presets: [...state.presets.slice(0, to), preset, ...state.presets.slice(to)] }
     }
     case 'updatePreset': {
       requirePreset(state, cmd.id)
@@ -396,12 +475,7 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       return withStack(state, cmd.id, (k) => ({ ...k, current: null, selected: null }))
     case 'addCue': {
       requirePreset(state, cmd.presetId)
-      const scope = patchCueScope(undefined, cmd.scope)
-      const cue = { id: nextId('cue', state.stacks.flatMap((k) => k.cues.map((c) => c.id))), presetId: cmd.presetId, take: cmd.take, ...(scope ? { scope } : {}), ...(cmd.action ? { action: cmd.action } : {}) }
-      return withStack(state, cmd.stackId, (k) => {
-        const at = Math.min(cmd.index ?? k.cues.length, k.cues.length)
-        return { ...k, cues: [...k.cues.slice(0, at), cue, ...k.cues.slice(at)] }
-      })
+      return insertCue(state, cmd.stackId, cmd.presetId, cmd.take, cmd.index, patchCueScope(undefined, cmd.scope), cmd.action)
     }
     case 'updateCue': {
       if (cmd.presetId !== undefined) requirePreset(state, cmd.presetId)
@@ -440,6 +514,25 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
         ;[cues[i], cues[j]] = [cues[j], cues[i]]
         return { ...k, cues }
       })
+    }
+    case 'moveCueTo': {
+      const stack = requireStack(state, cmd.stackId)
+      const i = stack.cues.findIndex((c) => c.id === cmd.cueId)
+      if (i === -1) throw new CommandError(`Unknown cue: ${cmd.cueId}`)
+      const to = Math.max(0, Math.min(cmd.index, stack.cues.length - 1))
+      if (to === i) return state
+      // current / selected are cue ids, so they follow the cue
+      return withStack(state, cmd.stackId, (k) => {
+        const cues = [...k.cues]
+        cues.splice(to, 0, ...cues.splice(i, 1))
+        return { ...k, cues }
+      })
+    }
+    case 'makeCuePresetUnique': {
+      const cue = requireStack(state, cmd.stackId).cues.find((c) => c.id === cmd.cueId)
+      if (!cue) throw new CommandError(`Unknown cue: ${cmd.cueId}`)
+      const { state: next, copy } = duplicatePresetOf(state, requirePreset(state, cue.presetId), cmd.name)
+      return withStack(next, cmd.stackId, (k) => ({ ...k, cues: k.cues.map((c) => (c.id === cue.id ? { ...c, presetId: copy.id } : c)) }))
     }
     case 'selectCue': {
       const i = requireStack(state, cmd.stackId).cues.findIndex((c) => c.id === cmd.cueId)
@@ -543,6 +636,22 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       return { ...state, clocks: { onAirSince: state.clocks.onAirSince === null ? null : ctx.now } }
     case 'setMattify':
       return state.settings.mattify === cmd.on ? state : { ...state, settings: { ...state.settings, mattify: cmd.on } }
+    case 'restoreSnapshot': {
+      const snap = structuredClone(cmd.snapshot)
+      const layers = { ...state.layers }
+      for (const o of state.outputs) if (snap.layers[o.id]) layers[o.id] = snap.layers[o.id]
+      const scoresChanged = JSON.stringify(snap.draft.scores) !== JSON.stringify(state.draft.scores)
+      const next: ShowState = {
+        ...state,
+        draft: snap.draft, layers, armed: [...new Set(snap.armed)].filter((id) => state.outputs.some((o) => o.id === id)),
+        transition: snap.transition, settings: { ...state.settings, mattify: snap.mattify },
+        lastPreset: snap.lastPreset !== null && state.presets.some((p) => p.id === snap.lastPreset) ? snap.lastPreset : null,
+        // Preview is replaced, so (as with a recall) no stack's standby cue is "loaded" any more.
+        stacks: state.stacks.map((k) => (k.selected ? { ...k, selected: null } : k)),
+      }
+      // With a tournament active, reduce() mirrors the restored players / race / scores into the active match and re-runs slot auto-fill.
+      return scoresChanged ? liveScores(next, ctx) : next
+    }
     case 'createTournament': {
       const id = nextId('tournament', state.tournaments.map((t) => t.id))
       const matches = cmd.template === 'empty'
@@ -561,7 +670,7 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       if (!t) throw new CommandError(`Unknown tournament: ${cmd.id}`)
       // The outgoing tournament is already in step with the draft (every command syncs it).
       const d = t.matches.find((m) => m.id === t.activeMatchId)?.data ?? state.draft
-      return { ...state, activeTournamentId: t.id, draft: { ...state.draft, players: structuredClone(d.players), race: structuredClone(d.race), scores: structuredClone(d.scores) } }
+      return { ...state, activeTournamentId: t.id, draft: { ...state.draft, players: structuredClone(d.players), race: withEffectiveTrack(structuredClone(d.race), ctx), scores: structuredClone(d.scores) } }
     }
     case 'renameTournament': {
       if (!state.tournaments.some((t) => t.id === cmd.id)) throw new CommandError(`Unknown tournament: ${cmd.id}`)
@@ -609,8 +718,21 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       const d = copy.matches.find((m) => m.id === activeMatchId)!.data
       return {
         ...state, layers, tournaments: [...state.tournaments, copy], activeTournamentId: id,
-        draft: { ...state.draft, players: structuredClone(d.players), race: structuredClone(d.race), scores: structuredClone(d.scores) },
+        draft: { ...state.draft, players: structuredClone(d.players), race: withEffectiveTrack(structuredClone(d.race), ctx), scores: structuredClone(d.scores) },
       }
+    }
+    case 'setRoundName': {
+      const t = requireTournament(state)
+      if (!Number.isInteger(cmd.round) || cmd.round < 0) throw new CommandError(`Invalid round: ${cmd.round}`)
+      const key = String(cmd.round)
+      const name = (cmd.name ?? '').trim().slice(0, NAME_MAX)
+      if ((t.roundNames?.[key] ?? '') === name) return state
+      const names = { ...t.roundNames }
+      if (name) names[key] = name
+      else delete names[key]
+      const next: Tournament = { ...t, roundNames: names }
+      if (!Object.keys(names).length) delete next.roundNames
+      return withTournament(state, next)
     }
     case 'addMatch': {
       const t = requireTournament(state)
@@ -647,15 +769,15 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       if (cmd.matchId !== t.activeMatchId) return withTournament(state, { ...t, matches })
       const fallback = (t.matches[at + 1] ?? t.matches[at - 1]).id
       const d = t.matches.find((m) => m.id === fallback)!.data
-      return withTournament({ ...state, draft: { ...state.draft, players: structuredClone(d.players), race: structuredClone(d.race), scores: structuredClone(d.scores) } }, { ...t, matches, activeMatchId: fallback })
+      return withTournament({ ...state, draft: { ...state.draft, players: structuredClone(d.players), race: withEffectiveTrack(structuredClone(d.race), ctx), scores: structuredClone(d.scores) } }, { ...t, matches, activeMatchId: fallback })
     }
     case 'setActiveMatch':
-      return switchMatch(state, cmd.matchId, false)
+      return switchMatch(state, cmd.matchId, false, ctx)
     case 'nextMatch': {
       const t = requireTournament(state)
       const next = t.matches[t.matches.findIndex((m) => m.id === t.activeMatchId) + 1]
       if (!next) return state
-      return resetActiveStacks(switchMatch(state, next.id, true), ctx)
+      return resetActiveStacks(switchMatch(state, next.id, true, ctx), ctx)
     }
     case 'setMatchResults':
       return editMatchData(state, cmd.matchId, (d) => ({

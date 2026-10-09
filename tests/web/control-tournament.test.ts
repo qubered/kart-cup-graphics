@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
-  adjustmentForTotal, choiceToRef, nextRaceNo, rangeSet, refToChoice, removeRace, setPosition, slotSourceChoices, splitAcrossOutputs, toggleRound,
+  adjustmentForTotal, choiceToRef, defaultTrackId, nextRaceNo, rangeSet, refToChoice, removeRace, setPosition, slotSourceChoices, splitAcrossOutputs, toggleRound,
 } from '../../web/src/control/tournament'
-import type { Layers, OutputConfig } from '../../shared/types'
+import { indexCatalog } from '../../shared/catalog'
+import type { Layers, OutputConfig, RaceState } from '../../shared/types'
+import { fixtureCatalog } from '../fixtures/catalog'
 
 const out = (id: string, format: OutputConfig['format']): OutputConfig => ({ id, name: id, format, safeArea: { top: 0, right: 0, bottom: 0, left: 0 }, graphicsScale: 1 })
 const lay = (over: Partial<Layers>): Layers => ({ background: 'A', scene: 'none', trackCard: false, lowerThirds: { on: false, players: [] }, ...over })
@@ -61,5 +63,24 @@ describe('split across outputs', () => {
   it('null for other scenes or a single output', () => {
     expect(splitAcrossOutputs(outputs, 'wide', { wide: lay({ scene: 'lineup' }) })).toBeNull()
     expect(splitAcrossOutputs([out('wide', 'wide')], 'wide', { wide: lay({ scene: 'raceWin' }) })).toBeNull()
+  })
+})
+
+describe('default track for a result', () => {
+  const catalog = indexCatalog(fixtureCatalog)
+  const cup: RaceState = { mode: 'cup', cupId: 'mushroom', raceIndex: 0, trackId: 'mario-kart-stadium', raceNo: 1, raceTotal: 4 }
+  it('follows the cup order by race number', () => {
+    expect([1, 2, 3, 4].map((n) => defaultTrackId(catalog, cup, n))).toEqual(['mario-kart-stadium', 'water-park', 'sweet-sweet-canyon', 'thwomp-ruins'])
+    expect(defaultTrackId(catalog, cup, 5)).toBe('mario-kart-stadium')
+    expect(defaultTrackId(catalog, cup, 0)).toBe('mario-kart-stadium')
+  })
+  it('honours a hand-picked map for that race', () => {
+    const r: RaceState = { ...cup, trackOverrides: [null, 'toad-harbor', null, 'shy-guy-falls'] }
+    expect([1, 2, 3, 4].map((n) => defaultTrackId(catalog, r, n))).toEqual(['mario-kart-stadium', 'toad-harbor', 'sweet-sweet-canyon', 'shy-guy-falls'])
+    expect(defaultTrackId(catalog, r, 6)).toBe('toad-harbor')
+  })
+  it('single-track mode uses the chosen track; an unknown cup falls back to it', () => {
+    expect(defaultTrackId(catalog, { ...cup, mode: 'track', trackId: 'toad-harbor', trackOverrides: ['water-park', null, null, null] }, 1)).toBe('toad-harbor')
+    expect(defaultTrackId(catalog, { ...cup, cupId: 'nope', trackId: 'water-park' }, 2)).toBe('water-park')
   })
 })
