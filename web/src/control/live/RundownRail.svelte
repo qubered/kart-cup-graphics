@@ -33,11 +33,13 @@
     if (!id || edit) return
     void tick().then(() => panel?.querySelector(`[data-cue="${id}"]`)?.scrollIntoView({ block: 'nearest' }))
   })
+  /** Open a cue's editor and bring it into view (it sits right under its row). */
   async function reveal(cueId: string) {
     openCue = cueId
     await tick()
-    panel?.querySelector(`[data-cue="${cueId}"]`)?.scrollIntoView({ block: 'nearest' })
+    panel?.querySelector(`[data-cue-editor="${cueId}"]`)?.scrollIntoView({ block: 'nearest' })
   }
+  const toggle = (cueId: string) => { if (openId === cueId) openCue = null; else void reveal(cueId) }
 
   // Drops: a cue reorders the list; a Look from the library adds a cue at the drop slot. Edit mode only (the zone accepts nothing in Run).
   function onDrop(p: DragPayload, index: number) {
@@ -60,7 +62,7 @@
   {#if st && stack}
     <div class="u-grow list" use:dropZone={{ accept: edit ? ['look', 'cue'] : [], onDrop }}>
       {#each stack.cues as cue, i (cue.id)}
-        <CueRow {stack} index={i} {st} {edit} open={openId === cue.id} ontoggle={() => (openCue = openId === cue.id ? null : cue.id)} />
+        <CueRow {stack} index={i} {st} {edit} open={openId === cue.id} ontoggle={() => toggle(cue.id)} />
       {/each}
       {#if !stack.cues.length}
         <div class="u-empty" data-empty><b>No cues yet</b><span>{edit ? 'Set up Preview how you want it, then tap “Add cue from Preview”.' : 'Switch to Edit to build this rundown.'}</span></div>
