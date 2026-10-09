@@ -168,7 +168,7 @@ describe('tournament reducer', () => {
     let s = run(start(), { type: 'addMatch', label: 'Extra', round: 0 })
     expect(T(s).matches).toHaveLength(6)
     s = run(s, { type: 'removeMatch', matchId: 'match-1' })
-    expect(T(s).activeMatchId).toBe('match-2'); expect(T(s).matches[3].slotSources?.[0]).toBeNull()
+    expect(T(s).activeMatchId).toBe('match-2'); expect(T(s).matches.find((m) => m.label === 'Final')!.slotSources?.[0]).toBeNull()
     s = run(s, { type: 'createTournament', name: 'Two', template: 'empty' })
     expect(s.activeTournamentId).toBe('tournament-2')
     s = run(s, { type: 'loadTournament', id: 'tournament-1' }, { type: 'renameTournament', id: 'tournament-1', name: 'Renamed' })
@@ -176,6 +176,13 @@ describe('tournament reducer', () => {
     expect(run(s, { type: 'loadTournament', id: null }).activeTournamentId).toBeNull()
     expect(run(s, { type: 'deleteTournament', id: 'tournament-1' }).activeTournamentId).toBeNull()
     expect(() => run(base, { type: 'nextMatch' })).toThrow()
+  })
+
+  it('addMatch keeps the matches in round order (an extra semi goes before the Final)', () => {
+    const s = run(start(), { type: 'addMatch', label: 'Extra semi', round: 0 })
+    expect(T(s).matches.map((m) => `${m.label}:${m.round}`)).toEqual(['Semi 1:0', 'Semi 2:0', 'Semi 3:0', 'Semi 4:0', 'Extra semi:0', 'Final:1'])
+    const t = run(s, { type: 'addMatch', label: 'Third place', round: 1 }, { type: 'addMatch', label: 'Round 3 match', round: 2 })
+    expect(T(t).matches.map((m) => m.round)).toEqual([0, 0, 0, 0, 0, 1, 1, 2])
   })
 
   it('updateMatch edits a non-active race', () => {

@@ -745,7 +745,10 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       const id = nextId('match', t.matches.map((m) => m.id))
       const label = cmd.label ?? `Match ${t.matches.length + 1}`
       const m: Match = { id, label, round, data: newMatchData(state.draft, ctx), status: 'pending', winnerOverride: null }
-      return withTournament(state, { ...t, matches: [...t.matches, m] })
+      // Keep the matches in round order: a match added to an earlier round goes after that round's last match, not after the Final.
+      let at = t.matches.length
+      while (at > 0 && t.matches[at - 1].round > round) at--
+      return withTournament(state, { ...t, matches: [...t.matches.slice(0, at), m, ...t.matches.slice(at)] })
     }
     case 'updateMatch': {
       const t = requireTournament(state)
