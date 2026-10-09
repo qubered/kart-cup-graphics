@@ -251,3 +251,21 @@
 .bg-player .pa-name { margin: calc(var(--h) * .012) auto 0; width: max-content; max-width: 100%; font: italic 900 calc(var(--h) * .11)/1.05 var(--font-name); color: #fff;
   -webkit-text-stroke: calc(var(--h) * .012) var(--mk-ink); paint-order: stroke fill; text-shadow: 0 calc(var(--h) * .01) 0 rgba(0,0,0,.35); text-transform: uppercase; }
 .bg-player .pa-char { font: italic 800 calc(var(--h) * .04)/1 var(--font-label); color: #fff; letter-spacing: 6px; text-transform: uppercase; opacity: .9; margin-top: calc(var(--h) * .006); }
+
+/* ============ SCENE · Player Announce (winner-hero layout on background D) ============ */
+.pa-hero { position: absolute; transform-origin: 0 0; display: flex; align-items: center; justify-content: center; flex-direction: column; justify-content: flex-start; gap: var(--gap); }
+.pa-hero.h { flex-direction: row; gap: var(--gap); }
+.pa-hrays { position: absolute; width: 2600px; height: 2600px; margin: -1300px 0 0 -1300px; pointer-events: none;
+  background: repeating-conic-gradient(rgba(255,255,255,.14) 0 6deg, transparent 6deg 18deg); -webkit-mask-image: radial-gradient(circle, #000 12%, transparent 55%); animation: spin 40s linear infinite; }
+.pa-medal { position: relative; z-index: 2; flex: none; }
+.pa-medal .medallion { border-width: 6px; }
+.pa-bob { width: 100%; height: 100%; position: relative; animation: bob 2.4s ease-in-out infinite alternate; }
+.pa-txt { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
+.pa-hero.h .pa-txt { align-items: flex-start; }
+.pa-nm { font: italic 900 1em/1.05 var(--font-name); color: #fff; margin-top: 10px; white-space: nowrap; overflow: hidden; text-shadow: 0 8px 0 var(--mk-navy); text-align: center; text-transform: uppercase; }
+.pa-hero.h .pa-nm { text-align: left; }
+.pa-nm > span { display: inline-block; white-space: nowrap; }
+.pa-sub { margin-top: 22px; display: flex; gap: 28px; align-items: center; justify-content: center; }
+.pa-hero.h .pa-sub { justify-content: flex-start; }
+.pa-ch { font: 800 1em/1 var(--font-label); color: #fff; text-transform: uppercase; }
+.pa-pts { display: inline-block; background: var(--mk-yellow); color: var(--mk-navy); font: italic 900 1em/1 var(--font-name); padding: .25em .6em; border-radius: 12px; transform: skewX(-12deg); box-shadow: 0 8px 0 var(--mk-pill-shadow); }
