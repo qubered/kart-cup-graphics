@@ -1,7 +1,8 @@
 // Pure tournament helpers shared by the reducer and the view model. No dependency on view.ts / reducer.ts.
+import type { CatalogIndex } from './catalog'
 import { standings } from './scoring'
 import type {
-  BracketConfig, Match, MatchRef, MatchSet, MatchesSceneConfig, ShowData, ShowState, Tournament, WinScreenConfig,
+  BracketConfig, Match, MatchRef, MatchSet, MatchesSceneConfig, RaceState, ShowData, ShowState, Tournament, WinScreenConfig,
 } from './types'
 
 export const DEFAULT_WIN_SCREEN: WinScreenConfig = {
@@ -12,6 +13,18 @@ export const DEFAULT_MATCHES_SCENE: MatchesSceneConfig = {
   layout: 'grid', detail: { wide: 'full', twin: 'compact', hd: 'compact' }, pendingScores: 'zeros', liveMarker: true,
 }
 export const DEFAULT_BRACKET: BracketConfig = { showScores: true, showStatus: true }
+
+/** Display name of a round: its custom name, else "Round n" (1-based). */
+export function roundLabel(t: Pick<Tournament, 'roundNames'>, round: number): string {
+  const name = t.roundNames?.[String(round)]
+  return name && name.trim() ? name : `Round ${round + 1}`
+}
+
+/** The track of race `raceIndex`: single-track mode has just the chosen track; cup mode uses the hand-picked override, else the cup's own order. '' when unknown. */
+export function effectiveTrackId(catalog: Pick<CatalogIndex, 'cup'>, race: RaceState, raceIndex: number): string {
+  if (race.mode !== 'cup') return race.trackId
+  return race.trackOverrides?.[raceIndex] || (catalog.cup(race.cupId)?.tracks[raceIndex] ?? '')
+}
 
 export function activeTournament(state: Pick<ShowState, 'tournaments' | 'activeTournamentId'>): Tournament | null {
   return state.tournaments.find((t) => t.id === state.activeTournamentId) ?? null

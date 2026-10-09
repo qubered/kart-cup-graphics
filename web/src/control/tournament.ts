@@ -1,14 +1,15 @@
 // Pure helpers for the Tournament tab (no Svelte, no store) so they can be unit tested.
 import type { CatalogIndex } from '../../../shared/catalog'
+import { effectiveTrackId } from '../../../shared/tournament'
 import { isSceneSupported } from '../../../shared/view'
 import { totals } from '../../../shared/scoring'
 import type { Command, Layers, MatchRef, MatchSet, OutputConfig, RaceResult, RaceState, SceneId, ScenePart } from '../../../shared/types'
 
-/** Cup mode: the Nth race of the cup; single-track mode: the chosen track. */
+/** Cup mode: the Nth race of the cup (a hand-picked map for that race wins); single-track mode: the chosen track. */
 export function defaultTrackId(catalog: CatalogIndex, race: RaceState, raceNo: number): string {
   if (race.mode === 'track') return race.trackId
-  const tracks = catalog.tracksOfCup(race.cupId)
-  return tracks[Math.max(0, raceNo - 1) % Math.max(1, tracks.length)]?.id ?? race.trackId
+  const count = Math.max(1, catalog.tracksOfCup(race.cupId).length)
+  return effectiveTrackId(catalog, race, Math.max(0, raceNo - 1) % count) || race.trackId
 }
 
 /** Replace (or append) one race's finishing positions. Result is sorted by race number. */

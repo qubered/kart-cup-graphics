@@ -2,7 +2,7 @@ import type { CatalogIndex } from './catalog'
 import { fontStack, isUpright } from './fonts'
 import { colourHex, textOn } from './palette'
 import { pointsFor, standings } from './scoring'
-import { DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN, hasResults, liveMatches, matchWinnerSlot, resolveMatchRef, resolveMatchSet } from './tournament'
+import { DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN, effectiveTrackId, hasResults, liveMatches, matchWinnerSlot, resolveMatchRef, resolveMatchSet } from './tournament'
 import type {
   BoardRace, BoardRow, BracketView, CupWinView, Layers, Match, MatchCardView, MatchesView, RaceWinView, ScenePart, Tournament, OutputConfig, OutputFormat, Player, PlayerView, SceneId, SceneView, ShowData, TitleView, TrackCardView, ViewModel,
 } from './types'
@@ -39,7 +39,7 @@ interface RaceInfo { raceLabel: string; cupName: string; cupEmblem: string; trac
 
 function raceInfo(data: ShowData, catalog: CatalogIndex): RaceInfo {
   const r = data.race
-  const trackId = r.mode === 'cup' ? (catalog.cup(r.cupId)?.tracks[r.raceIndex] ?? '') : r.trackId
+  const trackId = effectiveTrackId(catalog, r, r.raceIndex)
   const track = catalog.track(trackId)
   const cup = catalog.cup(r.mode === 'cup' ? r.cupId : (track?.cupId ?? r.cupId))
   return {
@@ -51,6 +51,17 @@ function raceInfo(data: ShowData, catalog: CatalogIndex): RaceInfo {
     cupId: cup?.id ?? '',
     trackId,
   }
+}
+
+/** The Next-race scene's strip of maps. Cup mode: the cup's races in order, with any hand-picked maps, the current race flagged. Single-track mode: the track's cup. */
+function nextRaceTracks(race: ShowData['race'], info: RaceInfo, catalog: CatalogIndex): { name: string; thumb: string; current: boolean }[] {
+  if (race.mode !== 'cup') return catalog.tracksOfCup(info.cupId).map((t) => ({ name: t.name, thumb: t.thumb, current: t.id === info.trackId }))
+  const out: { name: string; thumb: string; current: boolean }[] = []
+  for (let i = 0; i < (catalog.cup(race.cupId)?.tracks.length ?? 0); i++) {
+    const t = catalog.track(effectiveTrackId(catalog, race, i))
+    if (t) out.push({ name: t.name, thumb: t.thumb, current: i === race.raceIndex })
+  }
+  return out
 }
 
 function boardRaces(data: ShowData, catalog: CatalogIndex, upTo = data.scores.races.length): BoardRace[] {
@@ -169,7 +180,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
         scene = {
           kind: 'nextRace', raceLabel: info.raceLabel, cupName: info.cupName, cupEmblem: info.cupEmblem,
           trackName: info.trackName, trackImage: info.trackImage, single: data.race.mode === 'track',
-          cupTracks: catalog.tracksOfCup(info.cupId).map((t) => ({ name: t.name, thumb: t.thumb, current: t.id === info.trackId })),
+          cupTracks: nextRaceTracks(data.race, info, catalog),
         }
         break
       case 'standings': {
