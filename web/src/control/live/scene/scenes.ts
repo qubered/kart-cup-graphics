@@ -1,5 +1,6 @@
 // Pure helpers for the per-screen scene editor (no Svelte, no store) so they can be unit tested.
 import { isSceneSupported } from '../../../../../shared/view'
+import { partForScene } from '../../tournament'
 import type { BackgroundId, Layers, LogoMode, OutputFormat, QrStyle, SceneId, ScenePart } from '../../../../../shared/types'
 
 export const SCENES: { id: SceneId; label: string }[] = [
@@ -46,11 +47,10 @@ export function availableParts(format: OutputFormat, scene: SceneId): { id: Scen
 /** The patch that selects a scene. A win screen on a format that cannot show the current part (a twin never shows "full")
  *  also picks the first part it can, so choosing the scene never leaves Preview blank. */
 export function scenePatch(format: OutputFormat, layers: Pick<Layers, 'part'>, scene: SceneId): Partial<Layers> {
-  if (isWinScene(scene) && !isSceneSupported(format, scene, layers.part ?? 'full')) {
-    const part = availableParts(format, scene)[0]
-    if (part) return { scene, part: part.id }
-  }
-  return { scene }
+  if (!isWinScene(scene)) return { scene }
+  const current = layers.part ?? 'full'
+  const part = partForScene(format, scene, current)
+  return part && part !== current ? { scene, part } : { scene }
 }
 
 /** QR layouts offered per format (twins always show one code per half). */
