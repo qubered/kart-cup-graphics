@@ -97,7 +97,7 @@
   .modeseg > button.sel { background: #2a303c; color: #fff; }
   .modeseg > button.sel.e { background: #78350f; color: #fde68a; }
 
-  .menu { padding: 8px 12px 10px; border-bottom: 1px solid var(--ui-line); background: #101319; display: grid; gap: 8px; flex: none; max-height: 50%; overflow: auto; }
+  .menu { padding: 8px 12px 10px; border-bottom: 1px solid var(--ui-line); background: #101319; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; flex: none; max-height: 50%; overflow: auto; }
   .rdi { display: flex; justify-content: space-between; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border: 1px solid var(--ui-field); border-radius: 8px; font-weight: 600; font-size: 13px; background: transparent; color: #e5e7eb; text-align: left; }
   .rdi.on { background: #1d2430; border-color: #3a4455; color: #fff; }
   .rdname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }

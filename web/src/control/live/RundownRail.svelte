@@ -10,7 +10,7 @@
   import RailHeader from './rail/RailHeader.svelte'
   import RunFoot from './rail/RunFoot.svelte'
   import { addCueFromLook, moveCue, newRundown } from './rail/actions'
-  import { dropDestination, nextRundownName } from './rail/model'
+  import { dropDestination, nextRundownName, standbyIndex } from './rail/model'
 
   const st = $derived($control.payload?.state)
   const stack = $derived($activeStack)
@@ -26,6 +26,13 @@
   const openId = $derived(edit && stack?.cues.some((c) => c.id === openCue) ? openCue : null)
 
   let panel = $state<HTMLElement | undefined>()
+  // In Run mode keep the NEXT row on screen as GO and Back / Skip move it down a long rundown.
+  const nextCueId = $derived(stack ? stack.cues[standbyIndex(stack)]?.id : undefined)
+  $effect(() => {
+    const id = nextCueId
+    if (!id || edit) return
+    void tick().then(() => panel?.querySelector(`[data-cue="${id}"]`)?.scrollIntoView({ block: 'nearest' }))
+  })
   async function reveal(cueId: string) {
     openCue = cueId
     await tick()
@@ -46,7 +53,7 @@
   }
 </script>
 
-<section class="u-panel rail" class:editing={edit} data-stack={stack?.id} aria-label="Rundown" bind:this={panel}>
+<section class="u-panel rail" class:editing={edit} data-rail data-stack={stack?.id} aria-label="Rundown" bind:this={panel}>
   <RailHeader {stack} stacks={st?.stacks ?? []} />
   {#if edit}<div class="editbar" role="status">EDITING — GO is locked. Switch to Run to fire cues.</div>{/if}
 

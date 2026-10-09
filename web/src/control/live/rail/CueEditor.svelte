@@ -78,9 +78,9 @@
   .warn { font-size: 12px; color: #fbbf24; display: flex; gap: 8px; align-items: center; margin-left: 72px; min-width: 0; }
   .warn .u-btn { margin-left: auto; flex: none; }
   .warn.quiet { color: var(--ui-muted); }
-  .recalls { height: 44px; border: 1px solid var(--ui-field); border-radius: 8px; background: var(--ui-bg); display: flex; align-items: center; padding: 0 12px; gap: 8px; color: #fff; width: 100%; font-size: 13px; text-align: left; min-width: 0; }
+  .recalls { min-height: 44px; border: 1px solid var(--ui-field); border-radius: 8px; background: var(--ui-bg); display: flex; align-items: center; padding: 5px 12px; gap: 8px; color: #fff; width: 100%; font-size: 13px; text-align: left; min-width: 0; }
   .recalls:hover:not(:disabled) { background: var(--ui-bg); border-color: #4a5160; }
-  .sum { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .sum { min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
   .car { margin-left: auto; color: var(--ui-muted); flex: none; }
   .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-left: 72px; }
   .chips .u-chip { height: 44px; }
