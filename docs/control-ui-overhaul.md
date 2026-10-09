@@ -1,6 +1,8 @@
 # Control page overhaul: options
 
-Status: **pitch plus an interactive demo of options A and B (round 2). Nothing is built in the app yet.** Three directions were mocked at 1600×1000 in round 1; round 2 expands A and B and adds the Race page and Tournament workspace. Interactive prototypes: `docs/mockups/ui/control-v2-{a,b,c}.html` (serve the repo root, see `docs/mockups/README.md`). Screenshots live in `docs/mockups/ui/control-v2/`.
+> **Status:** Option A is implemented; see `docs/control-page.md` for what is built. This document is the design record, and `docs/mockups/ui/demo/` is the reference prototype.
+
+History: **pitch plus an interactive demo of options A and B (round 2), then Option A revised (round 3).** Three directions were mocked at 1600×1000 in round 1; round 2 expands A and B and adds the Race page and Tournament workspace. Interactive prototypes: `docs/mockups/ui/control-v2-{a,b,c}.html` (serve the repo root, see `docs/mockups/README.md`). Screenshots live in `docs/mockups/ui/control-v2/`.
 
 ## What is wrong today
 

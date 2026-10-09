@@ -28,7 +28,7 @@ The twins output is one 1920x1152 canvas, but the two LED screens can each get t
 | `/out/twins` | 1920x1152 | The whole canvas (still works; used by the control monitors) |
 
 - [ ] Use either the two half URLs **or** the full one in Millumin, not both.
-- [ ] The Outputs tab shows each half's connection count (`L 1 · R 1`). The Twins light is green with both halves (or a full page) connected, **amber with only one**.
+- [ ] Setup › Outputs shows each half's connection count (`L 1 · R 1`). The Twins light is green with both halves (or a full page) connected, **amber with only one**.
 
 ## Superwide 5760x1152 (one URL for the whole stage)
 
@@ -49,7 +49,7 @@ A keyer needs two feeds per overlay output. Every output page (full, `/left`, `/
 | **Key (cut)** | `/out/<id>?key=1` | The matte: **white** where the graphics are opaque, **black** elsewhere, grey on soft edges |
 | Plain | `/out/<id>` | Transparent page (for Millumin's `transparent` web source, no keyer) |
 
-The Outputs tab lists all of these under **Cut & fill URLs** for each output and for the superwide, with copy buttons.
+Setup › Outputs lists all of these under **Cut & fill URLs** for each output and for the superwide, with copy buttons.
 
 - [ ] Add **two Web media** per overlay output in Millumin: one on the `?fill=1` URL and one on the `?key=1` URL. Same render size as the output (twin halves 960x1152, wide 3840x1152, superwide 5760x1152).
 - [ ] **`transparent` OFF** on both. The pages draw their own opaque black, so the key and fill are already complete images.
