@@ -9,14 +9,14 @@
 <script src="../shared/mockup.js"></script>
 <script>
   /* Player announcement = winner hero (WinHero.svelte) on background D · Player Announce.
-     Same hero structure and sizes: medallion beside the text on wide (design 1640×640: medallion 480, heading 210, name 140 / max 1060,
-     character 46) or stacked on hd/twin (design 900×880: medallion 340, heading 170, name 110 / max 860, character 38). The hero is uniformly scaled
+     Same hero structure and sizes: medallion beside the text on wide (design 1640×640: medallion 480, heading 110, name 210 / max 1100,
+     subtitle 60, character 52) or stacked on hd/twin (design 900×880: medallion 340, heading 90, name 150 / max 860, subtitle 44, character 40). The hero is uniformly scaled
      (max 1.35×) into the area between the flag bands. Heading text is "PLAYER n". Subtitle (player profile field `subtitle`: job title · group) sits under the name; empty = hidden. ?sub=Job%20Title%20%C2%B7%20Group
      ?slot=0..3  ?colour=red|blue|…  ?format=wide|hd|twin  ?look=classic|chrome|plain */
   const HEX = { red: '#e60012', blue: '#1e6cff', green: '#22b14c', yellow: '#ffc400', pink: '#ff5fa2', orange: '#ff8a00', purple: '#8b5cf6', cyan: '#06b6d4' };
   const ART = ['mario', 'peach', 'yoshi', 'bowser'].map((n) => `../../../assets/characters/${n}.png`);
-  const DESIGN = { h: { dw: 1640, dh: 640, med: 480, head: 210, nm: 140, nmw: 1060, ch: 46, chs: 10, sub: 44, gap: 60 },
-                   v: { dw: 900,  dh: 880, med: 340, head: 170, nm: 110, nmw: 860,  ch: 38, chs: 8,  sub: 38, gap: 6 } };
+  const DESIGN = { h: { dw: 1640, dh: 640, med: 480, head: 110, nm: 210, nmw: 1100, ch: 52, chs: 10, sub: 60, gap: 60 },
+                   v: { dw: 900,  dh: 880, med: 340, head: 90, nm: 150, nmw: 860,  ch: 40, chs: 8,  sub: 44, gap: 6 } };
   const format = MK.param('format', 'wide');
   MK.page(format, (f, S) => {
     const slot = +MK.param('slot', 0), p = Object.assign({}, S.players[slot], { art: ART[slot] });
