@@ -61,7 +61,7 @@
     </div>
     <div class="fld">
       <span class="u-lab">Remember when recalled</span>
-      <RecallOptions {scope} {tournament} onchange={(s) => (scope = s)} />
+      <RecallOptions {scope} {tournament} onchange={(patch) => (scope = { ...scope, ...patch })} />
     </div>
     {#if stack}
       <div class="fld">

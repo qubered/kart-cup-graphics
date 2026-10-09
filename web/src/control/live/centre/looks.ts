@@ -41,12 +41,14 @@ export const scopeFromGroups = (groups: GroupState): PresetScope =>
 export const DEFAULT_SAVE_GROUPS: GroupState = { look: true, outputs: true, race: false, scores: false }
 export const defaultSaveScope = (): PresetScope => scopeFromGroups(DEFAULT_SAVE_GROUPS)
 
-/** Flip one group: every part in it goes on, or (when it was fully on) off. Returns the whole scope. */
-export function toggleGroup(scope: PresetScope, group: GroupKey): PresetScope {
+/** The patch that flips one group: every part in it goes on, or (when it was fully on) off. Only that group's parts, so two quick taps never undo each other. */
+export function groupPatch(scope: PresetScope, group: GroupKey): Partial<PresetScope> {
   const g = GROUPS.find((x) => x.key === group)!
   const on = !g.keys.every((k) => scope[k])
-  return { ...scope, ...Object.fromEntries(g.keys.map((k) => [k, on])) }
+  return Object.fromEntries(g.keys.map((k) => [k, on]))
 }
+/** `scope` with one group flipped (the whole scope). */
+export const toggleGroup = (scope: PresetScope, group: GroupKey): PresetScope => ({ ...scope, ...groupPatch(scope, group) })
 /** "look + outputs armed (custom)": what a recall restores, in words. */
 export function scopeSummary(scope: PresetScope): string {
   const g = groupsFromScope(scope)

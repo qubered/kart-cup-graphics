@@ -4,7 +4,7 @@ import { createDefaultState } from '../../shared/defaults'
 import { reduce } from '../../shared/reducer'
 import type { Command, Layers, Preset, ShowState } from '../../shared/types'
 import {
-  cueCount, cueCounts, cuesOf, defaultSaveScope, deleteUndoCommands, groupsFromScope, isModified, layersKey, onAirLook, plural, scopeFromGroups, scopeSummary, suggestName, toggleGroup,
+  cueCount, cueCounts, cuesOf, defaultSaveScope, deleteUndoCommands, groupPatch, groupsFromScope, isModified, layersKey, onAirLook, plural, scopeFromGroups, scopeSummary, suggestName, toggleGroup,
 } from '../../web/src/control/live/centre/looks'
 import { presetView, recalledDraft, sceneView, thumbOutput } from '../../web/src/control/live/centre/thumbs'
 import {
@@ -135,6 +135,12 @@ describe('recall groups', () => {
     expect(groupsFromScope({ ...defaultSaveScope(), mattify: false }).look).toBe(false)
     expect(groupsFromScope({ ...defaultSaveScope(), match: true }).race).toBe(false)
     expect(groupsFromScope({ ...defaultSaveScope(), match: true, players: true }).race).toBe(true)
+  })
+  it('a group patch holds only that group parts, so quick taps on different groups cannot clobber each other', () => {
+    expect(groupPatch(defaultSaveScope(), 'look')).toEqual({ layers: false, style: false, transition: false, mattify: false })
+    expect(groupPatch(defaultSaveScope(), 'race')).toEqual({ match: true, players: true })
+    expect(groupPatch(defaultSaveScope(), 'scores')).toEqual({ scores: true })
+    expect(groupPatch(defaultSaveScope(), 'outputs')).toEqual({ armed: false })
   })
   it('toggling a group flips all its parts and returns the whole scope', () => {
     const off = toggleGroup(defaultSaveScope(), 'look')

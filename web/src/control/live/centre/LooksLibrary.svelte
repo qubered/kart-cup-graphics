@@ -19,6 +19,8 @@
   const tour = $derived(st ? activeTournament(st) : null)
   const counts = $derived(cueCounts(st?.stacks ?? []))
   const loaded = $derived($previewLook.preset)
+  // primitives: the guard below must not disarm just because a new state message re-created the preset object
+  const loadedId = $derived($previewLook.preset?.id ?? null)
   const modified = $derived($previewLook.modified)
   const used = $derived(loaded ? (counts.get(loaded.id) ?? 0) : 0)
   const stack = $derived($activeStack)
@@ -32,7 +34,7 @@
   // ---- two-tap guards: overwrite (Update) and delete ----
   const guard = twoTap()
   // Anything that changes what the armed button would do disarms it.
-  $effect(() => { void [loaded?.id, modified, managing]; guard.reset() })
+  $effect(() => { void [loadedId, modified, managing]; guard.reset() })
 
   // ---- manage bar ----
   let managing = $state<string | null>(null)
@@ -81,7 +83,7 @@
           <b>When “{trunc(managed.name, 28)}” is recalled it restores</b>
           <span class="u-dim u-sm">{scopeSummary(managed.scope)} · applies to every cue using it unless the cue overrides it</span>
         </div>
-        <RecallOptions scope={managed.scope} layout="row" tournament={tour !== null} onchange={(s) => setLookScope(managed.id, s)} />
+        <RecallOptions scope={managed.scope} layout="row" tournament={tour !== null} onchange={(patch) => setLookScope(managed.id, patch)} />
       </div>
     {/if}
   {:else}

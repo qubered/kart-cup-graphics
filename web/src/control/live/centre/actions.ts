@@ -114,12 +114,13 @@ export async function addLookAsCue(id: string, take: TakeMode | null = 'auto'): 
   toast(`Added “${p.name}” as cue ${at} of “${stack.name}”`, { undoable: true })
 }
 
-/** Change what a recall of this look restores. Quiet (the switch itself shows the change), undo with Ctrl/Cmd+Z. */
-export function setLookScope(id: string, scope: PresetScope): void {
+/** Change what a recall of this look restores (just the parts in `patch`). Quiet: the switch itself shows the change; undo with Ctrl/Cmd+Z. */
+export function setLookScope(id: string, patch: Partial<PresetScope>): void {
   const p = presetOf(currentState(), id)
   if (!p) return
-  send({ type: 'updatePreset', id, scope })
-  pushUndo(`recall options of “${p.name}”`, [{ type: 'updatePreset', id, scope: { ...p.scope } }])
+  const back = Object.fromEntries(Object.keys(patch).map((k) => [k, p.scope[k as keyof PresetScope]]))
+  send({ type: 'updatePreset', id, scope: patch })
+  pushUndo(`recall options of “${p.name}”`, [{ type: 'updatePreset', id, scope: back }])
 }
 
 export interface SaveRequest {
