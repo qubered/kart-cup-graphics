@@ -7,6 +7,18 @@
 
   let open = $state(false)
   let root: HTMLDivElement | undefined = $state()
+  /** Open upwards when the page would cut the swatches off below the button. */
+  let up = $state(false)
+  function toggle(e: MouseEvent) {
+    if (!open) {
+      const b = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      const box = root?.closest('.u-grow')?.getBoundingClientRect()
+      const below = (box?.bottom ?? window.innerHeight) - b.bottom - 12
+      const above = b.top - (box?.top ?? 0) - 12
+      up = below < 140 && above > below
+    }
+    open = !open
+  }
   const current = $derived(PLAYER_COLOURS.find((c) => c.id === value))
 
   $effect(() => {
@@ -20,11 +32,11 @@
 </script>
 
 <div class="cl" bind:this={root}>
-  <button type="button" class="cur" data-colour-pick {disabled} aria-haspopup="listbox" aria-expanded={open} aria-label="{label}: {current?.name ?? ''}" onclick={() => (open = !open)}>
+  <button type="button" class="cur" data-colour-pick {disabled} aria-haspopup="listbox" aria-expanded={open} aria-label="{label}: {current?.name ?? ''}" onclick={toggle}>
     <i class="dot" style="background:{current?.hex ?? '#444'}"></i><span class="nm">{current?.name ?? 'Colour'}</span><span class="car">▾</span>
   </button>
   {#if open}
-    <div class="pop" role="radiogroup" aria-label={label}>
+    <div class="pop" class:up role="radiogroup" aria-label={label}>
       {#each PLAYER_COLOURS as c (c.id)}
         <button
           type="button" class="sw" class:on={value === c.id} style="background:{c.hex}" role="radio" aria-checked={value === c.id}
@@ -44,6 +56,7 @@
   .nm { overflow: hidden; text-overflow: ellipsis; }
   .car { margin-left: auto; color: var(--ui-muted); }
   .pop { position: absolute; z-index: 20; top: 100%; right: 0; margin-top: 2px; background: var(--ui-panel); border: 1px solid var(--ui-field); border-radius: 8px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5); display: grid; grid-template-columns: repeat(4, 44px); gap: 8px; }
+  .pop.up { top: auto; bottom: 100%; margin-top: 0; margin-bottom: 2px; }
   .sw { width: 44px; height: 44px; border-radius: 8px; border: 2px solid transparent; padding: 0; cursor: pointer; }
   .sw.on { border-color: #fff; box-shadow: 0 0 0 2px var(--ui-accent); }
   .sw:disabled { opacity: .5; cursor: not-allowed; }

@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test'
-import { command, state, resetShow } from './helpers'
+import { test, expect, type Page } from '@playwright/test'
+import { command, openPage, state, resetShow } from './helpers'
 
 test.beforeEach(async () => {
   await resetShow()
@@ -7,36 +7,80 @@ test.beforeEach(async () => {
   for (const t of s.tournaments) await command({ type: 'deleteTournament', id: t.id })
 })
 
-test('empty state shows a create button and nothing else changes', async ({ page }) => {
+/** Open the control page on the Tournament workspace. */
+async function openTour(page: Page) {
   await page.goto('/control')
-  await page.getByRole('tab', { name: 'Tournament' }).click()
+  await openPage(page, 'tour')
+}
+/** Give the four semi-finals real player names (the final fills itself). */
+async function nameSemis(ids = ['match-1', 'match-2', 'match-3', 'match-4']) {
+  for (const matchId of ids) await command({ type: 'updateMatch', matchId, patch: { players: [{ name: 'ANN' }, { name: 'BOB' }, { name: 'CAL' }, { name: 'DEE' }] } })
+}
+const T = async () => (await state()).tournaments[0]
+
+test('empty state offers to create one and nothing else changes', async ({ page }) => {
+  await openTour(page)
   await expect(page.locator('[data-empty]')).toBeVisible()
+  await expect(page.locator('[data-new-form]')).toBeVisible()
+  await expect(page.locator('[data-new=bracket]')).toBeVisible()
+  await expect(page.locator('[data-round]')).toHaveCount(0)
   await expect(page.locator('[data-match]')).toHaveCount(0)
   // bracket / matches scenes are not offered without a tournament
-  await expect(page.getByRole('button', { name: 'Bracket', exact: true })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Show' })).toHaveCount(0)
+  await openPage(page, 'live')
+  await expect(page.locator('[data-scene=bracket]')).toHaveCount(0)
+  await expect(page.locator('[data-scene=matches]')).toHaveCount(0)
 })
 
-test('create tournament, edit a match, switch active match, edit results', async ({ page }) => {
-  await page.goto('/control')
-  await page.getByRole('tab', { name: 'Tournament' }).click()
-  await page.locator('input[name=tournamentName]').fill('Cup Night')
-  await page.getByRole('button', { name: 'Create tournament' }).click()
-  await expect(page.locator('[data-match]')).toHaveCount(5)
-  await expect(page.locator('[data-match=match-1]')).toHaveClass(/active/)
+test('create from the bracket template: rounds appear in the outline and the first round opens', async ({ page }) => {
+  await openTour(page)
+  const name = page.locator('input[name=tournamentName]')
+  await expect(page.locator('[data-create]')).toBeDisabled()
+  // typing in the name never fires a show shortcut (H = hold, Space = take)
+  await name.pressSequentially('Cup H h g Night')
+  await expect(name).toHaveValue('Cup H h g Night')
+  expect((await state()).overlay.hold.on).toBe(false)
+  await name.fill('Cup Night')
+  await page.locator('[data-template=bracket]').click()
+  await page.locator('[data-create]').click()
+  await expect.poll(async () => (await state()).tournaments.length).toBe(1)
+  const t = await T()
+  expect(t.name).toBe('Cup Night')
+  expect(t.matches).toHaveLength(5)
+  await expect(page.locator('[data-loaded-name]')).toHaveText('Cup Night')
+  await expect(page.locator('[data-round]')).toHaveCount(2)
+  await expect(page.locator('[data-tour-page="round:0"]')).toBeVisible()
+  await expect(page.locator('[data-match-tab]')).toHaveCount(4)
+  await expect(page.locator('[data-live-footer]')).toContainText('Semi 1')
+  await expect(page.locator('[data-live-round]')).toHaveCount(1)
+})
 
-  // edit a NON-active match (match-2) without touching the active one
-  await page.locator('[data-edit-match=match-2]').click()
-  const setup = page.locator('[data-setup=match-2]')
-  await setup.locator('input[name=matchLabel]').fill('Semi B')
-  await setup.locator('[data-match-player="0"] input[name=name]').fill('ZED')
+test('create from the empty template', async ({ page }) => {
+  await openTour(page)
+  await page.locator('[data-new=empty]').click()
+  await expect(page.locator('[data-template=empty]')).toHaveAttribute('aria-pressed', 'true')
+  await page.locator('input[name=tournamentName]').fill('Practice')
+  await page.locator('[data-create]').click()
+  await expect.poll(async () => (await state()).tournaments.length).toBe(1)
+  expect((await T()).matches).toHaveLength(1)
+  await expect(page.locator('[data-round]')).toHaveCount(1)
+  await expect(page.locator('[data-match-tab]')).toHaveCount(1)
+})
+
+test('edit a match that is not live: settings, players, results, winner override, slot source', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'Cup Night' })
+  await openTour(page)
+  await page.locator('[data-round="0"]').click()
+  await page.locator('[data-match-tab=match-2]').click()
+  await expect(page.locator('[data-match-tab=match-2]')).toHaveAttribute('aria-selected', 'true')
+  await page.locator('[data-setup=match-2] input[name=matchLabel]').fill('Semi B')
+  await page.locator('[data-match-player="0"] input[name=name]').fill('ZED')
   await expect.poll(async () => {
-    const t = (await state()).tournaments[0]
+    const t = await T()
     return [t.matches[1].label, t.matches[1].data.players[0].name, t.activeMatchId]
   }).toEqual(['Semi B', 'ZED', 'match-1'])
   expect((await state()).draft.players[0].name).not.toBe('ZED')
 
-  // results for the non-active match
+  // results for the non-live match
   const results = page.locator('[data-results=match-2]')
   await results.locator('[data-add-race]').click()
   await results.locator('[data-race-row="1"] [data-pos="0"]').selectOption('1')
@@ -46,35 +90,238 @@ test('create tournament, edit a match, switch active match, edit results', async
   await results.locator('[data-adj="1"]').fill('5')
   await results.locator('[data-adj="1"]').blur()
   await expect(results.locator('[data-total="1"]')).toHaveText('17')
-  await expect.poll(async () => (await state()).tournaments[0].matches[1].data.scores.adjustments[1]).toBe(5)
+  await expect.poll(async () => (await T()).matches[1].data.scores.adjustments[1]).toBe(5)
 
-  // winner override and slot sources
-  await setup.locator('select[name=winnerOverride]').selectOption('2')
-  await expect.poll(async () => (await state()).tournaments[0].matches[1].winnerOverride).toBe(2)
-  await page.locator('[data-edit-match=match-5]').click()
-  await page.locator('[data-setup=match-5] [data-slot-source="0"]').selectOption('match-2')
-  await expect.poll(async () => (await state()).tournaments[0].matches[4].slotSources?.[0]).toEqual({ matchId: 'match-2', auto: true })
+  // winner override
+  await page.locator('select[name=winnerOverride]').selectOption('2')
+  await expect.poll(async () => (await T()).matches[1].winnerOverride).toBe(2)
 
-  // make match-2 active: the draft now carries its data
+  // slot sources: the final's first slot follows Semi B instead, and an auto slot is read-only until set to Hand-set
+  await page.locator('[data-round="1"]').click()
+  await page.locator('[data-slot-source="0"]').selectOption('match-2')
+  await expect.poll(async () => (await T()).matches[4].slotSources?.[0]).toEqual({ matchId: 'match-2', auto: true })
+  const slot0 = page.locator('[data-match-player="0"]')
+  await expect(slot0).toHaveAttribute('data-auto', 'true')
+  await expect(slot0.locator('[data-auto-tag]')).toBeVisible()
+  await expect(slot0.locator('input[name=name]')).toBeDisabled()
+  await page.locator('[data-slot-source="0"]').selectOption('')
+  await expect.poll(async () => (await T()).matches[4].slotSources?.[0]).toBeNull()
+  await expect(slot0.locator('input[name=name]')).toBeEnabled()
+  await slot0.locator('input[name=name]').fill('HANDY')
+  await expect.poll(async () => (await T()).matches[4].data.players[0].name).toBe('HANDY')
+
+  // make Semi B live: the draft now carries its data
+  await page.locator('[data-round="0"]').click()
+  await page.locator('[data-match-tab=match-2]').click()
   await page.locator('[data-make-active=match-2]').click()
-  await expect.poll(async () => (await state()).tournaments[0].activeMatchId).toBe('match-2')
+  await expect.poll(async () => (await T()).activeMatchId).toBe('match-2')
   expect((await state()).draft.players[0].name).toBe('ZED')
-  await expect(page.locator('[data-match=match-2]')).toHaveClass(/active/)
-
-  // go to next match
-  await page.locator('[data-next-match]').click()
-  await expect.poll(async () => (await state()).tournaments[0].activeMatchId).toBe('match-3')
-
-  // a config panel writes through
-  await page.locator('[data-win-block=cupEmblem]').click()
-  await expect.poll(async () => (await state()).tournaments[0].winScreen.blocks.cupEmblem).toBe(false)
+  await expect(page.locator('[data-live-tag]')).toBeVisible()
 })
 
-test('duplicate a tournament, with and without scores', async ({ page }) => {
+test('per-match settings: cup, single track, round and race counter', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await openTour(page)
+  await page.locator('[data-round="0"]').click()
+  await page.locator('[data-match-tab=match-2]').click()
+  await page.locator('[data-setup=match-2] select[name=matchCup]').selectOption('flower')
+  await expect.poll(async () => (await T()).matches[1].data.race.cupId).toBe('flower')
+  await page.locator('[data-setup=match-2] [data-mode=track]').click()
+  await expect.poll(async () => (await T()).matches[1].data.race.mode).toBe('track')
+  await page.locator('[data-setup=match-2] select[aria-label=Track]').selectOption('toad-harbor')
+  await expect.poll(async () => (await T()).matches[1].data.race.trackId).toBe('toad-harbor')
+  await page.locator('[data-setup=match-2] input[aria-label="Races in total"]').fill('6')
+  await page.locator('[data-setup=match-2] input[aria-label="Races in total"]').blur()
+  await expect.poll(async () => (await T()).matches[1].data.race.raceTotal).toBe(6)
+  // move Semi 2 into the final round: it follows to that page
+  await page.locator('[data-setup=match-2] select[name=matchRound]').selectOption('1')
+  await expect.poll(async () => (await T()).matches[1].round).toBe(1)
+  await expect(page.locator('[data-tour-page="round:1"]')).toBeVisible()
+  await expect(page.locator('[data-match-tab]')).toHaveCount(2)
+  await expect(page.locator('[data-match-tab=match-2]')).toHaveAttribute('aria-selected', 'true')
+})
+
+test('round names: edit, reset to Round n, undo', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await openTour(page)
+  await expect(page.locator('[data-round="0"]')).toContainText('Round 1')
+  await page.locator('[data-round="0"]').click()
+  const name = page.locator('[data-round-name]')
+  await expect(name).toHaveValue('Round 1')
+  await name.fill('Semi-finals')
+  await name.blur()
+  await expect.poll(async () => (await T()).roundNames).toEqual({ '0': 'Semi-finals' })
+  await expect(page.locator('[data-round="0"]')).toContainText('Semi-finals')
+  // Undo puts the old name back
+  await page.locator('[data-undo]').first().click()
+  await expect.poll(async () => (await T()).roundNames).toBeUndefined()
+  await expect(name).toHaveValue('Round 1')
+  // a name, then an empty field, falls back to Round n
+  await name.fill('Quarter-finals')
+  await name.blur()
+  await expect.poll(async () => (await T()).roundNames).toEqual({ '0': 'Quarter-finals' })
+  await name.fill('')
+  await name.blur()
+  await expect.poll(async () => (await T()).roundNames).toBeUndefined()
+  await expect(name).toHaveValue('Round 1')
+})
+
+test('fill from the previous round', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  // scramble the final's sources
+  await command({ type: 'setSlotSource', matchId: 'match-5', slot: 0, source: { matchId: 'match-3', auto: true } })
+  await command({ type: 'setSlotSource', matchId: 'match-5', slot: 1, source: null })
+  await command({ type: 'setSlotSource', matchId: 'match-5', slot: 3, source: { matchId: 'match-1', auto: false } })
+  await openTour(page)
+  await page.locator('[data-round="0"]').click()
+  await expect(page.locator('[data-fill-previous]')).toHaveCount(0) // nothing before the first round
+  await page.locator('[data-round="1"]').click()
+  await page.locator('[data-fill-previous]').click()
+  await expect.poll(async () => (await T()).matches[4].slotSources).toEqual([1, 2, 3, 4].map((n) => ({ matchId: `match-${n}`, auto: true })))
+  for (const i of [0, 1, 2, 3]) await expect(page.locator(`[data-match-player="${i}"]`)).toHaveAttribute('data-auto', 'true')
+})
+
+test('add round, add match to a round, remove round is two-tap', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await openTour(page)
+  await page.locator('[data-add-round]').click()
+  await expect(page.locator('[data-round]')).toHaveCount(3)
+  await expect(page.locator('[data-tour-page="round:2"]')).toBeVisible()
+  expect((await T()).matches).toHaveLength(6)
+  expect((await T()).matches[5].round).toBe(2)
+  const name = page.locator('[data-round-name]')
+  await name.fill('Grand final')
+  await name.blur()
+  await expect.poll(async () => (await T()).roundNames).toEqual({ '2': 'Grand final' })
+  await expect(page.locator('[data-round="2"]')).toContainText('Grand final')
+  // a second match in the new round; its tab is selected
+  await page.locator('[data-add-match]').click()
+  await expect.poll(async () => (await T()).matches.length).toBe(7)
+  await expect(page.locator('[data-match-tab]')).toHaveCount(2)
+  await expect(page.locator('[data-match-tab]').nth(1)).toHaveAttribute('aria-selected', 'true')
+  expect((await T()).matches[6].round).toBe(2)
+  // removing the round needs a second tap, then removes both matches, the name, and goes to the overview
+  const remove = page.locator('[data-remove-round]')
+  await remove.click()
+  await expect(remove).toContainText('Tap again')
+  expect((await T()).matches).toHaveLength(7)
+  await remove.click()
+  await expect.poll(async () => (await T()).matches.length).toBe(5)
+  expect((await T()).roundNames).toBeUndefined()
+  await expect(page.locator('[data-round]')).toHaveCount(2)
+  await expect(page.locator('[data-tour-page=overview]')).toBeVisible()
+})
+
+test('the only round cannot be removed; a single match cannot be removed; remove match is two-tap', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T', template: 'empty' })
+  await openTour(page)
+  await page.locator('[data-round="0"]').click()
+  await expect(page.locator('[data-remove-round]')).toBeDisabled()
+  await expect(page.locator('[data-remove-match]')).toBeDisabled()
+  await page.locator('[data-add-match]').click()
+  await expect.poll(async () => (await T()).matches.length).toBe(2)
+  const remove = page.locator('[data-remove-match]')
+  await remove.click()
+  await expect(remove).toContainText('Tap again')
+  expect((await T()).matches).toHaveLength(2)
+  await remove.click()
+  await expect.poll(async () => (await T()).matches.length).toBe(1)
+})
+
+test('maps: override one race, then back to the cup order', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await openTour(page)
+  await page.locator('[data-round="0"]').click()
+  await expect(page.locator('[data-maps-toggle]')).toContainText('Follow the cup order')
+  await page.locator('[data-maps-toggle]').click()
+  const map2 = page.locator('select[aria-label="Map for race 2"]')
+  await expect(map2).toHaveValue('')
+  await map2.selectOption('toad-harbor')
+  await expect.poll(async () => (await T()).matches[0].data.race.trackOverrides).toEqual([null, 'toad-harbor', null, null])
+  expect((await state()).draft.race.trackOverrides).toEqual([null, 'toad-harbor', null, null]) // match-1 is the live match
+  await expect(page.locator('[data-maps-toggle]')).toContainText('1 changed')
+  await page.locator('select[aria-label="Map for race 4"]').selectOption('shy-guy-falls')
+  await expect.poll(async () => (await T()).matches[0].data.race.trackOverrides).toEqual([null, 'toad-harbor', null, 'shy-guy-falls'])
+  await page.locator('[data-map-reset="1"]').click()
+  await expect.poll(async () => (await T()).matches[0].data.race.trackOverrides).toEqual([null, null, null, 'shy-guy-falls'])
+  await page.locator('[data-map-reset="3"]').click()
+  await expect.poll(async () => (await T()).matches[0].data.race.trackOverrides).toBeUndefined()
+  await expect(page.locator('[data-map-reset]')).toHaveCount(0)
+  // a match that is not live keeps its own maps, and the result rows follow them
+  await page.locator('[data-match-tab=match-2]').click()
+  await page.locator('[data-maps-toggle]').click()
+  await page.locator('select[aria-label="Map for race 1"]').selectOption('mario-circuit')
+  await expect.poll(async () => (await T()).matches[1].data.race.trackOverrides).toEqual(['mario-circuit', null, null, null])
+  expect((await state()).draft.race.trackOverrides).toBeUndefined()
+  await page.locator('[data-results=match-2] [data-add-race]').click()
+  await expect.poll(async () => (await T()).matches[1].data.scores.races[0]?.trackId).toBe('mario-circuit')
+})
+
+test('overview: issues with Fix links, readiness, bracket tap', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await nameSemis(['match-1', 'match-2', 'match-3'])
+  await openTour(page)
+  await page.locator('[data-overview]').click()
+  await expect(page.locator('[data-check=players]')).toContainText('4 slots still to name')
+  await expect(page.locator('[data-overview]')).toContainText('4 things to fix')
+  await expect(page.locator('[data-round="0"]')).toContainText('4 matches')
+  const issues = page.locator('[data-issue]')
+  await expect(issues).toHaveCount(4)
+  await expect(issues.first()).toContainText('Semi 4: P1 is still “Player 1”')
+  await expect(issues.first()).toHaveAttribute('data-match-id', 'match-4')
+  await issues.first().click()
+  await expect(page.locator('[data-tour-page="round:0"]')).toBeVisible()
+  await expect(page.locator('[data-match-tab=match-4]')).toHaveAttribute('aria-selected', 'true')
+  // fix the names there: the issues go away and the outline says ready
+  for (const i of [0, 1, 2, 3]) await page.locator(`[data-match-player="${i}"] input[name=name]`).fill(`P${i}X`)
+  await page.locator('[data-overview]').click()
+  await expect(page.locator('[data-overview]')).toContainText('Ready to run')
+  await expect(page.locator('[data-issue]')).toHaveCount(0)
+  await expect(page.locator('[data-check=players]')).toContainText('Every slot has a name')
+  // tapping a match in the bracket opens its round with that tab
+  await page.locator('[data-bracket] [data-match=match-5]').click()
+  await expect(page.locator('[data-tour-page="round:1"]')).toBeVisible()
+  await expect(page.locator('[data-match-tab=match-5]')).toHaveAttribute('aria-selected', 'true')
+})
+
+test('a match with no source and no name in a later round is an issue until it has one', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await nameSemis()
+  await command({ type: 'setSlotSource', matchId: 'match-5', slot: 2, source: null })
+  await openTour(page)
+  await page.locator('[data-overview]').click()
+  await expect(page.locator('[data-issue]')).toHaveCount(1)
+  await expect(page.locator('[data-issue]')).toContainText('pick a winner source or type a name')
+  await page.locator('[data-issue]').click()
+  await expect(page.locator('[data-tour-page="round:1"]')).toBeVisible()
+  await page.locator('[data-slot-source="2"]').selectOption('match-3')
+  await expect(page.locator('[data-overview]')).toContainText('Ready to run')
+})
+
+test('live match: select it, Next match, Go to Race', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await openTour(page)
+  await page.locator('[data-overview]').click()
+  await page.locator('select[name=liveMatch]').selectOption('match-3')
+  await expect.poll(async () => (await T()).activeMatchId).toBe('match-3')
+  await expect(page.locator('[data-live-footer]')).toContainText('Semi 3')
+  await expect(page.locator('[data-bracket] [data-match=match-3]')).toHaveAttribute('data-status', 'live')
+  await expect(page.locator('[data-next-match]')).toContainText('Semi 4')
+  await page.locator('[data-next-match]').click()
+  await expect.poll(async () => (await T()).activeMatchId).toBe('match-4')
+  await page.locator('select[name=liveMatch]').selectOption('match-5')
+  await expect.poll(async () => (await T()).activeMatchId).toBe('match-5')
+  await expect(page.locator('[data-next-match]')).toBeDisabled()
+  await page.locator('[data-go-race]').click()
+  await expect(page).toHaveURL(/#\/race$/)
+})
+
+test('library: duplicate with and without scores, close, load, rename, delete is two-tap', async ({ page }) => {
   await command({ type: 'createTournament', name: 'Orig' })
   await command({ type: 'setMatchResults', matchId: 'match-1', races: [{ raceNo: 1, trackId: 'rainbow-road', positions: [1, 2, 3, 4] }] })
-  await page.goto('/control')
-  await page.getByRole('tab', { name: 'Tournament' }).click()
+  await openTour(page)
+  await page.locator('[data-library]').click()
+  await expect(page.locator('[data-tournament=tournament-1] [data-loaded]')).toBeVisible()
   await page.locator('[data-tournament=tournament-1] [data-duplicate]').click()
   await expect.poll(async () => (await state()).tournaments.length).toBe(2)
   let s = await state()
@@ -87,12 +334,96 @@ test('duplicate a tournament, with and without scores', async ({ page }) => {
   expect(s.activeTournamentId).toBe('tournament-3')
   expect(s.tournaments[2].matches[0].data.scores.races).toHaveLength(0)
   expect(s.tournaments[0].matches[0].data.scores.races).toHaveLength(1)
+
+  // close: free play, the outline offers to create
+  await page.locator('[data-tournament=tournament-3] [data-close-tournament]').click()
+  await expect.poll(async () => (await state()).activeTournamentId).toBeNull()
+  await expect(page.locator('[data-new=bracket]')).toBeVisible()
+  await expect(page.locator('[data-round]')).toHaveCount(0)
+  // load brings it back; Undo of the load closes it again
+  await page.locator('[data-tournament=tournament-1] [data-load]').click()
+  await expect.poll(async () => (await state()).activeTournamentId).toBe('tournament-1')
+  await expect(page.locator('[data-loaded-name]')).toHaveText('Orig')
+  await page.locator('[data-undo]').first().click()
+  await expect.poll(async () => (await state()).activeTournamentId).toBeNull()
+  await page.locator('[data-tournament=tournament-1] [data-load]').click()
+  await expect.poll(async () => (await state()).activeTournamentId).toBe('tournament-1')
+
+  // rename
+  await page.locator('[data-tournament=tournament-2] [data-rename]').click()
+  const rename = page.locator('[data-tournament=tournament-2] input[name=renameTournament]')
+  await rename.fill('Second')
+  await rename.press('Enter')
+  await expect.poll(async () => (await state()).tournaments[1].name).toBe('Second')
+
+  // delete needs two taps
+  const del = page.locator('[data-tournament=tournament-2] [data-delete]')
+  await del.click()
+  await expect(del).toContainText('Tap again')
+  expect((await state()).tournaments).toHaveLength(3)
+  await del.click()
+  await expect.poll(async () => (await state()).tournaments.map((t) => t.id)).toEqual(['tournament-1', 'tournament-3'])
+})
+
+test('overview renames the tournament and Undo restores the name', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'Before' })
+  await openTour(page)
+  const name = page.locator('[data-tournament-name]')
+  await name.fill('After')
+  await name.blur()
+  await expect.poll(async () => (await T()).name).toBe('After')
+  await expect(page.locator('[data-loaded-name]')).toHaveText('After')
+  await page.locator('[data-undo]').first().click()
+  await expect.poll(async () => (await T()).name).toBe('Before')
+})
+
+test('graphics: configs write through, previews follow, Send to Preview targets the selected output', async ({ page }) => {
+  await command({ type: 'createTournament', name: 'T' })
+  await openTour(page)
+  await page.locator('[data-graphics]').click()
+  await expect(page.locator('[data-target=wide]')).toContainText('Wide')
+  // win screen
+  await page.locator('[data-win-layout=heroCentre]').click()
+  await expect.poll(async () => (await T()).winScreen.layout).toBe('heroCentre')
+  await page.locator('[data-win-block=cupEmblem]').click()
+  await expect.poll(async () => (await T()).winScreen.blocks.cupEmblem).toBe(false)
+  await page.locator('[data-win-block=cupEmblem]').click()
+  await expect.poll(async () => (await T()).winScreen.blocks.cupEmblem).toBe(true)
+  // matches scene (the preview redraws with the layout)
+  await page.locator('[data-matches-layout=row]').click()
+  await expect.poll(async () => (await T()).matchesScene.layout).toBe('row')
+  await expect(page.locator('[data-preview=matches] [data-layout=row]')).toBeVisible()
+  await page.locator('[data-matches-detail="wide-winner"]').click()
+  await expect.poll(async () => (await T()).matchesScene.detail.wide).toBe('winner')
+  await page.locator('[data-pending=hide]').click()
+  await expect.poll(async () => (await T()).matchesScene.pendingScores).toBe('hide')
+  await page.locator('[data-live-marker]').click()
+  await expect.poll(async () => (await T()).matchesScene.liveMarker).toBe(false)
+  // bracket
+  await page.locator('[data-bracket-scores]').click()
+  await expect.poll(async () => (await T()).bracket.showScores).toBe(false)
+  await page.locator('[data-bracket-status]').click()
+  await expect.poll(async () => (await T()).bracket.showStatus).toBe(false)
+  // Send to Preview sets the selected output's scene
+  await page.locator('[data-send=bracket]').click()
+  await expect.poll(async () => (await state()).layers.wide.scene).toBe('bracket')
+  await page.locator('[data-send=matches]').click()
+  await expect.poll(async () => (await state()).layers.wide.scene).toBe('matches')
+  await page.locator('[data-win-kind=cupWin]').click()
+  await page.locator('[data-send=cupWin]').click()
+  await expect.poll(async () => (await state()).layers.wide.scene).toBe('cupWin')
+  await page.locator('[data-win-kind=raceWin]').click()
+  await page.locator('[data-send=raceWin]').click()
+  await expect.poll(async () => (await state()).layers.wide.scene).toBe('raceWin')
+  // nothing was taken to air
+  expect((await state()).program.wide.view.scene?.kind).not.toBe('raceWin')
 })
 
 test('scene controls: cup win part, split across outputs, matches set; cue action', async ({ page }) => {
   await command({ type: 'createTournament', name: 'T' })
   await page.goto('/control')
-  await page.getByRole('button', { name: 'Cup win' }).click()
+  await openPage(page, 'live')
+  await page.locator('[data-scene=cupWin]').click()
   await page.locator('[data-part=hero]').click()
   await expect.poll(async () => (await state()).layers.wide.part).toBe('hero')
   await page.locator('select[name=matchRef]').selectOption('previous')
@@ -100,14 +431,13 @@ test('scene controls: cup win part, split across outputs, matches set; cue actio
   await page.locator('[data-split]').click()
   await expect.poll(async () => (await state()).layers.twins.part).toBe('board')
   expect((await state()).layers.twins.scene).toBe('cupWin')
-  await page.getByRole('button', { name: 'Matches', exact: true }).click()
+  await page.locator('[data-scene=matches]').click()
   await page.locator('[data-set-round="0"]').click()
   await expect.poll(async () => (await state()).layers.wide.matchSet).toEqual({ rounds: [0] })
 
+  // the nextMatch cue action (set through the model, not the rundown UI)
   await command({ type: 'savePreset', name: 'Look' })
   await command({ type: 'createStack', name: 'Run' })
-  await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: null })
-  await page.getByRole('tab', { name: 'Cues' }).click()
-  await page.locator('[data-cue=cue-1] select[name=cueAction]').selectOption('nextMatch')
+  await command({ type: 'addCue', stackId: 'stack-1', presetId: 'preset-1', take: null, action: 'nextMatch' })
   await expect.poll(async () => (await state()).stacks[0].cues[0].action).toBe('nextMatch')
 })

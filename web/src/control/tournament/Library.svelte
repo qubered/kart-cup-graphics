@@ -101,7 +101,7 @@
         {:else}
           <b>{tn.name}</b>
         {/if}
-        <small>{rounds} round{rounds === 1 ? '' : 's'} · {tn.matches.length} match{tn.matches.length === 1 ? '' : 'es'} · {done} done{#if loaded} · <span class="loaded" data-loaded>LOADED</span>{/if}</small>
+        <small>{rounds} round{rounds === 1 ? '' : 's'} · {tn.matches.length} match{tn.matches.length === 1 ? '' : 'es'} · {done} done{loaded ? ' · ' : ''}{#if loaded}<span class="loaded" data-loaded>LOADED</span>{/if}</small>
       </div>
       <div class="tacts">
         {#if loaded}
@@ -117,7 +117,7 @@
         <button type="button" class="u-btn" data-duplicate onclick={() => duplicate(tn.id, tn.name, false)}>Duplicate</button>
         <button type="button" class="u-btn" data-duplicate-clear onclick={() => duplicate(tn.id, tn.name, true)}>Duplicate, clear scores</button>
         <button type="button" class="u-btn danger" class:confirm={tt.armed === `del:${tn.id}`} data-delete onclick={() => tt.tap(`del:${tn.id}`, () => remove(tn.id, tn.name))}>
-          {tt.armed === `del:${tn.id}` ? 'Tap again to delete' : 'Delete'}
+          {tt.armed === `del:${tn.id}` ? (loaded ? 'Tap again: it is loaded' : 'Tap again to delete') : 'Delete'}
         </button>
       </div>
     </div>

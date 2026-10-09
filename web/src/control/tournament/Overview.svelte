@@ -37,7 +37,7 @@
 
 <div class="u-ph">
   <span class="u-lab">Overview</span>
-  <input class="u-input tname" type="text" name="tournamentName" data-tournament-name value={t.name} maxlength="100" aria-label="Tournament name" onchange={rename} />
+  <input class="u-input tname" type="text" name="tournamentTitle" data-tournament-name value={t.name} maxlength="100" aria-label="Tournament name" onchange={rename} />
 </div>
 <div class="u-grow ov">
   <section aria-label="Bracket at a glance">

@@ -23,7 +23,7 @@ export const setNewTemplate = (newTemplate: Template) => tourNav.update((n) => (
 /** Open a round page. `matchId` selects a match tab; leave it out to keep the current pick, or pass null to start from the live match. */
 export const openRound = (round: number, matchId?: string | null) =>
   tourNav.update((n) => ({ ...n, page: `round:${round}`, matchId: matchId === undefined ? n.matchId : matchId }))
-export const pickMatch = (matchId: string) => tourNav.update((n) => ({ ...n, matchId }))
+export const pickMatch = (matchId: string | null) => tourNav.update((n) => ({ ...n, matchId }))
 
 /** The round of a `round:n` page, else null. */
 export function roundOfPage(page: TourPage): number | null {

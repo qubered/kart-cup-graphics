@@ -42,6 +42,7 @@
     <span class="u-lab">Results</span>
     <button type="button" class="u-btn" data-add-race onclick={addRace}>＋ Add race</button>
   </div>
+  <div class="tw">
   <table class="res">
     <thead>
       <tr>
@@ -87,6 +88,7 @@
       </tr>
     </tbody>
   </table>
+  </div>
 
   <div class="ovr">
     <label class="u-lab" for="winner-{match.id}">Winner</label>
@@ -99,20 +101,21 @@
 </section>
 
 <style>
-  .sec { display: grid; gap: 10px; padding: 14px 16px; }
+  .sec { display: grid; gap: 10px; padding: 14px 16px; min-width: 0; }
+  .tw { overflow-x: auto; min-width: 0; }
   .hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .res { width: 100%; border-collapse: collapse; font-size: 13px; }
   .res th { text-align: left; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ui-muted); font-weight: 600; padding: 6px 4px; border-bottom: 1px solid var(--ui-line); white-space: nowrap; }
   .res th .pn { display: inline-block; max-width: 70px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
-  .res td { padding: 5px 4px; border-bottom: 1px solid #1c1f26; vertical-align: middle; }
+  .res td { padding: 5px 3px; border-bottom: 1px solid #1c1f26; vertical-align: middle; }
   .pc { display: inline-block; width: 6px; height: 16px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
-  .rl { min-width: 96px; }
+  .rl { min-width: 84px; }
   .rl b { margin-right: 6px; color: #fff; }
   .rl .u-dim { font-size: 11.5px; }
-  .pos { width: 100%; min-width: 66px; padding: 0 6px; }
+  .pos { width: 100%; min-width: 60px; padding: 0 4px; }
   .plus { display: block; margin-top: 2px; font-size: 11px; color: #4ade80; }
   .x { width: 44px; padding: 0; }
-  .adj .u-input { width: 100%; min-width: 60px; padding: 0 6px; }
+  .adj .u-input { width: 100%; min-width: 56px; padding: 0 6px; }
   .tot td { border-bottom: 0; font-weight: 700; }
   .num { font-family: var(--ui-mono); color: #fff; font-size: 15px; }
   .num.win { color: #4ade80; }

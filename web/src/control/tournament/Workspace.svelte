@@ -4,7 +4,7 @@
   import { control } from '../store'
   import { activeTournament, liveMatches } from '../../../../shared/tournament'
   import { roundNumbers, validateTournament } from '../tournament'
-  import { roundOfPage, tourNav, type TourPage } from './nav'
+  import { pickMatch, roundOfPage, tourNav, type TourPage } from './nav'
   import Graphics from './Graphics.svelte'
   import Library from './Library.svelte'
   import Outline from './Outline.svelte'
@@ -26,6 +26,16 @@
     return r !== null && !rounds.includes(r) ? 'overview' : p
   })
   const round = $derived(roundOfPage(page))
+
+  // Match ids repeat across tournaments (match-1 ...), so a tab picked in one must not carry over to another.
+  let lastId: string | null = null
+  $effect(() => {
+    const id = t?.id ?? null
+    if (id !== lastId) {
+      lastId = id
+      pickMatch(null)
+    }
+  })
 </script>
 
 {#if show && catalog}

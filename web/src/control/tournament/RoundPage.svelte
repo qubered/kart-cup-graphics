@@ -21,6 +21,7 @@
   const fallback = $derived(`Round ${round + 1}`)
   const prev = $derived(previousRound(matches, round))
   const removeCmds = $derived(removeRoundCommands(t, round))
+  const hasLive = $derived(ms.some((m) => m.id === t.activeMatchId))
 
   function renameRound(e: Event & { currentTarget: HTMLInputElement }) {
     const input = e.currentTarget
@@ -67,7 +68,7 @@
     <button type="button" class="u-btn" data-fill-previous onclick={fill}>Fill players from the previous round’s winners</button>
   {/if}
   <button type="button" class="u-btn danger" class:confirm={tt.armed === `rr:${round}`} data-remove-round disabled={!removeCmds} onclick={() => tt.tap(`rr:${round}`, removeRound)}>
-    {tt.armed === `rr:${round}` ? 'Tap again to remove round' : 'Remove round'}
+    {tt.armed === `rr:${round}` ? (hasLive ? 'Tap again: it holds the live match' : 'Tap again to remove round') : 'Remove round'}
   </button>
 </div>
 <div class="mtabs" role="tablist" aria-label="Matches in {name}">
@@ -110,7 +111,7 @@
   .mtab em.done { color: #86efac; opacity: .8; }
   .mtab.add { margin-left: auto; color: #93c5fd; font-weight: 600; }
   .sb { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 700 11px/1 var(--ui-font); font-style: normal; background: var(--ui-pending); color: #111; }
-  .rbody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+  .rbody { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
   .col { min-width: 0; }
   .right { border-left: 1px solid var(--ui-line); }
 </style>

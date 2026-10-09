@@ -60,7 +60,7 @@
       <button type="button" class="u-btn" data-make-active={match.id} onclick={() => send({ type: 'setActiveMatch', matchId: match.id })}>Make live</button>
     {/if}
     <button type="button" class="u-btn danger end" class:confirm={tt.armed === `rm:${match.id}`} data-remove-match disabled={matches.length < 2} onclick={() => tt.tap(`rm:${match.id}`, remove)}>
-      {tt.armed === `rm:${match.id}` ? 'Tap again to remove' : 'Remove match'}
+      {tt.armed === `rm:${match.id}` ? (isLive ? 'Tap again: this is the live match' : 'Tap again to remove') : 'Remove match'}
     </button>
   </div>
 
