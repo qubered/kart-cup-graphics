@@ -102,7 +102,7 @@ export function previewModified(st: Pick<ShowState, 'lastPreset' | 'presets' | '
 }
 
 const SCENE_LABEL: Record<SceneId, string> = {
-  none: 'None', title: 'Title', lineup: 'Line-up', nextRace: 'Next race', standings: 'Standings', winner: 'Winner',
+  none: 'None', title: 'Title', lineup: 'Line-up', announce: 'Announce', nextRace: 'Next race', standings: 'Standings', winner: 'Winner',
   raceWin: 'Race win', cupWin: 'Cup win', bracket: 'Bracket', matches: 'Matches', notice: 'Notice', qr: 'QR codes',
 }
 const NAME_MAX = 100

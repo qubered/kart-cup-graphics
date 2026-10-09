@@ -291,11 +291,11 @@ describe('thumbnail models', () => {
 describe('scene editor helpers', () => {
   it('offers each format the scenes it can show, bracket and matches only with a tournament', () => {
     const ids = (f: 'wide' | 'twin' | 'hd', t: boolean) => availableScenes(f, t).map((x) => x.id)
-    expect(ids('wide', false)).toEqual(['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'notice', 'qr'])
+    expect(ids('wide', false)).toEqual(['none', 'title', 'lineup', 'announce', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'notice', 'qr'])
     expect(ids('wide', true)).toContain('bracket')
     expect(ids('wide', true)).toContain('matches')
-    expect(ids('twin', false)).toEqual(['none', 'title', 'raceWin', 'cupWin', 'qr'])
-    expect(ids('twin', true)).toEqual(['none', 'title', 'raceWin', 'cupWin', 'bracket', 'matches', 'qr'])
+    expect(ids('twin', false)).toEqual(['none', 'title', 'announce', 'raceWin', 'cupWin', 'qr'])
+    expect(ids('twin', true)).toEqual(['none', 'title', 'announce', 'raceWin', 'cupWin', 'bracket', 'matches', 'qr'])
     expect(ids('hd', false)).toEqual(ids('wide', false))
   })
   it('offers a twin only the hero and board parts', () => {

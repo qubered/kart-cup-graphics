@@ -83,6 +83,7 @@ export function layersKey(l: Layers): string {
   }
   switch (l.scene) {
     case 'lineup': base.lineupShown = l.lineupShown ?? 4; break
+    case 'announce': base.announceSlot = l.announceSlot ?? 0; break
     case 'title': base.logo = l.logo ?? 'corner'; break
     case 'notice': base.noticeQr = !!l.noticeQr; break
     case 'qr': base.qrStyle = l.qrStyle ?? 'center'; break

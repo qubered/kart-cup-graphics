@@ -22,6 +22,17 @@ describe('deriveView', () => {
     const players = (n?: number) => { const s = deriveView(st.draft, { ...EMPTY_LAYERS, scene: 'lineup', lineupShown: n }, hd, idx).scene; return s?.kind === 'lineup' ? s.players.length : -1 }
     expect([players(0), players(2), players(undefined)]).toEqual([0, 2, 4])
   })
+  it('announce shows the chosen player (default P1, clamped) in every format', () => {
+    const players = st.draft.players.map((p, i) => (i === 1 ? { ...p, subtitle: 'Lead Engineer · Platform' } : p))
+    const d = { ...st.draft, players }
+    const wide = st.outputs[0]
+    const who = (slot: number | undefined, f = hd) => { const s = deriveView(d, { ...EMPTY_LAYERS, scene: 'announce', announceSlot: slot }, f, idx).scene; return s?.kind === 'announce' ? s.player : null }
+    expect(who(undefined)?.slot).toBe(0)
+    expect(who(1)).toMatchObject({ slot: 1, subtitle: 'Lead Engineer · Platform' })
+    expect([who(9)?.slot, who(-2)?.slot]).toEqual([3, 0])
+    expect(who(2, twin)?.slot).toBe(2)
+    expect(who(2, wide)?.slot).toBe(2)
+  })
   it('track card cup mode', () => {
     const d2 = { ...st.draft, race: { ...st.draft.race, raceIndex: 1 as const, raceNo: 2 } }
     expect(deriveView(d2, { ...EMPTY_LAYERS, trackCard: true }, twin, idx).trackCard).toMatchObject({

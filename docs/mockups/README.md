@@ -45,6 +45,7 @@ The mockups need internet for Google Fonts and Mario Wiki images. The real app s
 | `overlays/twin-lower-thirds.html`, `hd-lower-thirds.html`, `wide-lower-thirds.html` | Medallion lower thirds + T1 track card per format |
 | `overlays/hold.html` | HOLD slide, wide/hd/twin |
 | `scenes/lineup.html`, `next-race.html`, `standings.html`, `winner.html` | Wide scenes |
+| `backgrounds/d-player-announce.html`, `scenes/player-announce.html` | Player announcement: field in the player's colour with checkered flag bands, winner-hero layout on top. Built in the app as `AnnounceScene.svelte` (`announce` scene; player picked with `announceSlot`) |
 | `ui/control.html` | Approved control-page layout (1600×1000), standard operator UI |
 | `ui/multiview.html` | Multiview (1920×1080) |
 

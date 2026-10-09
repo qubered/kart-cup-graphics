@@ -3,7 +3,7 @@ import type { Catalog } from './catalog'
 export type ColourId = 'red' | 'blue' | 'green' | 'yellow' | 'pink' | 'orange' | 'purple' | 'cyan'
 export type OutputFormat = 'wide' | 'twin' | 'hd'
 export type BackgroundId = 'A' | 'B' | 'C' | 'none'
-export type SceneId = 'none' | 'title' | 'lineup' | 'nextRace' | 'standings' | 'winner' | 'notice' | 'qr' | 'raceWin' | 'cupWin' | 'bracket' | 'matches'
+export type SceneId = 'none' | 'title' | 'lineup' | 'announce' | 'nextRace' | 'standings' | 'winner' | 'notice' | 'qr' | 'raceWin' | 'cupWin' | 'bracket' | 'matches'
 export type LogoMode = 'off' | 'corner' | 'title'
 /** QR scene layout. wide: centre = both codes + text in the middle; title = title in the middle, a code + text either side; sides = same without the title (background shows through). hd: centre = codes + text; title = title above, codes + text below (sides = centre). Twins always show one code + text per half. */
 export type QrStyle = 'center' | 'title' | 'sides'
@@ -49,6 +49,8 @@ export type ScenePart = 'full' | 'hero' | 'board'
  *  `part`: raceWin/cupWin only (default full). `matchRef`: raceWin/cupWin source match (default active). `matchSet`: matches scene selection (default all). */
 export interface Layers {
   background: BackgroundId; scene: SceneId; trackCard: boolean; lowerThirds: { on: boolean; players: number[] }; lineupShown?: number
+  /** Announce scene: which player (slot 0-3) is announced. Absent = 0. */
+  announceSlot?: number
   part?: ScenePart; matchRef?: MatchRef; matchSet?: MatchSet
   /** Where the logo sits on the title scene. Absent = 'corner'. */
   logo?: LogoMode
@@ -137,6 +139,7 @@ export interface TrackCardView { raceLabel: string; cupName: string; cupEmblem: 
 export type SceneView =
   | { kind: 'title'; title: TitleView; logo: LogoMode }
   | { kind: 'lineup'; players: PlayerView[] }
+  | { kind: 'announce'; player: PlayerView }
   | { kind: 'nextRace'; raceLabel: string; cupName: string; cupEmblem: string; trackName: string; trackImage: string; single: boolean; cupTracks: { name: string; thumb: string; current: boolean }[] }
   | { kind: 'standings'; rows: { position: number; player: PlayerView; total: number; lastRacePoints: number | null }[] }
   | { kind: 'winner'; player: PlayerView; total: number }

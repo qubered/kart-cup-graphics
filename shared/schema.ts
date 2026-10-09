@@ -6,7 +6,7 @@ import type { BracketConfig, Command, Cue, CueStack, Layers, Match, MatchesScene
 export const colourIdSchema = z.enum(['red', 'blue', 'green', 'yellow', 'pink', 'orange', 'purple', 'cyan'])
 export const outputFormatSchema = z.enum(['wide', 'twin', 'hd'])
 export const backgroundIdSchema = z.enum(['A', 'B', 'C', 'none'])
-export const sceneIdSchema = z.enum(['none', 'title', 'lineup', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'])
+export const sceneIdSchema = z.enum(['none', 'title', 'lineup', 'announce', 'nextRace', 'standings', 'winner', 'notice', 'qr', 'raceWin', 'cupWin', 'bracket', 'matches'])
 export const transitionSpeedSchema = z.enum(['fast', 'normal', 'slow'])
 export const takeModeSchema = z.enum(['cut', 'auto'])
 export const slotSchema = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)])
@@ -78,6 +78,7 @@ const layersShape = {
   trackCard: z.boolean(),
   lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }),
   lineupShown: z.number().int().min(0).max(4).optional(),
+  announceSlot: slotSchema.optional(),
   part: scenePartSchema.optional(),
   matchRef: matchRefSchema.optional(),
   matchSet: matchSetSchema.optional(),
@@ -236,6 +237,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     trackCard: z.boolean().optional(),
     lowerThirds: z.object({ on: z.boolean(), players: z.array(slotSchema).max(4) }).optional(),
     lineupShown: z.number().int().min(0).max(4).optional(),
+    announceSlot: slotSchema.optional(),
     part: scenePartSchema.optional(),
     matchRef: matchRefSchema.optional(),
     matchSet: matchSetSchema.optional(),
