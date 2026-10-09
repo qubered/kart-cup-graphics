@@ -29,7 +29,7 @@
 {#if st && catalog}
   <div class="racepage">
     <LiveRace {st} {catalog} {tournament} {matchId} {matchKey} />
-    <PlayersPad {st} {catalog} {matchId} {matchKey} pending={$control.payload?.pending ?? {}} />
+    <PlayersPad {st} {catalog} {matchKey} pending={$control.payload?.pending ?? {}} />
     <Scoreboard {st} {tournament} {matchId} />
   </div>
 {:else}

@@ -14,8 +14,8 @@
   import { PLACES, SLOTS, changedPlayers, clearRaceCommands, isCompleteRow, liveRaceNo, placedCount, rowPoints, rowView, sameRow, stepPlan, tapPlace, trackOfRace } from './logic'
   import { staging } from './staging.svelte'
 
-  let { st, catalog, matchId, matchKey, pending }: {
-    st: ShowState; catalog: CatalogIndex; matchId: string | null; matchKey: string; pending: Record<string, number>
+  let { st, catalog, matchKey, pending }: {
+    st: ShowState; catalog: CatalogIndex; matchKey: string; pending: Record<string, number>
   } = $props()
 
   const ORD = ['1st', '2nd', '3rd', '4th']
@@ -54,7 +54,7 @@
     if (!s) { staging.drop(matchKey, raceNo); return }
     clr.tap('clear', () => {
       staging.drop(matchKey, raceNo)
-      act(`Clear race ${raceNo}`, clearRaceCommands(matchId, draft.scores, raceNo),
+      act(`Clear race ${raceNo}`, clearRaceCommands(raceNo),
         [{ type: 'saveResults', raceNo, trackId: s.trackId, positions: [...s.positions] }], `Cleared race ${raceNo}`)
     })
   }

@@ -206,6 +206,8 @@ export type Command =
   | { type: 'setRaceTrack'; raceIndex: 0 | 1 | 2 | 3; trackId: string | null }
   | { type: 'saveResults'; raceNo: number; trackId: string; positions: number[]; adjustments?: number[] }
   | { type: 'setAdjustment'; index: 0 | 1 | 2 | 3; value: number }
+  /** Remove one saved race (by race number) from the live draft's scores: the active match inside a tournament, the show's own scores otherwise. */
+  | { type: 'clearRace'; raceNo: number }
   | { type: 'setEventText'; patch: Partial<EventText> }
   | { type: 'setNotice'; doc: NoticeDoc }
   | { type: 'setQr'; patch: { text?: string; items?: [QrItem, QrItem] } }

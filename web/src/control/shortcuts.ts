@@ -5,12 +5,14 @@ export interface ShortcutKey { key: string; shiftKey: boolean; targetTag: string
 export interface ShortcutState { outputs: string[]; armed: string[]; hold: boolean; ftb: boolean; goStackId?: string | null }
 
 const TEXT_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
+/** Fields where capital letters are typed text: Shift+B must never fade the outputs to black from inside one. */
+const TYPED_TAGS = new Set(['INPUT', 'TEXTAREA'])
 
 export function shortcutCommand(e: ShortcutKey, s: ShortcutState): Command | null {
   const typing = TEXT_TAGS.has(e.targetTag.toUpperCase())
   // Emergency shortcuts work everywhere.
   if (e.shiftKey && e.key === 'Escape') return { type: 'clear' }
-  if (e.shiftKey && (e.key === 'B' || e.key === 'b')) return { type: 'ftb', on: !s.ftb }
+  if (e.shiftKey && (e.key === 'B' || e.key === 'b') && !TYPED_TAGS.has(e.targetTag.toUpperCase())) return { type: 'ftb', on: !s.ftb }
   if (typing || e.shiftKey) return null
   if (e.key === ' ') return { type: 'take', mode: 'auto' }
   if (e.key === 'Enter') return { type: 'take', mode: 'cut' }

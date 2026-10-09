@@ -164,31 +164,34 @@ describe('commands', () => {
     { type: 'saveResults', raceNo: 2, trackId: 'water-park', positions: [2, 1, 4, 3] },
     { type: 'setAdjustment', index: 2, value: 5 },
   )
-  it('clears a race in free play by replaying the others, adjustments kept', () => {
+  it('clears a race in free play, adjustments kept', () => {
     const s = full(base)
-    const cmds = clearRaceCommands(null, s.draft.scores, 1)
-    expect(cmds[0]).toEqual({ type: 'resetScores' })
+    const cmds = clearRaceCommands(1)
+    expect(cmds).toEqual([{ type: 'clearRace', raceNo: 1 }])
     const after = run(s, ...cmds)
     expect(after.draft.scores.races).toEqual([{ raceNo: 2, trackId: 'water-park', positions: [2, 1, 4, 3] }])
     expect(after.draft.scores.adjustments).toEqual([0, 0, 5, 0])
   })
   it('clearing the only race keeps the adjustments too', () => {
     const s = run(base, { type: 'saveResults', raceNo: 1, trackId: 'mario-kart-stadium', positions: [1, 2, 3, 4] }, { type: 'setAdjustment', index: 1, value: -2 })
-    const after = run(s, ...clearRaceCommands(null, s.draft.scores, 1))
+    const after = run(s, ...clearRaceCommands(1))
     expect(after.draft.scores).toEqual({ races: [], adjustments: [0, -2, 0, 0] })
   })
-  it('clears a race inside a tournament with one setMatchResults on the active match', () => {
+  it('clears a race inside a tournament (the active match mirrors the draft)', () => {
     const s = full(run(base, { type: 'createTournament', name: 'Finals', template: 'bracket' }))
     const t = activeTournament(s)!
-    const cmds = clearRaceCommands(t.activeMatchId, s.draft.scores, 2)
-    expect(cmds).toEqual([{ type: 'setMatchResults', matchId: t.activeMatchId, races: [{ raceNo: 1, trackId: 'mario-kart-stadium', positions: [1, 2, 3, 4] }] }])
-    const after = run(s, ...cmds)
+    const after = run(s, ...clearRaceCommands(2))
     expect(after.draft.scores.races.map((r) => r.raceNo)).toEqual([1])
     expect(after.draft.scores.adjustments).toEqual([0, 0, 5, 0])
+    expect(activeTournament(after)!.matches.find((m) => m.id === t.activeMatchId)!.data.scores.races.map((r) => r.raceNo)).toEqual([1])
+  })
+  it('clearing a race that was never saved changes nothing', () => {
+    const s = full(base)
+    expect(run(s, ...clearRaceCommands(4))).toBe(s)
   })
   it('the undo of a clear (saving the race again) restores it', () => {
     const s = full(base)
-    const cleared = run(s, ...clearRaceCommands(null, s.draft.scores, 2))
+    const cleared = run(s, ...clearRaceCommands(2))
     const back = run(cleared, { type: 'saveResults', raceNo: 2, trackId: 'water-park', positions: [2, 1, 4, 3] })
     expect(back.draft.scores).toEqual(s.draft.scores)
   })

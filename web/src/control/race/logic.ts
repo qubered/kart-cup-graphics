@@ -6,7 +6,6 @@ import { pointsFor, standings } from '../../../../shared/scoring'
 import { effectiveTrackId, matchWinnerSlot } from '../../../../shared/tournament'
 import type { Command, RaceResult, RaceState, ShowData, ShowState } from '../../../../shared/types'
 import { duplicatePositions } from '../catalog'
-import { removeRace } from '../tournament'
 
 export const SLOTS = [0, 1, 2, 3] as const
 export type Slot = (typeof SLOTS)[number]
@@ -152,16 +151,9 @@ export function leaderNote(rows: BoardRow[], names: string[], done: number, tota
 
 // ---- commands ----
 
-/** The live match's saved results are edited with the match's own command inside a tournament. Without one there is no remove command:
- *  free play wipes the scores and replays the other races (adjustments ride on the last save). */
-export function clearRaceCommands(matchId: string | null, scores: ShowData['scores'], raceNo: number): Command[] {
-  const races = removeRace(scores.races, raceNo)
-  if (matchId) return [{ type: 'setMatchResults', matchId, races }]
-  const adj = scores.adjustments
-  const cmds: Command[] = [{ type: 'resetScores' }]
-  races.forEach((r, i) => cmds.push({ type: 'saveResults', raceNo: r.raceNo, trackId: r.trackId, positions: [...r.positions], ...(i === races.length - 1 ? { adjustments: [...adj] } : {}) }))
-  if (!races.length) adj.forEach((value, index) => { if (value) cmds.push({ type: 'setAdjustment', index: index as Slot, value }) })
-  return cmds
+/** Remove one saved race from the live draft (the active match inside a tournament, the show's own scores otherwise). */
+export function clearRaceCommands(raceNo: number): Command[] {
+  return [{ type: 'clearRace', raceNo }]
 }
 
 export interface Plan { commands: Command[]; undo: Command[]; message: string }

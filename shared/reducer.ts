@@ -388,6 +388,11 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       const adjustments = cmd.adjustments ? [...cmd.adjustments] : state.draft.scores.adjustments
       return liveScores(withDraft(state, { scores: { races, adjustments } }), ctx)
     }
+    case 'clearRace': {
+      const races = state.draft.scores.races.filter((r) => r.raceNo !== cmd.raceNo)
+      if (races.length === state.draft.scores.races.length) return state
+      return liveScores(withDraft(state, { scores: { ...state.draft.scores, races } }), ctx)
+    }
     case 'setAdjustment': {
       const adjustments = state.draft.scores.adjustments.map((v, i) => (i === cmd.index ? cmd.value : v))
       return liveScores(withDraft(state, { scores: { ...state.draft.scores, adjustments } }), ctx)

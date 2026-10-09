@@ -217,6 +217,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
     adjustments: z.array(z.number().finite()).length(4).optional(),
   }),
   z.object({ type: z.literal('setAdjustment'), index: slotSchema, value: z.number().finite() }),
+  z.object({ type: z.literal('clearRace'), raceNo: z.number().int().min(1) }),
   z.object({ type: z.literal('setEventText'), patch: eventTextSchema.partial() }),
   z.object({ type: z.literal('setNotice'), doc: noticeDocSchema }),
   z.object({ type: z.literal('setQr'), patch: z.object({ text: z.string().max(1000).optional(), items: z.tuple([qrItemSchema, qrItemSchema]).optional() }) }),
