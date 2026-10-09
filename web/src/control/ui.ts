@@ -1,7 +1,7 @@
 // Client-only UI state for the overhauled control page: current page, rundown pick, Run/Edit lock, toasts and Undo.
 // Nothing here is show state: that lives on the server (see store.ts).
 import { derived, get, writable } from 'svelte/store'
-import type { Command, CueStack, PreviewSnapshot, ShowState } from '../../../shared/types'
+import type { Command, CueStack, PresetScope, PreviewSnapshot, ShowState } from '../../../shared/types'
 import { control, send } from './store'
 
 export type Page = 'live' | 'race' | 'tour' | 'setup'
@@ -40,6 +40,11 @@ export function pickStack(st: Pick<ShowState, 'stacks'> | undefined, id: string 
 }
 /** The rundown shown on the Live page (also the one the G shortcut fires). */
 export const activeStack = derived([control, stackPick], ([$c, $p]) => pickStack($c.payload?.state, $p))
+
+/** What a newly saved Look restores when recalled: the look (layers, style, speed, mattify) and the armed outputs, but NOT
+ *  race, players or scores (recalling those mid-event would reset the live race). The server's own default differs, so the
+ *  UI always sends this explicitly. */
+export const DEFAULT_LOOK_SCOPE: PresetScope = { layers: true, armed: true, style: true, match: false, players: false, scores: false, transition: true, mattify: true }
 
 // ---- toasts ----
 export interface Toast { id: number; message: string; kind: 'info' | 'error'; undoable: boolean }
