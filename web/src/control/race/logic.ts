@@ -1,10 +1,9 @@
 // Pure helpers for the Race page (no Svelte, no store) so the rules can be unit tested:
 // the finishing-place pad, which races count as done, the scoreboard rows, the winner and the map / next-race commands.
 import type { CatalogIndex } from '../../../../shared/catalog'
-import { colourHex } from '../../../../shared/palette'
 import { pointsFor, standings } from '../../../../shared/scoring'
 import { effectiveTrackId, matchWinnerSlot } from '../../../../shared/tournament'
-import type { Command, RaceResult, RaceState, ShowData, ShowState } from '../../../../shared/types'
+import type { Command, Player, RaceResult, RaceState, ShowData, ShowState } from '../../../../shared/types'
 import { duplicatePositions } from '../catalog'
 
 export const SLOTS = [0, 1, 2, 3] as const
@@ -206,17 +205,12 @@ export function stepPlan(catalog: CatalogIndex, race: RaceState, delta: 1 | -1):
 /** Hand-picked maps in the live match (cup mode). */
 export const overrideCount = (race: RaceState): number => (race.mode === 'cup' ? (race.trackOverrides ?? []).filter(Boolean).length : 0)
 
-/** Players whose name, character or colour in Preview differs from what an output with a pending change shows on air.
- *  (Preview edits never reach Program on their own; this says which ones are still waiting for a Take.) */
-export function changedPlayers(show: Pick<ShowState, 'draft' | 'outputs' | 'program'>, catalog: CatalogIndex, pending: Record<string, number>): number[] {
+/** Players whose details (name, character, colour, subtitle) in Preview differ from what was last saved to air. */
+export function changedPlayers(show: Pick<ShowState, 'draft' | 'outputs' | 'program'>): number[] {
+  const fields = (p: Player) => JSON.stringify([p.name, p.characterId, p.colour, p.subtitle ?? ''])
   const out: number[] = []
   show.draft.players.forEach((p, i) => {
-    for (const o of show.outputs) {
-      if (!pending[o.id]) continue
-      const lt = show.program[o.id]?.view.lowerThirds.find((x) => x.slot === i)
-      if (!lt) continue
-      if (lt.name !== p.name || lt.colour !== colourHex(p.colour) || lt.character !== (catalog.character(p.characterId)?.name ?? '?')) { out.push(i); break }
-    }
+    if (show.outputs.some((o) => { const q = show.program[o.id]?.draft?.players[i]; return !!q && fields(q) !== fields(p) })) out.push(i)
   })
   return out
 }

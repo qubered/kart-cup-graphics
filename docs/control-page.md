@@ -29,7 +29,7 @@ Top bar: **Live · Race · Tournament · Setup**. The transport (arm outputs, CU
 
 - `web/src/control/Control.svelte` (shell), `TopBar.svelte`, `MasterBar.svelte`, `ui.ts` (page, Run/Edit, error notice, undo), `ui/` (`ui.css` primitives with a `u-` prefix, `drag.ts`, `twotap.svelte.ts`).
 - `live/RundownRail.svelte` + `live/rail/`, `live/Centre.svelte` + `live/centre/`, `live/SceneEditor.svelte` + `live/scene/`, `race/`, `tournament/`, `setup/`.
-- Commands added for this UI (all in `shared/types.ts`): `addCueFromPreview`, `duplicatePreset`, `makeCuePresetUnique`, `setPreset`, `moveCueTo`, `restoreSnapshot`, `setRoundName`, `setRaceTrack`, `clearRace`. Existing commands are unchanged, so Companion keeps working.
+- Commands added for this UI (all in `shared/types.ts`): `savePlayers`, `addCueFromPreview`, `duplicatePreset`, `makeCuePresetUnique`, `setPreset`, `moveCueTo`, `restoreSnapshot`, `setRoundName`, `setRaceTrack`, `clearRace`. Existing commands are unchanged, so Companion keeps working.
 
 ## Behaviour worth knowing
 

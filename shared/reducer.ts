@@ -67,6 +67,22 @@ function liveScores(state: ShowState, ctx: ReduceContext): ShowState {
   return program === state.program ? state : { ...state, program }
 }
 
+/** Player details are saved on demand: refresh the player-derived parts of what is on air (scene and lower thirds) from the draft, and
+ *  remember them as the on-air players. Race, layers and everything else on air stay as taken; scores are live anyway. */
+function livePlayers(state: ShowState, ctx: ReduceContext): ShowState {
+  const t = activeTournament(state)
+  let program = state.program
+  for (const o of state.outputs) {
+    const frame = program[o.id]
+    if (!frame?.draft || !frame.layers) continue
+    const data = { ...state.draft, race: frame.draft.race }
+    const fresh = deriveView(data, frame.layers, o, ctx.catalog, t)
+    const scene = frame.view.scene && fresh.scene ? fresh.scene : frame.view.scene
+    program = { ...program, [o.id]: { ...frame, view: { ...frame.view, scene, lowerThirds: fresh.lowerThirds }, draft: { ...frame.draft, players: structuredClone(state.draft.players) } } }
+  }
+  return { ...state, program }
+}
+
 /** Hand-picked tracks, tidied: always length 4, an entry equal to the cup's own track is dropped (null), and all-null (or undefined) means the property is absent. */
 function tidyOverrides(race: RaceState, ctx: ReduceContext): RaceState {
   const cur = race.trackOverrides
@@ -349,6 +365,8 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       // Hand-editing an auto-filled slot turns auto-fill off for it.
       return t && src?.auto && edited ? withTournament(next, withMatch(t, t.activeMatchId, (m) => ({ ...m, slotSources: m.slotSources!.map((x, i) => (i === cmd.index && x ? { ...x, auto: false } : x)) }))) : next
     }
+    case 'savePlayers':
+      return livePlayers(state, ctx)
     case 'setRace':
       return applyRace(state, cmd.patch, ctx)
     case 'stepRace': {
