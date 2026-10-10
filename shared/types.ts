@@ -205,6 +205,8 @@ export interface MatchesSceneConfigPatch { layout?: MatchesLayout; detail?: Part
 
 export type Command =
   | { type: 'setPlayer'; index: 0 | 1 | 2 | 3; patch: Partial<Player> }
+  /** Put the draft's player details (name, character, colour, subtitle) on air in every output, in place: no Take, no transition. */
+  | { type: 'savePlayers' }
   | { type: 'setRace'; patch: Partial<RaceState> }
   | { type: 'stepRace'; delta: 1 | -1 }
   | { type: 'randomRace' }

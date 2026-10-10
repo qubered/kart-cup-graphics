@@ -209,6 +209,7 @@ export const showFileSchema: z.ZodType<ShowFile, z.ZodTypeDef, unknown> = z.obje
 
 export const commandSchema: z.ZodType<Command> = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setPlayer'), index: slotSchema, patch: playerSchema.partial() }),
+  z.object({ type: z.literal('savePlayers') }),
   z.object({ type: z.literal('setRace'), patch: raceStateSchema.partial() }),
   z.object({ type: z.literal('stepRace'), delta: z.union([z.literal(1), z.literal(-1)]) }),
   z.object({ type: z.literal('randomRace') }),

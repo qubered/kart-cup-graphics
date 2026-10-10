@@ -252,12 +252,11 @@ describe('commands', () => {
 })
 
 describe('edited, not on air yet', () => {
-  it('names the players whose Preview differs from an output with a pending change', () => {
+  it('names the players whose Preview details differ from what was last saved to air, and savePlayers puts them on air', () => {
     const s = run(base, { type: 'setPlayer', index: 1, patch: { name: 'OMAR' } })
-    const lt = { slot: 1, name: 'Player 2', colour: '#1e6cff', character: 'Luigi' }
-    const show = { ...s, program: { ...s.program, wide: { ...s.program.wide, view: { ...s.program.wide.view, lowerThirds: [lt as never] } } } }
-    expect(changedPlayers(show, catalog, { wide: 1 })).toEqual([1])
-    expect(changedPlayers(show, catalog, { wide: 0 })).toEqual([])
-    expect(changedPlayers(base, catalog, { wide: 1 })).toEqual([])
+    expect(changedPlayers(s)).toEqual([1])
+    expect(changedPlayers(base)).toEqual([])
+    const saved = run(s, { type: 'savePlayers' })
+    expect(changedPlayers(saved)).toEqual([])
   })
 })

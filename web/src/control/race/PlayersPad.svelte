@@ -14,8 +14,8 @@
   import { PLACES, SLOTS, changedPlayers, clearRaceCommands, isCompleteRow, liveRaceNo, placedCount, rowPoints, rowView, sameRow, stepPlan, tapPlace, trackOfRace } from './logic'
   import { staging } from './staging.svelte'
 
-  let { st, catalog, matchKey, pending }: {
-    st: ShowState; catalog: CatalogIndex; matchKey: string; pending: Record<string, number>
+  let { st, catalog, matchKey }: {
+    st: ShowState; catalog: CatalogIndex; matchKey: string
   } = $props()
 
   const ORD = ['1st', '2nd', '3rd', '4th']
@@ -26,7 +26,7 @@
   const trackName = $derived(catalog.track(trackId)?.name ?? '')
   const saved = $derived(draft.scores.races.find((r) => r.raceNo === raceNo))
   const view = $derived(rowView(saved?.positions, staging.get(matchKey, raceNo)))
-  const changed = $derived(changedPlayers(st, catalog, pending))
+  const changed = $derived(changedPlayers(st))
   const fwd = $derived(stepPlan(catalog, race, 1))
   const nextName = $derived(race.mode === 'cup' && fwd ? (catalog.track(effectiveTrackId(catalog, race, race.raceIndex + 1))?.name ?? '') : '')
   const done = $derived(view.complete && !view.staged)
@@ -81,6 +81,11 @@
     saveName(i, value)
     drafts[i] = undefined
   }
+  // Player details sit in Preview until saved; Save puts them on air in place (no Take). Pending name text is flushed first.
+  function savePlayers() {
+    for (const i of SLOTS) { if (drafts[i] !== undefined) { clearTimeout(timers[i]); saveName(i, drafts[i]!) } }
+    send({ type: 'savePlayers' })
+  }
   // Subtitle (job title · group, shown on the player announcement): saved on Enter or blur, so a state update never rewrites it mid-typing.
   function subKey(e: KeyboardEvent & { currentTarget: HTMLInputElement }) {
     if (!(e.shiftKey && e.key === 'Escape')) e.stopPropagation()
@@ -104,8 +109,9 @@
     <b class="rn">Race {raceNo}</b>
     {#if trackName}<span class="u-dim">· {trackName}</span>{/if}
     {#if changed.length}
-      <span class="notonair" data-not-on-air title="Edited in Preview; Take to put it on air">● {changed.map((i) => `P${i + 1}`).join(', ')} edited, not on air yet</span>
+      <span class="notonair" data-not-on-air title="Edited in Preview; Save to put it on air">● {changed.map((i) => `P${i + 1}`).join(', ')} edited, not on air yet</span>
     {/if}
+    <button type="button" class="u-btn savep" class:acc={changed.length > 0} data-save-players disabled={!changed.length} title="Put the player details on air" onclick={savePlayers}>Save players</button>
   </div>
 
   <div class="head" aria-hidden="true"><span>Player</span><span>Finishing place · tap one per player</span><span class="rcol">Race</span><span>Adjust</span></div>
@@ -183,6 +189,7 @@
 <style>
   .pad { min-width: 0; }
   .rn { color: #fff; }
+  .savep { margin-left: 10px; flex: none; }
   .notonair { margin-left: auto; font-size: 12px; color: var(--ui-pending); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .head, .player { display: grid; grid-template-columns: 44px minmax(190px, 270px) auto 48px auto; justify-content: space-between; column-gap: 12px; align-items: center; padding: 0 14px; }
   .head { min-height: 30px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ui-muted); flex: none; padding-top: 6px; }
