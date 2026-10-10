@@ -23,7 +23,7 @@ describe('savePlayers', () => {
     const v = s.program.wide.view
     expect(v.lowerThirds[0].name).toBe('SAM')
     expect(v.scene?.kind === 'standings' && v.scene.rows.some((r) => r.player.name === 'SAM')).toBe(true)
-    expect(s.program.wide.draft?.race).toEqual(live.program.wide.draft.race)
+    expect(s.program.wide.draft?.race).toEqual(live.program.wide.draft?.race)
     expect(s.program.wide.takenAt).toBe(live.program.wide.takenAt)
   })
 })
