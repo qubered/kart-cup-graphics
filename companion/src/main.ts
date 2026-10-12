@@ -234,6 +234,18 @@ class KartCupInstance extends InstanceBase<Config> {
         callback: async (a) => { const c = cueActionStandalone(a.options.action, a.options.stack); if (c) await this.send(c) },
       },
     }
+    // Every action gets a delay (seconds) that is waited out before the command is sent.
+    const delayOpt = { type: 'number' as const, id: 'delay', label: 'Delay before firing (seconds)', min: 0, max: 3600, step: 0.1, default: 0 }
+    for (const def of Object.values(actions)) {
+      if (!def) continue
+      const run = def.callback
+      def.options = [...def.options, delayOpt]
+      def.callback = async (a, ctx) => {
+        const secs = Number(a.options.delay)
+        if (secs > 0) await new Promise((r) => setTimeout(r, secs * 1000))
+        await run(a, ctx)
+      }
+    }
     this.setActionDefinitions(actions)
 
     const lit = { bgcolor: RED, color: WHITE }
