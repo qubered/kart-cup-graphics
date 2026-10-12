@@ -198,7 +198,7 @@
   .pos { position: relative; flex: none; font: italic 900 calc(var(--rh) * 0.62)/1 var(--font-name); white-space: nowrap; }
   .pos sup { font-size: 0.42em; margin-left: 2px; vertical-align: top; position: relative; top: 0.12em; }
   .medal { position: relative; flex: none; margin-right: 16px; }
-  .name { position: relative; flex: none; font-size: calc(var(--rh) * 0.56); font-weight: 900; font-style: italic; line-height: 1.1; white-space: nowrap; overflow: hidden; }
+  .name { position: relative; flex: none; font-size: calc(var(--rh) * 0.56); font-weight: 900; font-style: italic; line-height: 1.1; white-space: nowrap; overflow-x: clip; overflow-y: visible; }
   .name > span { display: inline-block; white-space: nowrap; }
   .rp { position: relative; flex: none; text-align: center; font: italic 800 calc(var(--rh) * 0.46)/1 var(--font-name); color: rgba(255, 255, 255, .78); }
   .tot { position: relative; flex: none; text-align: right; font: italic 900 calc(var(--rh) * 0.7)/1 var(--font-name); }
@@ -217,7 +217,7 @@
   .hero-in.col .wlabel { letter-spacing: 6px; }
   .htxt { display: flex; flex-direction: column; gap: 6px; }
   .wlabel { font-weight: 800; letter-spacing: 12px; color: var(--mk-label-cyan); line-height: 1; text-transform: uppercase; }
-  .hname { font-weight: 900; font-style: italic; line-height: 1.1; white-space: nowrap; overflow: hidden; color: #fff; text-shadow: 0 4px 0 rgba(0, 0, 0, .3); }
+  .hname { font-weight: 900; font-style: italic; line-height: 1.1; white-space: nowrap; overflow-x: clip; overflow-y: visible; color: #fff; text-shadow: 0 4px 0 rgba(0, 0, 0, .3); }
   .hname > span { display: inline-block; white-space: nowrap; }
   .htotal { font-weight: 900; font-style: italic; line-height: 1; color: var(--mk-yellow); }
     .tbd { font-weight: 900; font-style: italic; letter-spacing: 8px; color: rgba(255, 255, 255, .45); }

@@ -133,7 +133,7 @@
   @keyframes blink { 50% { opacity: .25 } }
   .body { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: center; }
   .win { display: flex; align-items: center; gap: 28px; padding: 0 28px; }
-  .wname { font-weight: 900; font-style: italic; line-height: 1.1; white-space: nowrap; overflow: hidden; text-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+  .wname { font-weight: 900; font-style: italic; line-height: 1.1; white-space: nowrap; overflow-x: clip; overflow-y: visible; text-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
   .wname > span { display: inline-block; white-space: nowrap; }
   .wtot { font-weight: 900; font-style: italic; line-height: 1; color: var(--mk-yellow); min-width: 90px; text-align: right; }
   .pend { display: flex; gap: 22px; opacity: .8; }
@@ -143,7 +143,7 @@
   .lead { position: absolute; inset: 0; background: var(--row-leader); opacity: 0; transition: opacity var(--d, 0ms); }
   .first .lead { opacity: 1; }
   .medal { position: relative; flex: none; margin-right: 16px; }
-  .name { position: relative; flex: none; font-size: calc(var(--rh) * 0.56); font-weight: 900; font-style: italic; line-height: 1.1; white-space: nowrap; overflow: hidden; }
+  .name { position: relative; flex: none; font-size: calc(var(--rh) * 0.56); font-weight: 900; font-style: italic; line-height: 1.1; white-space: nowrap; overflow-x: clip; overflow-y: visible; }
   .name > span { display: inline-block; white-space: nowrap; }
   .tot { position: relative; flex: none; text-align: right; padding-right: 36px; box-sizing: border-box; font: italic 900 calc(var(--rh) * 0.68)/1 var(--font-name); }
   .first .name, .first .tot { color: var(--row-leader-ink); }

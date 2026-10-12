@@ -65,7 +65,7 @@
     display: inline-block; background-color: var(--pc); color: var(--pt); transition: background-color var(--d), color var(--d); font: italic 900 46px/1 var(--font-name); padding: 10px 30px 8px;
     border-radius: 10px; transform: skewX(-12deg); box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
   }
-  .name { width: 740px; margin: 26px auto 0; font-size: 112px; font-weight: 900; font-style: italic; line-height: 1.05; color: #fff; white-space: nowrap; overflow: hidden; }
+  .name { width: 740px; margin: 26px auto 0; font-size: 112px; font-weight: 900; font-style: italic; line-height: 1.05; color: #fff; white-space: nowrap; overflow-x: clip; overflow-y: visible; }
   .name > span { display: inline-block; white-space: nowrap; }
   .char { font-size: 40px; font-weight: 800; line-height: 1; color: var(--mk-label-cyan); letter-spacing: 10px; text-transform: uppercase; margin-top: 14px; }
 </style>

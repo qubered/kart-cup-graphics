@@ -68,7 +68,7 @@
   .m { display: flex; align-items: center; gap: 8px; position: relative; }
   .v { font-weight: 900; font-style: italic; line-height: 1; }
   .m.first .v { color: var(--mk-yellow); }
-  .wname { font-weight: 900; font-style: italic; font-size: calc(var(--h) * 0.4); line-height: 1.1; white-space: nowrap; overflow: hidden; }
+  .wname { font-weight: 900; font-style: italic; font-size: calc(var(--h) * 0.4); line-height: 1.1; white-space: nowrap; overflow-x: clip; overflow-y: visible; }
   .wname > span { display: inline-block; white-space: nowrap; }
   .wtot { font: italic 900 calc(var(--h) * 0.46)/1 var(--font-name); color: var(--mk-yellow); }
   .tbd { font: italic 900 calc(var(--h) * 0.36)/1 var(--font-name); letter-spacing: 6px; color: rgba(255, 255, 255, .45); }
