@@ -205,6 +205,7 @@ describe('reducer', () => {
       it('saves from PGM (what is on air) or PVW (the draft), for new presets and overwrites', () => {
         // On air: lineup on wide with SAM. Then PVW moves on: standings scene, other name, other speed.
         let s = reduce(reduce(base, { type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } }, ctx), { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, ctx)
+        s = reduce(s, { type: 'savePlayers' }, ctx)
         s = reduce(reduce(s, { type: 'arm', outputIds: ['wide'] }, ctx), { type: 'setTransition', speed: 'slow' }, ctx)
         s = reduce(s, { type: 'take', mode: 'cut' }, ctx)
         s = reduce(reduce(s, { type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } }, ctx), { type: 'setPlayer', index: 0, patch: { name: 'LATER' } }, ctx)
