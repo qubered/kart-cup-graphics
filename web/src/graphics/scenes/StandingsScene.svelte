@@ -75,7 +75,7 @@
   .pos { position: absolute; left: 80px; top: 0; height: 172px; width: 220px; display: flex; align-items: center; font: italic 900 110px/1 var(--font-name); color: #fff; transition: color var(--d); }
   .pos sup { font-size: 48px; margin-left: 4px; align-self: flex-start; margin-top: 36px; }
   .medal { position: absolute; left: 300px; top: -4px; width: 180px; height: 180px; }
-  .name { position: absolute; left: 520px; top: 28px; width: 1100px; font-size: 84px; font-weight: 900; font-style: italic; line-height: 1; color: #fff; white-space: nowrap; overflow: hidden; transition: color var(--d); }
+  .name { position: absolute; left: 520px; top: 28px; width: 1100px; font-size: 84px; font-weight: 900; font-style: italic; line-height: 1; color: #fff; white-space: nowrap; overflow-x: clip; overflow-y: visible; transition: color var(--d); }
   .name > span { display: inline-block; white-space: nowrap; }
   .char { position: absolute; left: 524px; top: 122px; font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: 8px; text-transform: uppercase; color: var(--mk-label-cyan); transition: color var(--d); }
   .delta {

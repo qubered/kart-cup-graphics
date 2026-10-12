@@ -105,7 +105,7 @@
   .medal { flex: none; display: grid; place-items: center; }
   .who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; margin-left: 24px; }
   .who :global(.swap) { display: block; }
-  .name { font-weight: 900; font-style: italic; line-height: 1.05; color: #fff; white-space: nowrap; overflow: hidden; transition: color var(--d); }
+  .name { font-weight: 900; font-style: italic; line-height: 1.05; color: #fff; white-space: nowrap; overflow-x: clip; overflow-y: visible; transition: color var(--d); }
   .name > span { display: inline-block; white-space: nowrap; }
   .char { font-weight: 800; line-height: 1; letter-spacing: 7px; text-transform: uppercase; color: var(--mk-label-cyan); transition: color var(--d); }
   .cells { display: flex; flex: none; }

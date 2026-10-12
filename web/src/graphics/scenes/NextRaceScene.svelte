@@ -92,7 +92,7 @@
   .gtile img { width: 100%; height: 100%; object-fit: cover; }
   .gtile span {
     position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 14px; background: rgba(9, 28, 52, 0.85); color: #fff;
-    font-weight: 800; font-size: 28px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden;
+    font-weight: 800; font-size: 28px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow-x: clip; overflow-y: visible;
   }
   .nr-cup { position: absolute; left: 160px; top: 110px; width: 360px; height: 360px; z-index: 3; }
   .nr-text { position: absolute; left: 1780px; top: 200px; }
@@ -111,7 +111,7 @@
   .tile { position: relative; width: 300px; padding: 6px; border-radius: 14px; overflow: hidden; background: #0b1530; box-sizing: border-box; transition: opacity var(--d, 0ms); }
   .tin { border-radius: 8px; overflow: hidden; }
   .tile img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-  .tile span { display: block; padding: 8px 12px; font-size: 22px; font-weight: 800; line-height: 1.1; color: #fff; white-space: nowrap; overflow: hidden; }
+  .tile span { display: block; padding: 8px 12px; font-size: 22px; font-weight: 800; line-height: 1.1; color: #fff; white-space: nowrap; overflow-x: clip; overflow-y: visible; }
   .fr { position: absolute; inset: 0; border: 6px solid rgba(255, 255, 255, 0.25); border-radius: 14px; box-sizing: border-box; pointer-events: none; }
   .fr.hl { border-color: var(--mk-yellow); opacity: 0; transition: opacity var(--d, 0ms); }
   .fr.hl.on { opacity: 1; }

@@ -81,7 +81,7 @@
   .txt { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
   .h .txt { align-items: flex-start; }
   .wh { display: flex; }
-  .name { font-weight: 900; font-style: italic; line-height: 1.05; color: #fff; margin-top: 10px; white-space: nowrap; overflow: hidden; text-shadow: 0 8px 0 var(--mk-navy); text-align: center; }
+  .name { font-weight: 900; font-style: italic; line-height: 1.05; color: #fff; margin-top: 10px; white-space: nowrap; overflow-x: clip; overflow-y: visible; text-shadow: 0 8px 0 var(--mk-navy); text-align: center; }
   .h .name { text-align: left; }
   .name > span { display: inline-block; white-space: nowrap; }
   .sub { margin-top: 22px; display: flex; gap: 28px; align-items: center; justify-content: center; }

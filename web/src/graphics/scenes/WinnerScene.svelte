@@ -83,7 +83,7 @@
   .wh { display: flex; }
   .hd .wh { justify-content: center; }
   .hd .wname { position: absolute; left: 0; right: 0; }
-  .name { font-weight: 900; font-style: italic; line-height: 1; color: #fff; margin-top: 30px; white-space: nowrap; overflow: hidden; text-shadow: 0 10px 0 var(--mk-navy); }
+  .name { font-weight: 900; font-style: italic; line-height: 1; color: #fff; margin-top: 30px; white-space: nowrap; overflow-x: clip; overflow-y: visible; text-shadow: 0 10px 0 var(--mk-navy); }
   .hd .name { margin-top: 0; text-shadow: 0 6px 0 var(--mk-navy); }
   .name > span { display: inline-block; white-space: nowrap; }
   .sub { margin-top: 34px; display: flex; gap: 30px; align-items: center; }
