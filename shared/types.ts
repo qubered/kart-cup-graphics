@@ -159,7 +159,7 @@ export interface ProgramFrame { view: ViewModel; mode: TakeMode; speed: Transiti
 /** Where a preset snapshot is read from: PVW = the draft being built, PGM = what is on air. */
 export type PresetSource = 'pvw' | 'pgm'
 /** What a recall applies. A preset always captures everything; scope picks which parts it restores.
- *  style = event text and typography (show-wide). match = the race (cup, track, race number). players = the four players (name, character, colour). scores = results and adjustments (off by default: recalling would overwrite live scores).
+ *  style = event text and typography (show-wide); saved for reference but never recalled. match = the race (cup, track, race number). players = the four players (name, character, colour). scores = results and adjustments (off by default: recalling would overwrite live scores).
  *  While a tournament is active, `match`, `players` and `scores` are never recalled whatever the scope says. */
 export interface PresetScope { layers: boolean; armed: boolean; style: boolean; match: boolean; players: boolean; scores: boolean; transition: boolean; mattify: boolean }
 /** A saved snapshot of the show: every output's layers, arming, show data, scores, transition speed and Mattify. */

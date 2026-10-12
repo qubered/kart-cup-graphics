@@ -159,7 +159,9 @@ describe('reducer', () => {
       it('restores show data, scores, transition speed and mattify as well as layers and arming', () => {
         const s = setup()
         const back = reduce(scrambled(s), { type: 'recallPreset', id: 'preset-1' }, ctx)
-        expect(back.draft).toEqual(s.draft)
+        const t = scrambled(s)
+        // Event style (text, typography, notice, QR) is never recalled; everything else comes back.
+        expect(back.draft).toEqual({ ...s.draft, event: t.draft.event, typography: t.draft.typography, notice: t.draft.notice, qr: t.draft.qr })
         expect(back.transition).toBe('slow'); expect(back.settings.mattify).toBe(true)
         expect(back.layers).toEqual(s.layers); expect(back.armed).toEqual(s.armed)
       })
@@ -178,12 +180,20 @@ describe('reducer', () => {
         expect(back.layers).toEqual(s.layers); expect(back.armed).toEqual(t.armed)
         expect(back.draft).toEqual(t.draft); expect(back.transition).toBe('fast'); expect(back.settings.mattify).toBe(false)
       })
+      it('event style is never recalled, even when a preset or cue scope turns it on', () => {
+        let s = setup()
+        s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { style: true } }, ctx)
+        const t = scrambled(s)
+        const back = reduce(t, { type: 'recallPreset', id: 'preset-1' }, ctx)
+        expect(back.draft.event).toEqual(t.draft.event); expect(back.draft.typography).toEqual(t.draft.typography)
+        expect(back.draft.notice).toEqual(t.draft.notice); expect(back.draft.qr).toEqual(t.draft.qr)
+      })
       it('players are their own scope part, apart from show data', () => {
         let s = setup()
         s = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { players: false } }, ctx)
         const t = scrambled(s)
         const back = reduce(t, { type: 'recallPreset', id: 'preset-1' }, ctx)
-        expect(back.draft.players).toEqual(t.draft.players); expect(back.draft.event.title).toBe('FINALS')
+        expect(back.draft.players).toEqual(t.draft.players); expect(back.draft.event.title).toBe('X')
         const only = reduce(s, { type: 'updatePreset', id: 'preset-1', scope: { players: true, style: false, match: false } }, ctx)
         const b2 = reduce(scrambled(only), { type: 'recallPreset', id: 'preset-1' }, ctx)
         expect(b2.draft.players[0].name).toBe('SAM'); expect(b2.draft.event.title).toBe('X')

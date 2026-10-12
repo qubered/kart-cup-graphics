@@ -94,12 +94,11 @@ export function layersKey(l: Layers): string {
   return canon(base)
 }
 
-const style = (d: ShowData) => canon([d.event, d.typography, d.notice, d.qr])
 const race = (d: ShowData) => canon({ ...d.race, trackOverrides: d.race.trackOverrides?.some((t) => t) ? d.race.trackOverrides : undefined })
 
 /**
  * Does Preview differ from this look in a way a recall of it would change? Only the parts in the look's own recall scope count:
- * layers per output (outputs the look has no layers for are skipped, as a recall skips them), the armed set, style / speed / Mattify,
+ * layers per output (outputs the look has no layers for are skipped, as a recall skips them), the armed set, speed / Mattify (event style is never recalled, so it never counts),
  * and race / players / scores, which are ignored while a tournament is active (the active match supplies them, a recall never touches them).
  */
 export function isModified(preset: Preset, st: PreviewState): boolean {
@@ -115,7 +114,6 @@ export function isModified(preset: Preset, st: PreviewState): boolean {
     const known = (ids: string[]) => sortedStrings(ids.filter((id) => st.outputs.some((o) => o.id === id)))
     if (canon(known(preset.armed)) !== canon(known(st.armed))) return true
   }
-  if (sc.style && style(preset.draft) !== style(st.draft)) return true
   if (sc.transition && preset.transition !== st.transition) return true
   if (sc.mattify && preset.mattify !== st.settings.mattify) return true
   if (!activeTournament(st)) {
