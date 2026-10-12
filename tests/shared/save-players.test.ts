@@ -18,6 +18,12 @@ describe('savePlayers', () => {
     const s = run(live, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } })
     expect(s.program.wide.view.lowerThirds[0].name).toBe('Player 1')
   })
+  it('keeps the on-air players when scores refresh the scene before Save', () => {
+    const s = run(live, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, { type: 'saveResults', raceNo: 1, trackId: 'x', positions: [1, 2, 3, 4] })
+    const v = s.program.wide.view
+    expect(v.scene?.kind === 'standings' && v.scene.rows.some((r) => r.player.name === 'SAM')).toBe(false)
+    expect(v.scene?.kind === 'standings' && v.scene.rows.some((r) => r.total > 0)).toBe(true)
+  })
   it('puts the edit on air in place, without a Take', () => {
     const s = run(live, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, { type: 'setRace', patch: { raceNo: 3 } }, { type: 'savePlayers' })
     const v = s.program.wide.view
