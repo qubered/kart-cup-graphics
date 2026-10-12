@@ -4,7 +4,8 @@
   import type { CatalogIndex } from '../../../../shared/catalog'
   import type { Match, Player } from '../../../../shared/types'
   import { colourHex, textOn } from '../../../../shared/palette'
-  import { send } from '../store'
+  import { control, send } from '../store'
+  import { changedPlayers } from '../race/logic'
   import { autoSource, slotSourceGroups, winnerSlotOf } from '../tournament'
   import CharacterPicker from './CharacterPicker.svelte'
   import ColourPicker from './ColourPicker.svelte'
@@ -12,6 +13,10 @@
   let { match, matches, catalog }: { match: Match; matches: Match[]; catalog: CatalogIndex } = $props()
 
   const slots = [0, 1, 2, 3] as const
+  // The live match's player details go on air with "Save players" (same as the race screen).
+  const st = $derived($control.payload?.state)
+  const live = $derived(st?.tournaments.find((x) => x.id === st.activeTournamentId)?.activeMatchId === match.id)
+  const changed = $derived(live && st ? changedPlayers(st) : [])
   const groups = $derived(slotSourceGroups(matches, match.id))
   const hasChoices = $derived(groups.earlier.length + groups.other.length > 0)
 
@@ -33,6 +38,12 @@
 
 <section class="sec" aria-label="Players">
   <div class="u-lab">Players</div>
+  {#if live}
+    <div class="savebar">
+      {#if changed.length}<span class="notonair" data-not-on-air>● {changed.map((i) => `P${i + 1}`).join(', ')} edited, not on air yet</span>{/if}
+      <button type="button" class="u-btn" class:acc={changed.length > 0} data-save-players disabled={!changed.length} title="Put the player details on air" onclick={() => send({ type: 'savePlayers' })}>Save players</button>
+    </div>
+  {/if}
   {#each slots as i (i)}
     {@const p = match.data.players[i]}
     {@const src = autoSource(match, i)}
@@ -77,5 +88,7 @@
   .srcrow .src { flex: 1; }
   .autotag { flex: none; font: 700 10px/1 var(--ui-font); letter-spacing: .08em; padding: 6px 8px; border-radius: 4px; background: #1e3a8a; color: #bfdbfe; }
   .prow.auto .src { border-color: #2f56b8; }
+  .savebar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .notonair { font-size: 12px; color: var(--ui-pending); }
   .note { margin: 0; font-size: 11.5px; color: var(--ui-muted); }
 </style>

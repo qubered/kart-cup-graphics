@@ -52,3 +52,22 @@ describe('Take with unsaved player edits', () => {
     expect(run(s, { type: 'take', mode: 'cut' }).program.wide.view.lowerThirds[0].name).toBe('SAM')
   })
 })
+
+describe('unsaved player edits stay off every scene', () => {
+  const scenes = ['title', 'lineup', 'announce', 'nextRace', 'standings', 'winner', 'raceWin', 'cupWin', 'matches', 'bracket', 'notice', 'qr'] as const
+  const viaRace = (): Command => ({ type: 'setPlayer', index: 0, patch: { name: 'ZZSAM' } })
+  const viaTournament = (id: string): Command => ({ type: 'updateMatch', matchId: id, patch: { players: [{ name: 'ZZSAM' }, null, null, null] } })
+  for (const [label, edit] of [['race screen', viaRace], ['tournament menu', viaTournament]] as const) {
+    it(`${label}: every scene and the lower thirds keep the saved names until Save`, () => {
+      let s = run(createDefaultState(idx, 0), { type: 'createTournament', name: 'T' } as Command, { type: 'arm', outputIds: ['wide'] }, { type: 'take', mode: 'cut' })
+      const id = s.tournaments[0].activeMatchId
+      s = run(s, edit === viaRace ? viaRace() : viaTournament(id))
+      for (const scene of scenes) {
+        const t = run(s, { type: 'setLayers', outputId: 'wide', patch: { scene, lowerThirds: { on: true, players: [0, 1, 2, 3] } } } as Command, { type: 'take', mode: 'cut' })
+        expect(JSON.stringify(t.program.wide.view), scene).not.toContain('ZZSAM')
+      }
+      const saved = run(s, { type: 'savePlayers' }, { type: 'setLayers', outputId: 'wide', patch: { scene: 'lineup' } } as Command, { type: 'take', mode: 'cut' })
+      expect(JSON.stringify(saved.program.wide.view)).toContain('ZZSAM')
+    })
+  }
+})

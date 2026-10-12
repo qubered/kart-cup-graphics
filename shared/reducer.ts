@@ -830,6 +830,8 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       let next = state
       const { label, round, players, race } = cmd.patch
       if (label !== undefined || round !== undefined) next = withTournament(next, withMatch(requireTournament(next), m.id, (x) => ({ ...x, ...(label !== undefined ? { label } : {}), ...(round !== undefined ? { round } : {}) })))
+      // Edits to the live match's players wait for "Save players" like the race screen's: a Take keeps the saved ones until then.
+      if (players && m.id === t.activeMatchId && !next.savedPlayers && players.some((pp, i) => pp && Object.entries(pp).some(([k, v]) => state.draft.players[i]?.[k as 'name'] !== v))) next = { ...next, savedPlayers: structuredClone(state.draft.players) }
       if (players) {
         next = editMatchData(next, m.id, (d) => ({ ...d, players: d.players.map((p, i) => (players[i] ? { ...p, ...players[i] } : p)) }))
         // Hand-editing a slot that auto-fills turns auto-fill off for it.
