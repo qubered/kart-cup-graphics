@@ -4,15 +4,17 @@
   import { pop } from '../motion'
   import Swap from '../Swap.svelte'
   import QrFigure from '../QrFigure.svelte'
+  import Logo from '../Logo.svelte'
 
   type S = Extract<SceneView, { kind: 'notice' }>
-  let { scene, view, enter = 0 }: { scene: S; view: ViewModel; enter?: number } = $props()
+  let { scene, view, enter = 0, logoSrc = null }: { scene: S; view: ViewModel; enter?: number; logoSrc?: string | null } = $props()
 
   /* Run sizes are px on a 1080-tall canvas; the board is sized per format and kept clear of the lower-third band. */
   const wide = $derived(view.format === 'wide')
   const k = $derived(view.canvas.h / 1080)
-  const box = $derived(wide ? { x: 640, y: 150, w: 2560, h: 760 } : { x: 160, y: 90, w: 1600, h: 720 })
+  const box = $derived(wide ? { x: 320, y: 90, w: 3200, h: 820 } : { x: 90, y: 60, w: 1740, h: 780 })
   /* With QR codes: wide puts them in a row on the right, hd puts them in a row under the text. */
+  const logoSize = $derived(wide ? 230 : 160)
   const qrSize = $derived(wide ? 290 : 210)
 </script>
 
@@ -29,6 +31,7 @@
         {/each}
       </div>
     </Swap>
+    <div class="logo-badge"><Logo size={logoSize} src={logoSrc} dur={enter} /></div>
     {#if scene.qr}
       <div class="codes">
         {#each scene.qr as q, i (i)}<QrFigure value={q.url} label={q.label} size={qrSize} tilt={i} />{/each}
@@ -47,6 +50,7 @@
   .board.with-qr.wide { flex-direction: row; gap: 72px; }
   .text { flex: 1 1 auto; min-width: 0; width: 100%; }
   .board.with-qr .text { text-shadow: 0 .06em 0 rgba(0, 0, 0, .3); }
+  .logo-badge { position: absolute; right: 28px; top: 20px; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .25)); }
   .codes { display: flex; flex: none; gap: 56px; justify-content: center; }
   p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>

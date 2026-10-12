@@ -1,18 +1,16 @@
 <script lang="ts">
-  import { LOGO_PATH, LOGO_VIEWBOX } from './logo'
-  /** The logo: the uploaded image (`src`, already normalised to a square) or, without one, the built-in roundel drawn in `currentColor`. */
+  import { DEFAULT_LOGO } from './logo'
+  /** The logo: the uploaded image (`src`, already normalised to a square) or, without one, the bundled Her Ascent Career Guidance mark. */
   import Swap from './Swap.svelte'
-  /** `dur` = AUTO enter ms: swapping the uploaded image / built-in roundel crossfades over it (0 = instant). */
-  let { size = 96, color = '', src = null, dur = 0 }: { size?: number; color?: string; src?: string | null; dur?: number } = $props()
+  /** `dur` = AUTO enter ms: swapping the uploaded image / default mark crossfades over it (0 = instant). */
+  let { size = 96, src = null, dur = 0 }: { size?: number; src?: string | null; dur?: number } = $props()
 </script>
 
 <Swap key={src ?? ''} {dur} block>
 {#if src}
   <img class="logo" {src} width={size} height={size} alt="" />
 {:else}
-  <svg class="logo" viewBox={LOGO_VIEWBOX} width={size} height={size} style:color={color || undefined} aria-hidden="true">
-    <path d={LOGO_PATH} fill="currentColor" transform="translate(0 -0.2)" />
-  </svg>
+  <img class="logo" src={DEFAULT_LOGO} width={size} height={size} alt="Her Ascent Career Guidance" />
 {/if}
 </Swap>
 
