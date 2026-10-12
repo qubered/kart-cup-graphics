@@ -9,7 +9,7 @@
   const halves = $derived(view.format === 'twin')
   const st = $derived(enter ? STAGGER_MS : 0)
   // Same top-right spot and sizes as the HOLD screen; clear of the track card (top-left) and the lower thirds.
-  const logoSize = $derived(view.format === 'wide' ? 160 : view.format === 'hd' ? 116 : 100)
+  const logoSize = $derived(view.format === 'wide' ? 480 : view.format === 'hd' ? 300 : 230)
 </script>
 
 <div class="title-scene">
