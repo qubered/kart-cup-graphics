@@ -21,9 +21,9 @@
 <div class="notice">
   <div class="board kart-box" class:with-qr={!!scene.qr} class:wide style:left="{box.x}px" style:top="{box.y}px" style:width="{box.w}px" style:height="{box.h}px"
     style:font-family={view.fonts.labels} style:--fs="{wide ? 36 : 28}px" in:pop|global={{ duration: enter }}>
+    <div class="logo-badge"><Logo size={logoSize} src={logoSrc} dur={enter} /></div>
     <div class="textwrap"><Swap key={JSON.stringify(scene.doc)} dur={enter} block>
       <div class="text">
-        <div class="logo-badge" style:width="{logoSize}px" style:height="{logoSize}px"><Logo size={logoSize} src={logoSrc} dur={enter} /></div>
         {#each scene.doc.blocks as b, i (i)}
           <p style:text-align={b.align}>{#each b.runs as r, j (j)}<span
             style:font-weight={r.bold ? 900 : undefined} style:font-style={r.italic ? 'italic' : undefined}
@@ -50,9 +50,9 @@
   .board.with-qr.wide { flex-direction: row; gap: 72px; }
   .textwrap { flex: 1 1 auto; min-width: 0; align-self: stretch; display: flex; align-items: center; }
   .textwrap > :global(.swap) { flex: 1 1 auto; min-width: 0; }
-  .text { flex: 1 1 auto; min-width: 0; width: 100%; display: flow-root; }
+  .text { flex: 1 1 auto; min-width: 0; width: 100%; }
   .board.with-qr .text { text-shadow: 0 .06em 0 rgba(0, 0, 0, .3); }
-  .logo-badge { float: left; margin: 0 56px 12px 0; shape-outside: polygon(50% 0, 62% 38%, 100% 38%, 69% 62%, 81% 100%, 50% 76%, 19% 100%, 31% 62%, 0 38%, 38% 38%); shape-margin: 24px; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .25)); }
+  .logo-badge { flex: none; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .25)); }
   .codes { display: flex; flex: none; gap: 56px; justify-content: center; }
   p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>
