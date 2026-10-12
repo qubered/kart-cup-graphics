@@ -1,5 +1,6 @@
 // Pure helpers for the rundown rail: no Svelte, no store access. Unit-tested in tests/web/rundown-rail.test.ts.
-import type { Command, Cue, CueAction, CueScopePatch, CueStack, Preset, PresetScope, SceneId, ShowState, TakeMode } from '../../../../../shared/types'
+import { formatOscLine } from '../../../../../shared/osc'
+import type { Command, Cue, CueAction, OscCue, CueScopePatch, CueStack, Preset, PresetScope, SceneId, ShowState, TakeMode } from '../../../../../shared/types'
 
 // ---- standby, position, row flags ----
 
@@ -73,6 +74,16 @@ export const nextScopeOverride = (own: boolean | undefined): boolean | null => (
 export const scopeRestore = (cue: Pick<Cue, 'scope'>, key: keyof PresetScope): CueScopePatch => ({ [key]: cue.scope?.[key] ?? null })
 /** An `addCue` scope patch that reproduces a cue's override (used to undo a remove). */
 export const scopeAsPatch = (scope: Partial<PresetScope> | undefined): CueScopePatch | undefined => (scope && Object.keys(scope).length ? { ...scope } : undefined)
+
+// ---- OSC cues ----
+
+/** A new OSC cue starts from the target of the last one in the rundown (usually the same desk), else localhost:8000. */
+export const defaultOscCue = (k: CueStack): OscCue => {
+  const last = [...k.cues].reverse().find((c) => c.osc)?.osc
+  return { host: last?.host ?? '127.0.0.1', port: last?.port ?? 8000, messages: [] }
+}
+/** The one-line summary under an OSC cue's name: its first message, "+2 more" for the rest. */
+export const oscSummary = (o: OscCue): string => (o.messages.length ? formatOscLine(o.messages[0]) + (o.messages.length > 1 ? `  +${o.messages.length - 1} more` : '') : 'no messages yet')
 
 // ---- Looks (presets) ----
 
@@ -150,5 +161,6 @@ export function nextId(prefix: string, ids: string[]): string {
 
 /** The `addCue` that puts a removed cue back at its place with the same Look, take, action and recall overrides. */
 export function restoreCueCommand(stackId: string, cue: Cue, index: number): Command {
+  if (cue.osc) return { type: 'addOscCue', stackId, osc: cue.osc, index }
   return { type: 'addCue', stackId, presetId: cue.presetId, take: cue.take, index, ...(cue.action ? { action: cue.action } : {}), ...(scopeAsPatch(cue.scope) ? { scope: scopeAsPatch(cue.scope) } : {}) }
 }

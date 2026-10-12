@@ -179,7 +179,18 @@ export interface PreviewSnapshot {
 }
 /** One step in a stack: recall a preset, then cut/auto it to air (take: null = recall only, take by hand). The same preset may appear in many cues. */
 export type CueAction = 'nextRace' | 'nextMatch' | 'resetStack'
-export interface Cue { id: string; presetId: string; take: TakeMode | null; scope?: Partial<PresetScope>; /** Runs after the cue fires: advance the race, advance the match (and reset the stacks), or reset this stack. */ action?: CueAction }
+/** One OSC message: an address ("/cmd") and typed arguments (integers go out as int32, other numbers as float32). */
+export type OscArg = number | string | boolean
+export interface OscMessage { address: string; args: OscArg[] }
+/** What an OSC cue sends (UDP) when it fires. */
+export interface OscCue { host: string; port: number; messages: OscMessage[] }
+export interface Cue {
+  id: string; presetId: string; take: TakeMode | null; scope?: Partial<PresetScope>
+  /** Runs after the cue fires: advance the race, advance the match (and reset the stacks), or reset this stack. */
+  action?: CueAction
+  /** An OSC cue: no Look (presetId is ''), sends these messages when it fires. It auto-follows: when the cue before it fires, it fires straight after. */
+  osc?: OscCue
+}
 /** Patch for a cue's scope override: true/false forces that part on/off for this cue, null goes back to inheriting the preset's scope. */
 export type CueScopePatch = { [K in keyof PresetScope]?: boolean | null }
 /** An ordered, user-built list of cues. current = on air (last fired). selected = standby: its design is loaded into Preview and GO fires it.
@@ -236,7 +247,9 @@ export type Command =
   | { type: 'deleteStack'; id: string }
   | { type: 'resetStack'; id: string }
   | { type: 'addCue'; stackId: string; presetId: string; take: TakeMode | null; index?: number; scope?: CueScopePatch; action?: CueAction }
-  | { type: 'updateCue'; stackId: string; cueId: string; presetId?: string; take?: TakeMode | null; scope?: CueScopePatch; action?: CueAction | null }
+  | { type: 'updateCue'; stackId: string; cueId: string; presetId?: string; take?: TakeMode | null; scope?: CueScopePatch; action?: CueAction | null; /** OSC cues only. */ osc?: OscCue }
+  /** Insert an OSC cue (append, or at `index`). */
+  | { type: 'addOscCue'; stackId: string; osc: OscCue; index?: number }
   | { type: 'removeCue'; stackId: string; cueId: string }
   | { type: 'moveCue'; stackId: string; cueId: string; delta: 1 | -1 }
   /** Move a cue so it ends up at `index` (clamped to the stack). `current` / `selected` follow the cue by id. */

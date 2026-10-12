@@ -1,9 +1,9 @@
 // What the rundown rail does to the show: every command it sends, and the Undo that goes with each edit.
 // Performance actions (select, GO, Back, Skip, Rewind) are not undoable; edits are, through act() / pushUndo() from ui.ts.
-import type { Command, Cue, CueAction, CueStack, PresetScope, ShowState, TakeMode } from '../../../../../shared/types'
+import type { Command, Cue, CueAction, OscCue, CueStack, PresetScope, ShowState, TakeMode } from '../../../../../shared/types'
 import { control, send } from '../../store'
 import { DEFAULT_LOOK_SCOPE, act, currentState, editRundown, previewSnapshot, pushUndo, restoreCommand, stackPick } from '../../ui'
-import { addedIds, nextId, previewModified, restoreCueCommand, scopeRestore } from './model'
+import { addedIds, defaultOscCue, nextId, previewModified, restoreCueCommand, scopeRestore } from './model'
 
 /** A keyboard move re-inserts the row, which drops focus: the cue whose grip should get focus back once the list has updated (see CueRow). */
 export const focusAfterMove: { id: string | null } = { id: null }
@@ -129,6 +129,23 @@ export function setCueAfter(stack: CueStack, cue: Cue, action: CueAction | null)
 }
 export function setCueScope(stack: CueStack, cue: Cue, key: keyof PresetScope, value: boolean | null): void {
   act('cue recall', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, scope: { [key]: value } }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, scope: scopeRestore(cue, key) }])
+}
+
+// ---- OSC cues ----
+
+/** Add an OSC cue at `index` (default end). Undo removes it. Resolves with the new cue's id. */
+export async function addOscCue(stack: CueStack, index?: number): Promise<string | null> {
+  const before = stack.cues
+  const seen = observe((st) => claim('cue', addedIds(before, st.stacks.find((k) => k.id === stack.id)?.cues ?? [])))
+  send({ type: 'addOscCue', stackId: stack.id, osc: defaultOscCue(stack), ...(index !== undefined ? { index } : {}) })
+  const cueId = await seen
+  if (cueId === null) return null
+  pushUndo('add OSC cue', [{ type: 'removeCue', stackId: stack.id, cueId }])
+  return cueId
+}
+export function setCueOsc(stack: CueStack, cue: Cue, osc: OscCue): void {
+  if (!cue.osc || JSON.stringify(osc) === JSON.stringify(cue.osc)) return
+  act('change OSC', [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, osc }], [{ type: 'updateCue', stackId: stack.id, cueId: cue.id, osc: cue.osc }])
 }
 
 // ---- rundowns ----

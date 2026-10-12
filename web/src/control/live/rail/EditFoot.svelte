@@ -3,7 +3,7 @@
   import type { CueStack, ShowState } from '../../../../../shared/types'
   import { control } from '../../store'
   import GoButton from './GoButton.svelte'
-  import { addCueFromPreview, newRundown } from './actions'
+  import { addCueFromPreview, addOscCue, newRundown } from './actions'
   import { loadedPreset, nextRundownName, previewModified, suggestLookName } from './model'
 
   interface Props { stack: CueStack; st: ShowState; onadded: (cueId: string) => void }
@@ -31,6 +31,7 @@
     <span class="what">{loaded?.name ?? 'New look'}{#if modified}<span class="mod"> · modified</span>{/if} → saved as “{suggested}”</span>
   </button>
   <div class="u-dim u-sm hint">Add from the Looks library: tap ＋ on a Look or drag its grip onto this list</div>
+  <button type="button" class="u-btn" data-add-osc onclick={async () => { const id = await addOscCue(stack); if (id) onadded(id) }}>＋ Add OSC cue <span class="u-dim u-sm">fires after the cue above</span></button>
   <button type="button" class="u-btn" data-new-rundown onclick={() => newRundown(nextRundownName(st.stacks))}>＋ New rundown</button>
   <GoButton {stack} {st} locked />
 </div>

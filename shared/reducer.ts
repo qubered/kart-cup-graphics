@@ -2,7 +2,7 @@ import type { CatalogIndex } from './catalog'
 import { createDefaultShowData, createDefaultState, DEFAULT_PRESET_SCOPE, emptyLayers, emptyProgram, LAYOUT_ONLY_PRESET_SCOPE } from './defaults'
 import { activeTournament, DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN, effectiveTrackId, liveMatches, recalcTournament } from './tournament'
 import { FORMAT_CANVAS, deriveView, isSceneSupported } from './view'
-import type { Command, Cue, CueAction, CueScopePatch, CueStack, Layers, Match, OutputConfig, Preset, PresetScope, PresetSource, ProgramFrame, RaceState, ShowData, ShowState, TakeMode, Tournament, Typography } from './types'
+import type { Command, Cue, CueAction, CueScopePatch, CueStack, Layers, Match, OscCue, OutputConfig, Preset, PresetScope, PresetSource, ProgramFrame, RaceState, ShowData, ShowState, TakeMode, Tournament, Typography } from './types'
 
 export class CommandError extends Error {
   constructor(message: string) {
@@ -11,7 +11,8 @@ export class CommandError extends Error {
   }
 }
 
-export interface ReduceContext { catalog: CatalogIndex; now: number; random: () => number }
+/** `onOsc` is called for every OSC cue that fires (the server sends them over UDP; the reducer itself stays pure). */
+export interface ReduceContext { catalog: CatalogIndex; now: number; random: () => number; onOsc?: (osc: OscCue) => void }
 
 const SLUG = /^[a-z0-9-]+$/
 
@@ -172,7 +173,7 @@ function standbyIndex(k: CueStack): number {
 function selectAt(state: ShowState, stackId: string, index: number, ctx: ReduceContext): ShowState {
   const cue = requireStack(state, stackId).cues[index]
   if (!cue) return state
-  const next = recall(state, requirePreset(state, cue.presetId), undefined, ctx, cue.scope)
+  const next = cue.osc ? state : recall(state, requirePreset(state, cue.presetId), undefined, ctx, cue.scope)
   return withStack(next, stackId, (k) => ({ ...k, selected: cue.id }))
 }
 
@@ -183,6 +184,11 @@ function fireAt(state: ShowState, stackId: string, index: number, ctx: ReduceCon
   const stack = requireStack(state, stackId)
   const cue = stack.cues[index]
   if (!cue) return state
+  if (cue.osc) {
+    ctx.onOsc?.(cue.osc)
+    const done = withStack(state, stackId, (k) => ({ ...k, current: cue.id, selected: null }))
+    return followOsc(selectAt(done, stackId, index + 1, ctx), stackId, index, ctx)
+  }
   const fired = stack.selected === cue.id
     ? (cue.take ? reduce(state, { type: 'take', mode: cue.take }, ctx) : state)
     : recall(state, requirePreset(state, cue.presetId), cue.take ?? undefined, ctx, cue.scope)
@@ -196,8 +202,13 @@ function fireAt(state: ShowState, stackId: string, index: number, ctx: ReduceCon
       // nextMatch resets the stacks and stands by on their first cue; at the last match nothing moves, so carry on down the stack
       return activeTournament(moved)?.activeMatchId !== t?.activeMatchId ? moved : selectAt(after, stackId, index + 1, ctx)
     }
-    default: return selectAt(after, stackId, index + 1, ctx)
+    default: return followOsc(selectAt(after, stackId, index + 1, ctx), stackId, index, ctx)
   }
+}
+
+/** An OSC cue right after the one that just fired goes off with it (auto-follow), and so on down a run of OSC cues. */
+function followOsc(state: ShowState, stackId: string, firedIndex: number, ctx: ReduceContext): ShowState {
+  return requireStack(state, stackId).cues[firedIndex + 1]?.osc ? fireAt(state, stackId, firedIndex + 1, ctx) : state
 }
 
 type Snapshot = Pick<Preset, 'layers' | 'armed' | 'draft' | 'transition' | 'mattify'>
@@ -262,8 +273,8 @@ function duplicatePresetOf(state: ShowState, src: Preset, name: string | undefin
 }
 
 /** Insert a new cue (fresh id, unique across all stacks) at `index` (default end). */
-function insertCue(state: ShowState, stackId: string, presetId: string, take: TakeMode | null, index: number | undefined, scope: Partial<PresetScope> | undefined, action: CueAction | undefined): ShowState {
-  const cue: Cue = { id: nextId('cue', state.stacks.flatMap((k) => k.cues.map((c) => c.id))), presetId, take, ...(scope ? { scope } : {}), ...(action ? { action } : {}) }
+function insertCue(state: ShowState, stackId: string, presetId: string, take: TakeMode | null, index: number | undefined, scope: Partial<PresetScope> | undefined, action: CueAction | undefined, osc?: OscCue): ShowState {
+  const cue: Cue = { id: nextId('cue', state.stacks.flatMap((k) => k.cues.map((c) => c.id))), presetId, take, ...(scope ? { scope } : {}), ...(action ? { action } : {}), ...(osc ? { osc } : {}) }
   return withStack(state, stackId, (k) => {
     const at = Math.min(index ?? k.cues.length, k.cues.length)
     return { ...k, cues: [...k.cues.slice(0, at), cue, ...k.cues.slice(at)] }
@@ -523,6 +534,8 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       requirePreset(state, cmd.presetId)
       return insertCue(state, cmd.stackId, cmd.presetId, cmd.take, cmd.index, patchCueScope(undefined, cmd.scope), cmd.action)
     }
+    case 'addOscCue':
+      return insertCue(state, cmd.stackId, '', null, cmd.index, undefined, undefined, cmd.osc)
     case 'updateCue': {
       if (cmd.presetId !== undefined) requirePreset(state, cmd.presetId)
       const stack = requireStack(state, cmd.stackId)
@@ -534,7 +547,8 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
           if (c.id !== cmd.cueId) return c
           const scope = cmd.scope ? patchCueScope(c.scope, cmd.scope) : c.scope
           const action = cmd.action === undefined ? c.action : cmd.action ?? undefined
-          return { id: c.id, presetId: cmd.presetId ?? c.presetId, take: cmd.take !== undefined ? cmd.take : c.take, ...(scope ? { scope } : {}), ...(action ? { action } : {}) }
+          const osc = c.osc ? (cmd.osc ?? c.osc) : undefined
+          return { id: c.id, presetId: cmd.presetId ?? c.presetId, take: cmd.take !== undefined ? cmd.take : c.take, ...(scope ? { scope } : {}), ...(action ? { action } : {}), ...(osc ? { osc } : {}) }
         }),
       }))
       // Editing the standby cue's preset reloads Preview.

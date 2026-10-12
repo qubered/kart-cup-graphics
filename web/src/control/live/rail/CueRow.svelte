@@ -5,7 +5,7 @@
   import { dragSource } from '../../ui/drag'
   import CueEditor from './CueEditor.svelte'
   import { focusAfterMove, moveCue, removeCue, selectCue } from './actions'
-  import { afterHint, rowFlags, takeLabel } from './model'
+  import { afterHint, oscSummary, rowFlags, takeLabel } from './model'
 
   interface Props { stack: CueStack; index: number; st: ShowState; edit: boolean; open: boolean; ontoggle: () => void }
   let { stack, index, st, edit, open, ontoggle }: Props = $props()
@@ -13,8 +13,8 @@
   const cue = $derived(stack.cues[index])
   const flags = $derived(rowFlags(stack, index))
   const preset = $derived(st.presets.find((p) => p.id === cue.presetId))
-  const name = $derived(preset?.name ?? '(missing look)')
-  const pill = $derived(cue.take ?? 'none')
+  const name = $derived(cue.osc ? `OSC → ${cue.osc.host}:${cue.osc.port}` : (preset?.name ?? '(missing look)'))
+  const pill = $derived(cue.osc ? 'none' : (cue.take ?? 'none'))
 
   let gripEl = $state<HTMLButtonElement | undefined>()
   // After a keyboard move the row is re-inserted by the list update, which drops focus: put it back on the grip.
@@ -50,15 +50,16 @@
   <span class="n">{index + 1}</span>
   <span class="who">
     <span class="nm">{name}</span>
-    {#if flags.onAir || flags.next || cue.action}
+    {#if flags.onAir || flags.next || cue.action || cue.osc}
       <span class="sub">
         {#if flags.onAir}<span class="u-tag pgm">ON AIR</span>{/if}
         {#if flags.next}<span class="u-tag pvw">NEXT</span>{/if}
         {#if cue.action}<span class="then">{afterHint(cue.action)}</span>{/if}
+        {#if cue.osc}<span class="osc">{oscSummary(cue.osc)}</span>{/if}
       </span>
     {/if}
   </span>
-  <span class="u-pill {pill}">{takeLabel(cue.take)}</span>
+  <span class="u-pill {pill}">{cue.osc ? 'OSC' : takeLabel(cue.take)}</span>
 {/snippet}
 
 {#if !edit}
@@ -100,6 +101,7 @@
   .who { display: grid; min-width: 0; }
   .nm { color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sub { font-size: 11.5px; color: var(--ui-muted); display: flex; gap: 6px; align-items: center; margin-top: 2px; white-space: nowrap; }
+  .osc { font: 11px var(--ui-mono); overflow: hidden; text-overflow: ellipsis; }
   .then { font-size: 11px; color: #fbbf24; overflow: hidden; text-overflow: ellipsis; }
 
   .grip { margin: 0; padding: 0; width: 40px; height: 50px; border: 0; border-radius: 0; background: transparent; }
