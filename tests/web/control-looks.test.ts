@@ -69,7 +69,7 @@ describe('isModified', () => {
     const only = (key: keyof Preset['scope']) => ({ ...look(s), scope: { ...look(s).scope, [key]: true } })
     expect(isModified(only('layers'), messy)).toBe(true)
     expect(isModified(only('armed'), messy)).toBe(true)
-    expect(isModified(only('style'), messy)).toBe(true)
+    expect(isModified(only('style'), messy)).toBe(false) // event style is never recalled, so it never counts as a modification
     expect(isModified(only('transition'), messy)).toBe(true)
     expect(isModified(only('mattify'), messy)).toBe(true)
     expect(isModified(only('players'), messy)).toBe(true)

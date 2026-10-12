@@ -54,7 +54,7 @@ describe('restoreSnapshot', () => {
       { type: 'saveResults', raceNo: 1, trackId: 'water-park', positions: [3, 2, 1, 4] }, { type: 'setEventText', patch: { title: 'SEMI' } })
     const snap = previewOf(before)
     const recalled = run(before, { type: 'recallPreset', id: 'preset-9' })
-    expect(recalled.layers).not.toEqual(before.layers); expect(recalled.draft.event.title).toBe('OTHER')
+    expect(recalled.layers).not.toEqual(before.layers); expect(recalled.draft.event.title).toBe('SEMI') // event style is never recalled
     expect(recalled.draft.players).toEqual(before.draft.players) // match data is never recalled in a tournament
     const back = run(recalled, { type: 'restoreSnapshot', snapshot: snap })
     expect(back).toEqual(before)

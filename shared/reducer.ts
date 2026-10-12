@@ -295,6 +295,8 @@ function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | u
   const sc = { ...preset.scope, ...override }
   // Match data always comes from the active match while a tournament is running, whatever the preset or cue scope says.
   if (activeTournament(state)) { sc.match = false; sc.players = false; sc.scores = false }
+  // Show-wide style (event text, typography, notice, QR) is never recalled, whatever the preset or cue scope says, including presets saved before this rule.
+  sc.style = false
   // A fresh recall replaces Preview, so no stack's standby cue is "loaded" any more (selectAt re-marks the one it loads).
   let next: ShowState = { ...state, lastPreset: preset.id, stacks: state.stacks.map((k) => (k.selected ? { ...k, selected: null } : k)) }
   if (sc.layers) {
