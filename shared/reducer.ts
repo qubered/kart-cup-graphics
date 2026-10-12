@@ -62,7 +62,9 @@ function liveScores(state: ShowState, ctx: ReduceContext): ShowState {
     if (!layers) continue
     // a pinned match that no longer exists (deleted) keeps its last view
     if ((layers.matchRef && typeof layers.matchRef === 'object' && t && !t.matches.some((m) => m.id === (layers.matchRef as { matchId: string }).matchId) && layers.matchRef.matchId !== '')) continue
-    const fresh = deriveView(state.draft, layers, o, ctx.catalog, t)
+    // Player details only go on air with "Save players", so scores refresh with the players that were last put on air.
+    const data = frame.draft ? { ...state.draft, players: frame.draft.players } : state.draft
+    const fresh = deriveView(data, layers, o, ctx.catalog, t)
     program = { ...program, [o.id]: { ...frame, view: { ...frame.view, scene: fresh.scene } } }
   }
   return program === state.program ? state : { ...state, program }
