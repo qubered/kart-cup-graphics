@@ -27,6 +27,7 @@ export const raceStateSchema = z.object({
   mode: z.enum(['cup', 'track']), cupId: z.string(), raceIndex: slotSchema, trackId: z.string(),
   raceNo: z.number().int().min(1).max(99).default(1), raceTotal: z.number().int().min(1).max(99).default(4),
   trackOverrides: z.array(z.string().max(100).nullable()).length(4).optional(),
+  playerCount: z.number().int().min(2).max(4).optional(),
 })
 export const raceResultSchema = z.object({
   raceNo: z.number().int().min(1),

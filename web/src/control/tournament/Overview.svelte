@@ -3,7 +3,7 @@
   import type { Match, ShowState, Tournament } from '../../../../shared/types'
   import { colourHex } from '../../../../shared/palette'
   import { totals } from '../../../../shared/scoring'
-  import { hasResults, roundLabel } from '../../../../shared/tournament'
+  import { hasResults, playerCount, roundLabel } from '../../../../shared/tournament'
   import { send } from '../store'
   import { act, goto } from '../ui'
   import { autoSource, matchesOfRound, matchStatusOf, nextMatchOf, raceDots, roundNumbers, winnerSlotOf, type Readiness } from '../tournament'
@@ -51,11 +51,11 @@
               {@const st = matchStatusOf(m, t.activeMatchId)}
               {@const ws = winnerSlotOf(m)}
               {@const scored = hasResults(m.data)}
-              {@const tot = totals(m.data.scores)}
+              {@const tot = totals(m.data.scores, playerCount(m.data))}
               <button type="button" class="mc {st}" data-match={m.id} data-status={st} onclick={() => openRound(r, m.id)}>
                 <span class="l1"><b>{m.label || 'Untitled'}</b><em class={st}>{statusText[st]}</em></span>
                 <span class="l2">
-                  {#each m.data.players as p, i (i)}
+                  {#each m.data.players.slice(0, playerCount(m.data)) as p, i (i)}
                     <i class:w={scored && ws === i} style:--c={colourHex(p.colour)}><span class="nm">{chip(m, i)}</span>{#if scored}<small>{tot[i]}</small>{/if}</i>
                   {/each}
                 </span>

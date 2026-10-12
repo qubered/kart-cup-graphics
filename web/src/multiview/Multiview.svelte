@@ -6,7 +6,7 @@
   import { standings } from '../../../shared/scoring'
   import { indexCatalog, type Catalog, type CatalogIndex } from '../../../shared/catalog'
   import { colourHex } from '../../../shared/palette'
-  import { effectiveTrackId } from '../../../shared/tournament'
+  import { effectiveTrackId, playerCount } from '../../../shared/tournament'
   import type { ControlPayload, ServerMessage } from '../../../shared/protocol'
   import { multiviewLayout, MV_W, MV_H, type Tile } from './layout'
   import { cueWindow } from './cues'
@@ -72,7 +72,7 @@
     if (r.mode !== 'cup' || r.raceIndex >= 3) return '—'
     return catalog ? (catalog.track(effectiveTrackId(catalog, r, r.raceIndex + 1))?.name ?? '—') : '—'
   })
-  const rows = $derived(st ? standings(st.draft.scores) : [])
+  const rows = $derived(st ? standings(st.draft.scores, playerCount(st.draft)) : [])
 
   const ROW_H = 34
   function cueRowsFor(t: Tile) {

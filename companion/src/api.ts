@@ -23,7 +23,7 @@ export interface TournamentInfo { id: string; name: string; activeMatchId: strin
 export interface RawTournament {
   id: string; name: string; activeMatchId: string
   matches: { id: string; label: string; round: number; status: string; winnerOverride: number | null
-    data: { players: { name: string }[]; scores: { races: { positions: number[] }[]; adjustments: number[] } } }[]
+    data: { players: { name: string }[]; race?: { playerCount?: number }; scores: { races: { positions: number[] }[]; adjustments: number[] } } }[]
 }
 
 const POINTS = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
@@ -32,7 +32,7 @@ const pts = (pos: number): number => (Number.isInteger(pos) && pos >= 1 && pos <
 /** Mirrors shared matchWinnerSlot: override, else top of standings (tie: better last-race position), null while there are no results. */
 export function winnerSlot(m: RawTournament['matches'][number]): number | null {
   const { players, scores } = m.data
-  const n = players.length
+  const n = Math.max(2, Math.min(players.length, m.data.race?.playerCount ?? players.length))
   if (m.winnerOverride !== null && m.winnerOverride >= 0 && m.winnerOverride < n) return m.winnerOverride
   if (!scores.races.length && !scores.adjustments.some((a) => a !== 0)) return null
   const tot = Array.from({ length: n }, (_, i) => scores.races.reduce((s, r) => s + pts(r.positions[i] ?? 0), 0) + (scores.adjustments[i] ?? 0))

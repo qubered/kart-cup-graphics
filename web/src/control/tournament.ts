@@ -1,6 +1,6 @@
 // Pure helpers for the Tournament workspace (no Svelte, no store) so they can be unit tested.
 import type { CatalogIndex } from '../../../shared/catalog'
-import { effectiveTrackId, matchWinnerSlot } from '../../../shared/tournament'
+import { effectiveTrackId, matchWinnerSlot, playerCount } from '../../../shared/tournament'
 import { isSceneSupported } from '../../../shared/view'
 import { totals } from '../../../shared/scoring'
 import type { Command, Layers, Match, MatchRef, MatchSet, MatchStatus, OutputConfig, OutputFormat, RaceResult, RaceState, SceneId, ScenePart } from '../../../shared/types'
@@ -152,7 +152,7 @@ export function validateTournament(matches: readonly Match[], catalog?: { track(
   for (const m of matches) {
     const label = m.label.trim() || 'A match'
     if (!m.label.trim()) issues.push({ kind: 'label', round: m.round, matchId: m.id, text: 'A match has no label' })
-    m.data.players.forEach((p, slot) => {
+    m.data.players.slice(0, playerCount(m.data)).forEach((p, slot) => {
       if (autoSource(m, slot) !== null || !isPlaceholderName(p.name)) return
       const what = p.name.trim() ? `is still “${p.name.trim()}”` : 'has no name'
       issues.push({ kind: 'name', round: m.round, matchId: m.id, slot, text: `${label}: P${slot + 1} ${what}${m.round > first ? ', pick a winner source or type a name' : ''}` })
@@ -185,7 +185,7 @@ export function raceDots(m: Pick<Match, 'data'>): ('done' | 'part' | 'empty')[] 
   const n = Math.max(1, Math.min(12, m.data.race.raceTotal))
   return Array.from({ length: n }, (_, i) => {
     const placed = races.find((r) => r.raceNo === i + 1)?.positions.filter((p) => p > 0).length ?? 0
-    return placed >= m.data.players.length ? 'done' : placed > 0 ? 'part' : 'empty'
+    return placed >= playerCount(m.data) ? 'done' : placed > 0 ? 'part' : 'empty'
   })
 }
 

@@ -5,17 +5,17 @@
   import type { Match, RaceResult } from '../../../../shared/types'
   import { colourHex } from '../../../../shared/palette'
   import { pointsFor, totals } from '../../../../shared/scoring'
-  import { matchWinnerSlot } from '../../../../shared/tournament'
+  import { matchWinnerSlot, playerCount } from '../../../../shared/tournament'
   import { duplicatePositions } from '../catalog'
   import { send } from '../store'
   import { defaultTrackId, nextRaceNo, removeRace, setPosition } from '../tournament'
 
   let { match, catalog }: { match: Match; catalog: CatalogIndex } = $props()
 
-  const slots = [0, 1, 2, 3] as const
+  const slots = $derived(([0, 1, 2, 3] as const).filter((i) => i < playerCount(match.data)))
   const races = $derived(match.data.scores.races)
-  const adj = $derived(slots.map((i) => match.data.scores.adjustments[i] ?? 0))
-  const tot = $derived(totals({ races, adjustments: adj }))
+  const adj = $derived([0, 1, 2, 3].map((i) => match.data.scores.adjustments[i] ?? 0))
+  const tot = $derived(totals({ races, adjustments: adj }, playerCount(match.data)))
   const winner = $derived(matchWinnerSlot(match.winnerOverride, match.data))
   const computed = $derived(matchWinnerSlot(null, match.data))
   const ordinal = (n: number) => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`
@@ -69,9 +69,9 @@
           {/each}
           <td><button type="button" class="u-btn danger x" aria-label="Remove race {r.raceNo}" data-remove-race={r.raceNo} onclick={() => save(removeRace(races, r.raceNo))}>✕</button></td>
         </tr>
-        {#each duplicatePositions(r.positions) as d (d)}<tr><td colspan="6" class="warn">Race {r.raceNo}: duplicate position {d}</td></tr>{/each}
+        {#each duplicatePositions(r.positions) as d (d)}<tr><td colspan={slots.length + 2} class="warn">Race {r.raceNo}: duplicate position {d}</td></tr>{/each}
       {/each}
-      {#if !races.length}<tr><td colspan="6" class="u-dim empty">No races saved yet.</td></tr>{/if}
+      {#if !races.length}<tr><td colspan={slots.length + 2} class="u-dim empty">No races saved yet.</td></tr>{/if}
       <tr class="adj">
         <td class="rl">Adjustment</td>
         {#each slots as i (i)}

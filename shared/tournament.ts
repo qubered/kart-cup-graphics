@@ -26,6 +26,11 @@ export function effectiveTrackId(catalog: Pick<CatalogIndex, 'cup'>, race: RaceS
   return race.trackOverrides?.[raceIndex] || (catalog.cup(race.cupId)?.tracks[raceIndex] ?? '')
 }
 
+/** Players actually racing in a match (2-4; 4 when unset). */
+export function playerCount(data: Pick<ShowData, 'race' | 'players'>): number {
+  return Math.max(2, Math.min(data.players.length, data.race.playerCount ?? data.players.length))
+}
+
 export function activeTournament(state: Pick<ShowState, 'tournaments' | 'activeTournamentId'>): Tournament | null {
   return state.tournaments.find((t) => t.id === state.activeTournamentId) ?? null
 }
@@ -38,7 +43,7 @@ export function hasResults(data: ShowData): boolean {
 /** Winning slot of a match: the hand-picked override, else the top of standings() (ties: last race position), else null while there are no results. */
 export function matchWinnerSlot(winnerOverride: number | null, data: ShowData): number | null {
   if (winnerOverride !== null && winnerOverride >= 0 && winnerOverride < data.players.length) return winnerOverride
-  return hasResults(data) ? standings(data.scores, data.players.length)[0].playerIndex : null
+  return hasResults(data) ? standings(data.scores, playerCount(data))[0].playerIndex : null
 }
 
 /** The tournament's matches with the active one's data taken from the live draft (players, race, scores; event text and typography are show-wide). */
