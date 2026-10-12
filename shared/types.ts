@@ -209,7 +209,7 @@ export interface ShowState {
   presets: Preset[]; lastPreset: string | null; stacks: CueStack[]
   tournaments: Tournament[]; activeTournamentId: string | null
   /** App-wide switches (not part of an exported show). Applied instantly, with no Take. */
-  settings: { mattify: boolean; /** URL of the uploaded logo (normalised PNG); absent = the built-in roundel. */ logo?: string }
+  settings: { mattify: boolean; /** URL of the uploaded logo (normalised PNG); absent = the default Her Ascent logo. */ logo?: string }
 }
 export interface ShowFile { draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; transition: TransitionSpeed; presets: Preset[]; stacks: CueStack[]; tournaments: Tournament[] }
 

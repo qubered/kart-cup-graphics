@@ -64,7 +64,7 @@ describe('patternTile', () => {
     expect(t).toContain(`<image data-mattify href="${MATTIFY_IMAGE}" x="440" y="150" width="120" height="120"`)
     expect(t).toContain(`opacity="${MATTIFY_OPACITY}"`)
     // every other icon is untouched
-    for (const id of ['i-wheel', 'i-shield', 'i-sign', 'i-tire2', 'i-star', 'i-speedo', 'i-logo', 'i-box', 'i-flag'])
+    for (const id of ['i-wheel', 'i-shield', 'i-sign', 'i-tire2', 'i-star', 'i-speedo', 'i-tire', 'i-box', 'i-flag'])
       expect(t).toContain(`href="#${id}"`)
   })
 })

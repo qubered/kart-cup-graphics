@@ -9,7 +9,7 @@ export interface OutputPayload {
   hold: HoldView | null; ftb: boolean
   /** Replace the mushroom in the icon-pattern background with the custom image. Live setting, no Take. */
   mattify: boolean
-  /** Uploaded logo URL, or null for the built-in roundel. Live setting, no Take. */
+  /** Uploaded logo URL, or null for the default (Her Ascent) logo. Live setting, no Take. */
   logo: string | null
 }
 /** left/right count the clients that render only that half of the output (a subset of program/preview). */
