@@ -1,6 +1,6 @@
 <script lang="ts">
   // Centre panel: the racing players (2-4) and the finishing-place pad for the live race.
-  // Places are staged here until all four are set, then saved in one command, so the scoreboard and any on-air standings never show half a race.
+  // Places (1st to 12th, the rest are bots) are staged here until every human player has one, then saved in one command, so the scoreboard and any on-air standings never show half a race.
   import type { CatalogIndex } from '../../../../shared/catalog'
   import { colourHex } from '../../../../shared/palette'
   import { POINTS } from '../../../../shared/scoring'
@@ -19,7 +19,7 @@
     st: ShowState; catalog: CatalogIndex; matchKey: string
   } = $props()
 
-  const ORD = ['1st', '2nd', '3rd', '4th']
+  const ORD = PLACES.map((n) => `${n}${n % 100 > 10 && n % 100 < 14 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`)
   const draft = $derived(st.draft)
   const race = $derived(draft.race)
   const raceNo = $derived(liveRaceNo(race))
@@ -28,7 +28,7 @@
   const saved = $derived(draft.scores.races.find((r) => r.raceNo === raceNo))
   const count = $derived(playerCount(draft))
   const slots = $derived(SLOTS.filter((i) => i < count))
-  const places = $derived(PLACES.filter((p) => p <= count))
+  const places = PLACES
   const view = $derived(rowView(saved?.positions, staging.get(matchKey, raceNo), count))
   const changed = $derived(changedPlayers(st))
   const fwd = $derived(stepPlan(catalog, race, 1))
@@ -141,7 +141,7 @@
           <input name="subtitle" type="text" class="u-input sub" maxlength="80" autocomplete="off" placeholder="Subtitle: job title · group" aria-label="Player {i + 1} subtitle"
             value={p.subtitle ?? ''} onchange={(e) => setPlayer(i, { subtitle: e.currentTarget.value })} onkeydown={subKey} />
         </div>
-        <div class="places" style:--np={count} role="group" aria-label="{p.name} finishing place">
+        <div class="places" style:--np={6} role="group" aria-label="{p.name} finishing place">
           {#each places as pl (pl)}
             {@const mine = view.row[i] === pl}
             {@const by = mine ? -1 : view.row.findIndex((p, j) => j !== i && p === pl)}
@@ -206,13 +206,13 @@
   .head > span:first-child { grid-column: 1 / 3; }
   .head .rcol, .head > span:nth-child(2) { text-align: center; }
   .rows { overflow: auto; }
-  .player { min-height: 104px; padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #1c1f26; }
+  .player { min-height: 120px; padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #1c1f26; }
   .who { display: grid; gap: 6px; min-width: 0; }
   .nm { font-weight: 700; }
   .sub { font-size: 12.5px; }
-  .places { display: grid; grid-template-columns: repeat(var(--np, 4), minmax(58px, 80px)); gap: 6px; }
-  .place { height: 64px; padding: 0; border: 1px solid var(--ui-field); border-radius: 9px; background: #161a22; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; touch-action: manipulation; min-width: 0; }
-  .place b { font-size: 16px; color: #fff; }
+  .places { display: grid; grid-template-columns: repeat(var(--np, 6), minmax(52px, 72px)); gap: 6px; }
+  .place { height: 46px; padding: 0; border: 1px solid var(--ui-field); border-radius: 9px; background: #161a22; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; touch-action: manipulation; min-width: 0; }
+  .place b { font-size: 14px; color: #fff; }
   .place small { font-size: 11px; color: var(--ui-muted); }
   .place.taken { opacity: .6; }
   .place.sel, .place.sel:hover:not(:disabled) { background: #1e3a8a; border-color: #3b82f6; }
@@ -245,7 +245,7 @@
     .chipc { grid-area: chip; }
     .who { grid-area: who; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .who .sub { grid-column: 1 / -1; }
-    .places { grid-area: places; grid-template-columns: repeat(var(--np, 4), minmax(0, 1fr)); }
+    .places { grid-area: places; grid-template-columns: repeat(var(--np, 6), minmax(0, 1fr)); }
     .adj { grid-area: adj; }
     .rcol { display: none; }
   }
