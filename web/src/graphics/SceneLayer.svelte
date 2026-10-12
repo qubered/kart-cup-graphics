@@ -42,7 +42,7 @@
     {:else if scene.kind === 'matches'}
       <Matches {scene} {view} {enter} />
     {:else if scene.kind === 'notice'}
-      <NoticeScene {scene} {view} {enter} />
+      <NoticeScene {scene} {view} {enter} {logoSrc} />
     {:else if scene.kind === 'qr'}
       <QrScene {scene} {view} {enter} />
     {/if}
