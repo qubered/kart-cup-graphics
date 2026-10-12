@@ -2,7 +2,8 @@
   // The inline editor under an open cue (Edit mode): its Look, Take, After and per-cue recall overrides.
   // Every change is one undoable edit (see actions.ts).
   import type { Cue, CueStack, ShowState } from '../../../../../shared/types'
-  import { makeUnique, setCueAfter, setCueLook, setCueScope, setCueTake } from './actions'
+  import { formatOscLines, parseOscLines } from '../../../../../shared/osc'
+  import { makeUnique, setCueAfter, setCueOsc, setCueLook, setCueScope, setCueTake } from './actions'
   import { AFTERS, SCOPE_KEYS, TAKES, afterFromValue, effectiveScope, hasScopeOverride, nextScopeOverride, recallSummary, takeFromValue, takeValue, usedByCount } from './model'
 
   interface Props { stack: CueStack; cue: Cue; st: ShowState }
@@ -16,6 +17,22 @@
 </script>
 
 <div class="ceditor" data-cue-editor={cue.id}>
+  {#if cue.osc}
+    <div class="r">
+      <span>Send to</span>
+      <div class="to">
+        <input class="u-input" name="oscHost" aria-label="OSC host" value={cue.osc.host} onchange={(e) => setCueOsc(stack, cue, { ...cue.osc!, host: e.currentTarget.value.trim() || cue.osc!.host })} />
+        <input class="u-input port" name="oscPort" type="number" min="1" max="65535" aria-label="OSC port" value={cue.osc.port}
+          onchange={(e) => { const n = Math.round(Number(e.currentTarget.value)); if (n >= 1 && n <= 65535) setCueOsc(stack, cue, { ...cue.osc!, port: n }); else e.currentTarget.value = String(cue.osc!.port) }} />
+      </div>
+    </div>
+    <label class="r top">
+      <span>Messages</span>
+      <textarea class="u-input osc" name="oscMessages" rows="3" spellcheck="false" placeholder='/cmd "Go+ Sequence 1"' value={formatOscLines(cue.osc.messages)}
+        onchange={(e) => { const messages = parseOscLines(e.currentTarget.value); setCueOsc(stack, cue, { ...cue.osc!, messages }); e.currentTarget.value = formatOscLines(messages) }}></textarea>
+    </label>
+    <div class="hint">One message per line: address, then arguments. Quote text ("Go+ Sequence 1"); numbers and true/false are sent as such. Fires straight after the cue above it.</div>
+  {:else}
   <label class="r">
     <span>Look</span>
     <select class="u-select" name="cuePreset" value={cue.presetId}
@@ -68,6 +85,7 @@
     </div>
     <div class="hint">Tap cycles: inherit the Look → force on → force off.</div>
   {/if}
+  {/if}
 </div>
 
 <style>
@@ -83,5 +101,8 @@
   .car { margin-left: auto; color: var(--ui-muted); flex: none; }
   .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-left: 72px; }
   .chips .u-chip { height: 44px; }
+  .r.top { align-items: start; }
+  .to { display: grid; grid-template-columns: minmax(0, 1fr) 90px; gap: 6px; }
+  .osc { font: 12px var(--ui-mono); resize: vertical; min-height: 64px; }
   .hint { font-size: 11px; color: var(--ui-muted); margin-left: 72px; }
 </style>

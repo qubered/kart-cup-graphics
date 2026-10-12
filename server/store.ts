@@ -5,11 +5,11 @@ import type { CatalogIndex } from '../shared/catalog'
 import { createDefaultState, emptyLayers } from '../shared/defaults'
 import { CommandError, reduce } from '../shared/reducer'
 import { commandSchema, showStateSchema } from '../shared/schema'
-import type { ShowState } from '../shared/types'
+import type { OscCue, ShowState } from '../shared/types'
 import { activeTournament } from '../shared/tournament'
 import { deriveView } from '../shared/view'
 
-export interface StoreOptions { dataDir: string; catalog: CatalogIndex; now?: () => number; random?: () => number }
+export interface StoreOptions { dataDir: string; catalog: CatalogIndex; now?: () => number; random?: () => number; /** Called for each OSC cue that fires, after the new state is in place. */ onOsc?: (osc: OscCue) => void }
 const MAX_BACKUPS = 10
 const DEBOUNCE_MS = 200
 
@@ -107,12 +107,16 @@ export class StateStore {
       return { ok: false, error: `Invalid command: ${i ? `${i.path.join('.')} ${i.message}` : 'bad shape'}` }
     }
     try {
-      const next = reduce(this.current, parsed.data, { catalog: this.opts.catalog, now: this.now(), random: this.random })
+      const fired: OscCue[] = []
+      const next = reduce(this.current, parsed.data, { catalog: this.opts.catalog, now: this.now(), random: this.random, onOsc: (o) => fired.push(o) })
       if (next !== this.current) {
         this.current = next
         this.schedule()
         for (const fn of [...this.listeners]) {
           try { fn(next) } catch { /* listener errors must not break dispatch */ }
+        }
+        for (const o of fired) {
+          try { this.opts.onOsc?.(o) } catch { /* a bad OSC target must not break dispatch */ }
         }
       }
       return { ok: true }

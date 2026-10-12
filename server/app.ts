@@ -6,6 +6,7 @@ import { indexCatalog, type Catalog } from '../shared/catalog'
 import { StateStore } from './store'
 import { createHttpHandler } from './http'
 import { attachSockets } from './ws'
+import { createOscSender } from './osc'
 
 export interface StartOpts {
   port: number; dataDir: string; assetsDir: string; distDir: string; dev: boolean; fresh?: boolean; catalog?: Catalog
@@ -22,7 +23,8 @@ export async function startServer(opts: StartOpts): Promise<{ port: number; stor
     catalog = JSON.parse(readFileSync(p, 'utf8')) as Catalog
   }
   const idx = indexCatalog(catalog)
-  const store = new StateStore({ dataDir: opts.dataDir, catalog: idx })
+  const osc = createOscSender()
+  const store = new StateStore({ dataDir: opts.dataDir, catalog: idx, onOsc: osc.send })
   await store.load()
   if (opts.fresh) { store.reset(); await store.flush() }
 
@@ -47,6 +49,7 @@ export async function startServer(opts: StartOpts): Promise<{ port: number; stor
     store,
     async close() {
       sockets.close()
+      osc.close()
       await store.flush()
       await vite?.close()
       server.closeAllConnections?.()

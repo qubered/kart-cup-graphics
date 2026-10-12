@@ -10,7 +10,7 @@ export function cueWindow(stack: CueStack, presets: Preset[], max: number): CueW
   const anchor = Math.max(0, stack.cues.findIndex((c) => c.id === (stack.selected ?? stack.current)))
   const start = Math.max(0, Math.min(anchor - 1, len - size))
   const rows = stack.cues.slice(start, start + size).map((c, i): CueRow => ({
-    id: c.id, n: start + i + 1, name: presets.find((p) => p.id === c.presetId)?.name ?? '?', take: c.take,
+    id: c.id, n: start + i + 1, name: c.osc ? 'OSC' : (presets.find((p) => p.id === c.presetId)?.name ?? '?'), take: c.take,
     status: c.id === stack.current ? 'pgm' : c.id === stack.selected ? 'pvw' : '',
   }))
   return { rows, before: start, after: len - start - rows.length }
