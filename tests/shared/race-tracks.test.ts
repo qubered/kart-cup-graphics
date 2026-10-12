@@ -121,13 +121,13 @@ describe('setRaceTrack', () => {
     expect(() => run(base, { type: 'setRaceTrack', raceIndex: 0, trackId: 'nope' })).toThrow(/Unknown track/)
     expect(() => run(base, { type: 'setRaceTrack', raceIndex: 4 as 3, trackId: null })).toThrow(CommandError)
   })
-  it('stays on the draft only: Program keeps what was taken', () => {
+  it('goes on air at once, without a Take', () => {
     let s = run(base, { type: 'setLayers', outputId: 'wide', patch: { scene: 'nextRace' } }, { type: 'arm', outputIds: ['wide'] }, { type: 'take', mode: 'cut' })
+    const takenAt = s.program.wide.takenAt
     s = run(s, { type: 'setRaceTrack', raceIndex: 0, trackId: 'toad-harbor' })
-    const onAir = s.program.wide.view.scene
-    expect(onAir?.kind === 'nextRace' && onAir.trackName).toBe('Mario Kart Stadium')
-    expect(s.program.wide.draft?.race.trackOverrides).toBeUndefined()
-    expect(run(s, { type: 'take', mode: 'cut' }).program.wide.view.scene).toMatchObject({ trackName: 'Toad Harbor' })
+    expect(s.program.wide.view.scene).toMatchObject({ kind: 'nextRace', trackName: 'Toad Harbor' })
+    expect(s.program.wide.draft?.race.trackOverrides?.[0]).toBe('toad-harbor')
+    expect(s.program.wide.takenAt).toBe(takenAt)
   })
   it('a preset or Preview snapshot carries the maps with the race', () => {
     let s = run(base, { type: 'setRaceTrack', raceIndex: 1, trackId: 'toad-harbor' }, { type: 'savePreset', name: 'P' })

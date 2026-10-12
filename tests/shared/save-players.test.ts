@@ -18,12 +18,12 @@ describe('savePlayers', () => {
     const s = run(live, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } })
     expect(s.program.wide.view.lowerThirds[0].name).toBe('Player 1')
   })
-  it('puts the edit on air in place, without a Take, and leaves the on-air race alone', () => {
+  it('puts the edit on air in place, without a Take', () => {
     const s = run(live, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } }, { type: 'setRace', patch: { raceNo: 3 } }, { type: 'savePlayers' })
     const v = s.program.wide.view
     expect(v.lowerThirds[0].name).toBe('SAM')
     expect(v.scene?.kind === 'standings' && v.scene.rows.some((r) => r.player.name === 'SAM')).toBe(true)
-    expect(s.program.wide.draft?.race).toEqual(live.program.wide.draft?.race)
+    expect(s.program.wide.draft?.race.raceNo).toBe(3)
     expect(s.program.wide.takenAt).toBe(live.program.wide.takenAt)
   })
 })
