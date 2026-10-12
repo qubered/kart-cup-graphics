@@ -23,7 +23,7 @@
     <div class="hold-half" style="left:{i * 960}px;width:{hw}px;height:{h}px">
       <SkyBackground watermark={hold.watermark ?? hold.title.title} font={hold.fonts.eventTitle} lowfx={true} w={hw} {h} />
       <TitleLockup title={hold.title} style={hold.titleStyle} {format} font={hold.fonts.eventTitle} labelFont={hold.fonts.labels} top={cfg.holdTop} {dur} />
-      <div class="hold-logo"><Logo size={format === 'wide' ? 160 : format === 'hd' ? 116 : 100} src={logoSrc} {dur} /></div>
+      <div class="hold-logo"><Logo size={format === 'wide' ? 480 : format === 'hd' ? 300 : 230} src={logoSrc} {dur} /></div>
       <div class="hold-msg" style:--ms="{cfg.ms}px" style:font-family={hold.fonts.headings}><Swap key={hold.message} {dur}>{hold.message}</Swap></div>
     </div>
   {/each}
