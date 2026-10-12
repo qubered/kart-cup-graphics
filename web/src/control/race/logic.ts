@@ -8,8 +8,8 @@ import { duplicatePositions } from '../catalog'
 
 export const SLOTS = [0, 1, 2, 3] as const
 export type Slot = (typeof SLOTS)[number]
-/** The four finishing places the pad offers. */
-export const PLACES = [1, 2, 3, 4] as const
+/** The finishing places the pad offers: up to 4 human players race alongside bots, so a player can finish anywhere from 1st to 12th. */
+export const PLACES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const
 /** One race's positions by player slot. 0 = not placed yet. */
 export type Row = number[]
 export const blankRow = (): Row => [0, 0, 0, 0]
@@ -38,9 +38,9 @@ export function tapPlace(row: Row, slot: number, place: number): Row {
 
 export const placedCount = (row: Row): number => row.filter((p) => p > 0).length
 
-/** Every racing player (the first `n`, default 4) has a different place from 1st to nth and the rest are empty: the only entry that is saved. */
+/** Every racing player (the first `n`, default 4) has a different place from 1st to 12th and the rest are empty: the only entry that is saved. */
 export function isCompleteRow(row: Row | undefined, n = 4): boolean {
-  return !!row && row.length === 4 && row.slice(0, n).every((p) => Number.isInteger(p) && p >= 1 && p <= n)
+  return !!row && row.length === 4 && row.slice(0, n).every((p) => Number.isInteger(p) && p >= 1 && p <= PLACES.length)
     && new Set(row.slice(0, n)).size === n && row.slice(n).every((p) => p === 0)
 }
 

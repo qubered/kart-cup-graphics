@@ -46,7 +46,9 @@ describe('place pad', () => {
     expect(isCompleteRow([2, 1, 4, 3])).toBe(true)
     expect(isCompleteRow([2, 1, 4, 0])).toBe(false)
     expect(isCompleteRow([1, 1, 3, 4])).toBe(false)
-    expect(isCompleteRow([1, 2, 3, 5])).toBe(false)
+    expect(isCompleteRow([1, 2, 3, 5])).toBe(true) // bots fill the other places
+    expect(isCompleteRow([12, 1, 7, 5])).toBe(true)
+    expect(isCompleteRow([1, 2, 3, 13])).toBe(false)
     expect(isCompleteRow(undefined)).toBe(false)
   })
   it('reports the duplicate-position message for a row saved with one', () => {
