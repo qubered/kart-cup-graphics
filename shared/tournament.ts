@@ -2,7 +2,7 @@
 import type { CatalogIndex } from './catalog'
 import { standings } from './scoring'
 import type {
-  BracketConfig, Match, MatchRef, MatchSet, MatchesSceneConfig, RaceState, ShowData, ShowState, Tournament, WinScreenConfig,
+  BracketConfig, ColourId, Match, MatchRef, MatchSet, MatchesSceneConfig, RaceState, ShowData, ShowState, Tournament, WinScreenConfig,
 } from './types'
 
 export const DEFAULT_WIN_SCREEN: WinScreenConfig = {
@@ -13,6 +13,9 @@ export const DEFAULT_MATCHES_SCENE: MatchesSceneConfig = {
   layout: 'grid', detail: { wide: 'full', twin: 'compact', hd: 'compact' }, pendingScores: 'zeros', liveMarker: true,
 }
 export const DEFAULT_BRACKET: BracketConfig = { showScores: true, showStatus: true }
+
+/** The normal Player 1-4 colours (see defaults.ts). */
+const SLOT_COLOURS: ColourId[] = ['red', 'blue', 'green', 'yellow']
 
 /** Display name of a round: its custom name, else "Round n" (1-based). */
 export function roundLabel(t: Pick<Tournament, 'roundNames'>, round: number): string {
@@ -86,8 +89,11 @@ export function recalcTournament(t: Tournament, draft: ShowData): { tournament: 
       if (!from) return
       const w = matchWinnerSlot(from.winnerOverride, from.data)
       const p = w === null ? undefined : from.data.players[w]
-      if (!p || same(m.data.players[slot], p)) return
-      m.data.players = m.data.players.map((x, i) => (i === slot ? { ...p } : x))
+      if (!p) return
+      // the winner's name, character and subtitle move on; the colour stays the slot's own Player 1-4 colour
+      const filled = { ...p, colour: SLOT_COLOURS[slot] ?? p.colour }
+      if (same(m.data.players[slot], filled)) return
+      m.data.players = m.data.players.map((x, i) => (i === slot ? filled : x))
       if (m.id === t.activeMatchId) draftOut = { ...draftOut, players: m.data.players }
     })
   }

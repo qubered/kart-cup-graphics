@@ -425,3 +425,14 @@ describe('round names', () => {
     expect(bad({ '0': 'ok' })).toBe(true); expect(bad({ first: 'x' })).toBe(false); expect(bad({ '0': 5 })).toBe(false); expect(bad(['x'])).toBe(false)
   })
 })
+
+describe('auto-fill colour', () => {
+  it('a slot filled from a winner keeps its own Player 1-4 colour', () => {
+    let s = run(base, { type: 'createTournament', name: 'Cup' }, { type: 'setPlayer', index: 0, patch: { name: 'ALPHA', colour: 'purple' } },
+      { type: 'setMatchResults', matchId: 'match-1', races: [race(1)] })
+    s = run(s, { type: 'setActiveMatch', matchId: 'match-5' })
+    const p = T(s).matches[4].data.players[0]
+    expect(p.name).toBe('ALPHA')
+    expect(p.colour).toBe('red')
+  })
+})
