@@ -260,3 +260,21 @@ describe('edited, not on air yet', () => {
     expect(changedPlayers(saved)).toEqual([])
   })
 })
+
+describe('fewer than four players (tie-breaker)', () => {
+  const two = () => run(base, { type: 'setRace', patch: { playerCount: 2 } }).draft
+  it('a row is complete once every racing player is placed and the rest are empty', () => {
+    expect(isCompleteRow([2, 1, 0, 0], 2)).toBe(true)
+    expect(isCompleteRow([1, 0, 0, 0], 2)).toBe(false)
+    expect(isCompleteRow([1, 2, 3, 0], 2)).toBe(false)
+    expect(isCompleteRow([1, 2, 0, 0], 3)).toBe(false)
+    expect(rowView(undefined, [2, 1, 0, 0], 2)).toMatchObject({ complete: true, placed: 2 })
+  })
+  it('standings, winner and match completion only count the racing players', () => {
+    const d = run(base, { type: 'setRace', patch: { playerCount: 2, raceTotal: 1 } }, { type: 'saveResults', raceNo: 1, trackId: 'a', positions: [2, 1, 0, 0] }).draft
+    expect(boardRows(d)).toHaveLength(2)
+    expect(winnerInfo(d, null)).toMatchObject({ slot: 1, total: 15 })
+    expect(matchComplete(d)).toBe(true)
+    expect(boardRows(two())).toHaveLength(2)
+  })
+})

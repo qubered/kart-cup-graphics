@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Centre panel: the four players and the finishing-place pad for the live race.
+  // Centre panel: the racing players (2-4) and the finishing-place pad for the live race.
   // Places are staged here until all four are set, then saved in one command, so the scoreboard and any on-air standings never show half a race.
   import type { CatalogIndex } from '../../../../shared/catalog'
   import { colourHex } from '../../../../shared/palette'
@@ -11,6 +11,7 @@
   import { twoTap } from '../ui/twotap.svelte'
   import CharacterPicker from './CharacterPicker.svelte'
   import ColourChip from './ColourChip.svelte'
+  import { playerCount } from '../../../../shared/tournament'
   import { PLACES, SLOTS, changedPlayers, clearRaceCommands, isCompleteRow, liveRaceNo, placedCount, rowPoints, rowView, sameRow, stepPlan, tapPlace, trackOfRace } from './logic'
   import { staging } from './staging.svelte'
 
@@ -25,7 +26,10 @@
   const trackId = $derived(trackOfRace(catalog, race, raceNo) || race.trackId)
   const trackName = $derived(catalog.track(trackId)?.name ?? '')
   const saved = $derived(draft.scores.races.find((r) => r.raceNo === raceNo))
-  const view = $derived(rowView(saved?.positions, staging.get(matchKey, raceNo)))
+  const count = $derived(playerCount(draft))
+  const slots = $derived(SLOTS.filter((i) => i < count))
+  const places = $derived(PLACES.filter((p) => p <= count))
+  const view = $derived(rowView(saved?.positions, staging.get(matchKey, raceNo), count))
   const changed = $derived(changedPlayers(st))
   const fwd = $derived(stepPlan(catalog, race, 1))
   const nextName = $derived(race.mode === 'cup' && fwd ? (catalog.track(effectiveTrackId(catalog, race, race.raceIndex + 1))?.name ?? '') : '')
@@ -35,7 +39,7 @@
   // ---- results ----
   function tap(slot: number, place: number) {
     const next = tapPlace(view.row, slot, place)
-    if (isCompleteRow(next)) {
+    if (isCompleteRow(next, count)) {
       if (sameRow(next, saved?.positions)) { staging.drop(matchKey, raceNo); return }
       staging.set(matchKey, raceNo, next) // shown until the server confirms it
       send({ type: 'saveResults', raceNo, trackId, positions: [...next] })
@@ -111,13 +115,18 @@
     {#if changed.length}
       <span class="notonair" data-not-on-air title="Edited in Preview; Save to put it on air">● {changed.map((i) => `P${i + 1}`).join(', ')} edited, not on air yet</span>
     {/if}
+    <div class="pc" role="group" aria-label="Players racing" title="Players in this race, e.g. 2 for a tie-breaker">
+      {#each [2, 3, 4] as n (n)}
+        <button type="button" class="u-btn" class:acc={count === n} aria-pressed={count === n} data-player-count={n} onclick={() => count !== n && send({ type: 'setRace', patch: { playerCount: n } })}>{n}</button>
+      {/each}
+    </div>
     <button type="button" class="u-btn savep" class:acc={changed.length > 0} data-save-players disabled={!changed.length} title="Put the player details on air" onclick={savePlayers}>Save players</button>
   </div>
 
   <div class="head" aria-hidden="true"><span>Player</span><span>Finishing place · tap one per player</span><span class="rcol">Race</span><span>Adjust</span></div>
 
   <div class="u-grow rows">
-    {#each SLOTS as i (i)}
+    {#each slots as i (i)}
       {@const p = draft.players[i]}
       <div class="player" data-player={i} data-result={i}>
         <div class="chipc"><ColourChip slot={i} value={p.colour} onchange={(c) => setPlayer(i, { colour: c })} /></div>
@@ -132,8 +141,8 @@
           <input name="subtitle" type="text" class="u-input sub" maxlength="80" autocomplete="off" placeholder="Subtitle: job title · group" aria-label="Player {i + 1} subtitle"
             value={p.subtitle ?? ''} onchange={(e) => setPlayer(i, { subtitle: e.currentTarget.value })} onkeydown={subKey} />
         </div>
-        <div class="places" role="group" aria-label="{p.name} finishing place">
-          {#each PLACES as pl (pl)}
+        <div class="places" style:--np={count} role="group" aria-label="{p.name} finishing place">
+          {#each places as pl (pl)}
             {@const mine = view.row[i] === pl}
             {@const by = mine ? -1 : view.row.findIndex((p, j) => j !== i && p === pl)}
             <button type="button" class="place" class:sel={mine} class:staged={mine && view.staged} class:taken={by >= 0 && !mine}
@@ -164,11 +173,11 @@
         <button type="button" class="u-link rv" data-resave onclick={() => send({ type: 'saveResults', raceNo, trackId, positions: [...view.row] })}>Save again</button></div>
     {:else if view.placed > 0}
       <div class="pmsg warn" data-status="partial">
-        {view.placed} of 4 placed{view.staged ? ', not saved yet' : ''}. Tap a place for each remaining player{saved && view.staged ? '; the scoreboard keeps the saved result until then' : ''}.
+        {view.placed} of {count} placed{view.staged ? ', not saved yet' : ''}. Tap a place for each remaining player{saved && view.staged ? '; the scoreboard keeps the saved result until then' : ''}.
         {#if view.staged && saved}<button type="button" class="u-link rv" data-revert onclick={revert}>Back to the saved result</button>{/if}
       </div>
     {:else if staging.get(matchKey, raceNo)}
-      <div class="pmsg warn" data-status="partial">Nothing placed. The saved result stays until all four places are set or the race is cleared.
+      <div class="pmsg warn" data-status="partial">Nothing placed. The saved result stays until all {count} places are set or the race is cleared.
         <button type="button" class="u-link rv" data-revert onclick={revert}>Back to the saved result</button></div>
     {:else}
       <div class="pmsg" data-status="empty">Tap each player’s finishing place. Tap a taken place to move it.</div>
@@ -189,6 +198,7 @@
 <style>
   .pad { min-width: 0; }
   .rn { color: #fff; }
+  .pc { display: flex; gap: 2px; margin-left: 10px; flex: none; }
   .savep { margin-left: 10px; flex: none; }
   .notonair { margin-left: auto; font-size: 12px; color: var(--ui-pending); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .head, .player { display: grid; grid-template-columns: 44px minmax(190px, 270px) auto 48px auto; justify-content: space-between; column-gap: 12px; align-items: center; padding: 0 14px; }
@@ -200,7 +210,7 @@
   .who { display: grid; gap: 6px; min-width: 0; }
   .nm { font-weight: 700; }
   .sub { font-size: 12.5px; }
-  .places { display: grid; grid-template-columns: repeat(4, minmax(58px, 80px)); gap: 6px; }
+  .places { display: grid; grid-template-columns: repeat(var(--np, 4), minmax(58px, 80px)); gap: 6px; }
   .place { height: 64px; padding: 0; border: 1px solid var(--ui-field); border-radius: 9px; background: #161a22; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; touch-action: manipulation; min-width: 0; }
   .place b { font-size: 16px; color: #fff; }
   .place small { font-size: 11px; color: var(--ui-muted); }
@@ -235,7 +245,7 @@
     .chipc { grid-area: chip; }
     .who { grid-area: who; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .who .sub { grid-column: 1 / -1; }
-    .places { grid-area: places; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .places { grid-area: places; grid-template-columns: repeat(var(--np, 4), minmax(0, 1fr)); }
     .adj { grid-area: adj; }
     .rcol { display: none; }
   }

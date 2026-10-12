@@ -6,13 +6,15 @@
   import { colourHex, textOn } from '../../../../shared/palette'
   import { control, send } from '../store'
   import { changedPlayers } from '../race/logic'
+  import { playerCount } from '../../../../shared/tournament'
   import { autoSource, slotSourceGroups, winnerSlotOf } from '../tournament'
   import CharacterPicker from './CharacterPicker.svelte'
   import ColourPicker from './ColourPicker.svelte'
 
   let { match, matches, catalog }: { match: Match; matches: Match[]; catalog: CatalogIndex } = $props()
 
-  const slots = [0, 1, 2, 3] as const
+  const count = $derived(playerCount(match.data))
+  const slots = $derived(([0, 1, 2, 3] as const).filter((i) => i < count))
   // The live match's player details go on air with "Save players" (same as the race screen).
   const st = $derived($control.payload?.state)
   const live = $derived(st?.tournaments.find((x) => x.id === st.activeTournamentId)?.activeMatchId === match.id)
@@ -38,6 +40,14 @@
 
 <section class="sec" aria-label="Players">
   <div class="u-lab">Players</div>
+  <div class="cnt" role="group" aria-label="Players racing">
+    <span class="u-dim">Racing</span>
+    {#each [2, 3, 4] as n (n)}
+      <button type="button" class="u-btn" class:acc={count === n} aria-pressed={count === n} data-match-player-count={n}
+        onclick={() => count !== n && send({ type: 'updateMatch', matchId: match.id, patch: { race: { playerCount: n } } })}>{n}</button>
+    {/each}
+    <span class="u-dim">(2 = tie-breaker)</span>
+  </div>
   {#if live}
     <div class="savebar">
       {#if changed.length}<span class="notonair" data-not-on-air>● {changed.map((i) => `P${i + 1}`).join(', ')} edited, not on air yet</span>{/if}
@@ -77,6 +87,7 @@
 </section>
 
 <style>
+  .cnt { display: flex; align-items: center; gap: 4px; }
   .sec { display: grid; gap: 10px; padding: 14px 16px; }
   .prow { display: grid; grid-template-columns: 36px minmax(80px, 1fr) minmax(120px, 170px) 112px; gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--ui-line); border-radius: 10px; background: var(--ui-panel-2); }
   .prow.auto { border-color: #2f56b8; background: #0f1a36; }

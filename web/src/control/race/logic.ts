@@ -2,7 +2,7 @@
 // the finishing-place pad, which races count as done, the scoreboard rows, the winner and the map / next-race commands.
 import type { CatalogIndex } from '../../../../shared/catalog'
 import { pointsFor, standings } from '../../../../shared/scoring'
-import { effectiveTrackId, matchWinnerSlot } from '../../../../shared/tournament'
+import { effectiveTrackId, matchWinnerSlot, playerCount } from '../../../../shared/tournament'
 import type { Command, Player, RaceResult, RaceState, ShowData, ShowState } from '../../../../shared/types'
 import { duplicatePositions } from '../catalog'
 
@@ -38,9 +38,10 @@ export function tapPlace(row: Row, slot: number, place: number): Row {
 
 export const placedCount = (row: Row): number => row.filter((p) => p > 0).length
 
-/** Every player has a different place from 1st to 4th: the only entry that is saved. */
-export function isCompleteRow(row: Row | undefined): boolean {
-  return !!row && row.length === 4 && row.every((p) => Number.isInteger(p) && p >= 1 && p <= 4) && new Set(row).size === 4
+/** Every racing player (the first `n`, default 4) has a different place from 1st to nth and the rest are empty: the only entry that is saved. */
+export function isCompleteRow(row: Row | undefined, n = 4): boolean {
+  return !!row && row.length === 4 && row.slice(0, n).every((p) => Number.isInteger(p) && p >= 1 && p <= n)
+    && new Set(row.slice(0, n)).size === n && row.slice(n).every((p) => p === 0)
 }
 
 /** "Duplicate position: 1" lines for a row that was saved elsewhere with the same place twice (the pad itself cannot make one). */
@@ -54,9 +55,9 @@ export function sameRow(a: Row | undefined, b: Row | undefined): boolean {
 
 /** What the pad shows and what is saved. `staged` is a row that has not been saved yet (it differs from `saved`). */
 export interface RowView { row: Row; staged: boolean; complete: boolean; placed: number; issues: string[] }
-export function rowView(saved: Row | undefined, staged: Row | undefined): RowView {
+export function rowView(saved: Row | undefined, staged: Row | undefined, n = 4): RowView {
   const row = staged ?? saved ?? blankRow()
-  return { row, staged: !!staged && !sameRow(staged, saved), complete: isCompleteRow(row), placed: placedCount(row), issues: rowIssues(row) }
+  return { row, staged: !!staged && !sameRow(staged, saved), complete: isCompleteRow(row, n), placed: placedCount(row), issues: rowIssues(row) }
 }
 
 /** Points a player scores for a race row (0 while not placed). */
@@ -107,7 +108,7 @@ export function boardColumns(data: ShowData): number {
 /** Ranked rows, best first (ties broken by the last saved race, as the graphics do). The leader is only marked once a race is saved. */
 export function boardRows(data: ShowData, columns = boardColumns(data)): BoardRow[] {
   const { races, adjustments } = data.scores
-  return standings(data.scores, 4).map((s, k) => ({
+  return standings(data.scores, playerCount(data)).map((s, k) => ({
     slot: s.playerIndex,
     position: s.position,
     points: Array.from({ length: columns }, (_, c) => {
@@ -123,7 +124,7 @@ export function boardRows(data: ShowData, columns = boardColumns(data)): BoardRo
 
 /** Races with a saved, complete result (what finishes a match). */
 export function racesDone(data: ShowData): number {
-  return data.scores.races.filter((r) => isCompleteRow(r.positions)).length
+  return data.scores.races.filter((r) => isCompleteRow(r.positions, playerCount(data))).length
 }
 export function matchComplete(data: ShowData): boolean {
   return racesDone(data) >= Math.max(1, data.race.raceTotal)
@@ -133,8 +134,8 @@ export interface WinnerInfo { slot: number; total: number; /** Winner was set by
 export function winnerInfo(data: ShowData, winnerOverride: number | null): WinnerInfo | null {
   const slot = matchWinnerSlot(winnerOverride, data)
   if (slot === null) return null
-  const rows = standings(data.scores, 4)
-  const byHand = winnerOverride !== null && winnerOverride >= 0 && winnerOverride < 4
+  const rows = standings(data.scores, playerCount(data))
+  const byHand = winnerOverride !== null && winnerOverride >= 0 && winnerOverride < playerCount(data)
   return { slot, total: rows.find((r) => r.playerIndex === slot)?.total ?? 0, byHand, tieBroken: !byHand && rows.length > 1 && rows[0].total === rows[1].total }
 }
 

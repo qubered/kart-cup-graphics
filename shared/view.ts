@@ -2,7 +2,7 @@ import type { CatalogIndex } from './catalog'
 import { fontStack, isUpright } from './fonts'
 import { colourHex, textOn } from './palette'
 import { pointsFor, standings } from './scoring'
-import { DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN, effectiveTrackId, hasResults, liveMatches, matchWinnerSlot, resolveMatchRef, resolveMatchSet } from './tournament'
+import { DEFAULT_BRACKET, DEFAULT_MATCHES_SCENE, DEFAULT_WIN_SCREEN, effectiveTrackId, hasResults, liveMatches, matchWinnerSlot, playerCount, resolveMatchRef, resolveMatchSet } from './tournament'
 import type {
   BoardRace, BoardRow, BracketView, CupWinView, Layers, Match, MatchCardView, MatchesView, RaceWinView, ScenePart, Tournament, OutputConfig, OutputFormat, Player, PlayerView, SceneId, SceneView, ShowData, TitleView, TrackCardView, ViewModel,
 } from './types'
@@ -72,7 +72,7 @@ function boardRaces(data: ShowData, catalog: CatalogIndex, upTo = data.scores.ra
 function boardRows(data: ShowData, pv: (i: number) => PlayerView, winnerSlot: number | null, upTo = data.scores.races.length): BoardRow[] {
   const races = data.scores.races.slice(0, upTo)
   const scores = { races, adjustments: data.scores.adjustments }
-  return standings(scores, data.players.length).map((r) => ({
+  return standings(scores, playerCount(data)).map((r) => ({
     position: r.position, player: pv(r.playerIndex), total: r.total,
     racePoints: races.map((x) => pointsFor(x.positions[r.playerIndex] ?? 0)),
     lastRacePoints: r.lastRacePoints, adjustment: data.scores.adjustments[r.playerIndex] ?? 0, winner: r.playerIndex === winnerSlot,
@@ -97,7 +97,7 @@ function raceWinView(m: ReturnType<typeof winMatch>, layers: Layers, t: Tourname
   if (last) {
     let best = Number.MAX_SAFE_INTEGER
     last.positions.forEach((p, i) => { if (p >= 1 && p < best) { best = p; slot = i } })
-  } else slot = standings(d.scores, d.players.length)[0].playerIndex
+  } else slot = standings(d.scores, playerCount(d))[0].playerIndex
   const rows = boardRows(d, pv, last ? slot : null)
   const lastRow = rows.find((r) => r.player.slot === slot)
   return {
@@ -112,7 +112,7 @@ function cupWinView(m: ReturnType<typeof winMatch>, layers: Layers, t: Tournamen
   const d = m.data
   const pv = (i: number) => playerView(d.players[i], i, catalog)
   const info = raceInfo(d, catalog)
-  const slot = matchWinnerSlot(m.winnerOverride, d) ?? standings(d.scores, d.players.length)[0].playerIndex
+  const slot = matchWinnerSlot(m.winnerOverride, d) ?? standings(d.scores, playerCount(d))[0].playerIndex
   const rows = boardRows(d, pv, slot)
   return {
     kind: 'cupWin', matchId: m.id, matchLabel: m.label, part: layers.part ?? 'full', config: t?.winScreen ?? DEFAULT_WIN_SCREEN,
@@ -153,10 +153,10 @@ function bracketView(t: Tournament, draft: ShowData, catalog: CatalogIndex): Bra
         const d = m.data
         const pv = (i: number) => playerView(d.players[i], i, catalog)
         const slot = matchWinnerSlot(m.winnerOverride, d)
-        const tot = standings(d.scores, d.players.length)
+        const tot = standings(d.scores, playerCount(d))
         return {
           matchId: m.id, label: m.label, status: m.status, live: m.id === t.activeMatchId, hasResults: hasResults(d),
-          slots: d.players.map((_, i) => ({ player: pv(i), total: tot.find((r) => r.playerIndex === i)?.total ?? 0, winner: i === slot, fromMatchId: m.slotSources?.[i]?.matchId ?? null })),
+          slots: d.players.slice(0, playerCount(d)).map((_, i) => ({ player: pv(i), total: tot.find((r) => r.playerIndex === i)?.total ?? 0, winner: i === slot, fromMatchId: m.slotSources?.[i]?.matchId ?? null })),
           winner: slot === null ? null : pv(slot), overridden: m.winnerOverride !== null,
         }
       }),
@@ -175,7 +175,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
   if (isSceneSupported(output.format, layers.scene, layers.part)) {
     switch (layers.scene) {
       case 'title': scene = { kind: 'title', title, logo: layers.logo ?? 'corner' }; break
-      case 'lineup': scene = { kind: 'lineup', players: data.players.slice(0, Math.min(4, Math.max(0, layers.lineupShown ?? 4))).map((_, i) => pv(i)) }; break
+      case 'lineup': scene = { kind: 'lineup', players: data.players.slice(0, Math.min(playerCount(data), Math.max(0, layers.lineupShown ?? 4))).map((_, i) => pv(i)) }; break
       case 'announce': scene = { kind: 'announce', player: pv(Math.min(3, Math.max(0, layers.announceSlot ?? 0))), card: !layers.announceBare }; break
       case 'nextRace':
         scene = {
@@ -185,14 +185,14 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
         }
         break
       case 'standings': {
-        const rows = standings(data.scores, data.players.length).map((r) => ({
+        const rows = standings(data.scores, playerCount(data)).map((r) => ({
           position: r.position, player: pv(r.playerIndex), total: r.total, lastRacePoints: r.lastRacePoints,
         }))
         scene = { kind: 'standings', rows }
         break
       }
       case 'winner': {
-        const top = standings(data.scores, data.players.length)[0]
+        const top = standings(data.scores, playerCount(data))[0]
         scene = { kind: 'winner', player: pv(top.playerIndex), total: top.total }
         break
       }
@@ -213,6 +213,7 @@ export function deriveView(data: ShowData, layers: Layers, output: OutputConfig,
   let slots: number[] = []
   if (layers.lowerThirds.on) {
     slots = output.format === 'twin' ? [0, 1, 2, 3] : [...new Set(layers.lowerThirds.players)].sort((a, b) => a - b)
+    slots = slots.filter((s) => s < playerCount(data))
   }
 
   return {

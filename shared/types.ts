@@ -15,6 +15,8 @@ export interface OutputConfig { id: string; name: string; format: OutputFormat; 
 export interface Player { name: string; characterId: string; colour: ColourId; subtitle: string }
 export interface RaceState {
   mode: 'cup' | 'track'; cupId: string; raceIndex: 0 | 1 | 2 | 3; trackId: string; raceNo: number; raceTotal: number
+  /** How many of the four player slots are racing (2-4). Absent = 4. Slots past the count are ignored by standings and graphics; a tie-breaker between two players is 2. */
+  playerCount?: number
   /** Cup mode: a hand-picked track per race, aligned to `raceIndex` (length 4). null / absent = the cup's own order. `trackId` always mirrors the effective track of `raceIndex`. */
   trackOverrides?: (string | null)[]
 }
