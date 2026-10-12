@@ -70,15 +70,31 @@ function liveScores(state: ShowState, ctx: ReduceContext): ShowState {
 /** Player details are saved on demand: refresh the player-derived parts of what is on air (scene and lower thirds) from the draft, and
  *  remember them as the on-air players. Race, layers and everything else on air stay as taken; scores are live anyway. */
 function livePlayers(state: ShowState, ctx: ReduceContext): ShowState {
+  return liveOnAir(state, ctx, { players: true, race: false })
+}
+
+/** Race and match changes (race number, map, cup, active match) go to air at once, with no Take: the on-air race and track card follow the draft.
+ *  `players` also carries the players (a match switch brings its own). */
+function liveOnAir(state: ShowState, ctx: ReduceContext, what: { players: boolean; race: boolean }): ShowState {
   const t = activeTournament(state)
   let program = state.program
   for (const o of state.outputs) {
     const frame = program[o.id]
     if (!frame?.draft || !frame.layers) continue
-    const data = { ...state.draft, race: frame.draft.race }
+    const data = {
+      ...state.draft,
+      players: what.players ? state.draft.players : frame.draft.players,
+      race: what.race ? state.draft.race : frame.draft.race,
+    }
     const fresh = deriveView(data, frame.layers, o, ctx.catalog, t)
     const scene = frame.view.scene && fresh.scene ? fresh.scene : frame.view.scene
-    program = { ...program, [o.id]: { ...frame, view: { ...frame.view, scene, lowerThirds: fresh.lowerThirds }, draft: { ...frame.draft, players: structuredClone(state.draft.players) } } }
+    const view = { ...frame.view, scene, lowerThirds: fresh.lowerThirds, ...(what.race ? { trackCard: fresh.trackCard } : {}) }
+    const taken = {
+      ...frame.draft,
+      ...(what.players ? { players: structuredClone(state.draft.players) } : {}),
+      ...(what.race ? { race: structuredClone(state.draft.race), scores: structuredClone(state.draft.scores) } : {}),
+    }
+    program = { ...program, [o.id]: { ...frame, view, draft: taken } }
   }
   return { ...state, program }
 }
@@ -286,8 +302,15 @@ function scoreSig(state: ShowState): string {
   return JSON.stringify([state.draft.scores, t ? liveMatches(t, state.draft).map((m) => [m.id, m.data.scores, m.winnerOverride, m.status, m.data.players]) : null])
 }
 
+const RACE_LIVE = new Set<Command['type']>(['setRace', 'stepRace', 'randomRace', 'setRaceTrack', 'updateMatch'])
+const MATCH_LIVE = new Set<Command['type']>(['setActiveMatch', 'nextMatch'])
+
 export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): ShowState {
-  const next = reduceCore(state, cmd, ctx)
+  let next = reduceCore(state, cmd, ctx)
+  if (next !== state) {
+    if (RACE_LIVE.has(cmd.type)) next = liveOnAir(next, ctx, { players: false, race: true })
+    else if (MATCH_LIVE.has(cmd.type)) next = liveOnAir(next, ctx, { players: true, race: true })
+  }
   const t = activeTournament(next)
   if (!t) return next
   // Keep the active Match in step with the draft, auto-fill slots from winners, and refresh on-air scores. Same object back when nothing changed.
