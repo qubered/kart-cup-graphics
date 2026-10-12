@@ -33,3 +33,22 @@ describe('savePlayers', () => {
     expect(s.program.wide.takenAt).toBe(live.program.wide.takenAt)
   })
 })
+
+describe('Take with unsaved player edits', () => {
+  const base = run(createDefaultState(idx, 0),
+    { type: 'setLayers', outputId: 'wide', patch: { scene: 'announce', lowerThirds: { on: true, players: [0] } } } as Command,
+    { type: 'arm', outputIds: ['wide'] }, { type: 'take', mode: 'cut' })
+  const edited = run(base, { type: 'setPlayer', index: 0, patch: { name: 'SAM' } },
+    { type: 'setLayers', outputId: 'wide', patch: { scene: 'standings' } } as Command, { type: 'take', mode: 'cut' })
+
+  it('shows the saved names, not the edit', () => {
+    const v = edited.program.wide.view
+    expect(v.lowerThirds[0].name).toBe('Player 1')
+    expect(v.scene?.kind === 'standings' && v.scene.rows.some((r) => r.player.name === 'SAM')).toBe(false)
+  })
+  it('shows the edit once saved', () => {
+    const s = run(edited, { type: 'savePlayers' })
+    expect(s.program.wide.view.lowerThirds[0].name).toBe('SAM')
+    expect(run(s, { type: 'take', mode: 'cut' }).program.wide.view.lowerThirds[0].name).toBe('SAM')
+  })
+})

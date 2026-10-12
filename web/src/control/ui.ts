@@ -88,7 +88,7 @@ export function act(label: string, commands: Command[], undoCommands: Command[])
 
 /** Everything on the Preview side of the show (what a load / recall changes). Use with the `restoreSnapshot` command to undo it. */
 export function previewSnapshot(st: ShowState): PreviewSnapshot {
-  return { draft: st.draft, layers: st.layers, armed: st.armed, transition: st.transition, mattify: st.settings.mattify, lastPreset: st.lastPreset }
+  return { draft: st.draft, layers: st.layers, armed: st.armed, transition: st.transition, mattify: st.settings.mattify, lastPreset: st.lastPreset, ...(st.savedPlayers ? { savedPlayers: st.savedPlayers } : {}) }
 }
 export const restoreCommand = (snapshot: PreviewSnapshot): Command => ({ type: 'restoreSnapshot', snapshot })
 /** The current show state (or undefined before the first payload). Convenience for non-component code. */

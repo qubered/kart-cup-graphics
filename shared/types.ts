@@ -176,6 +176,8 @@ export interface PreviewSnapshot {
   transition: TransitionSpeed
   mattify: boolean
   lastPreset: string | null
+  /** The saved players while hand edits to the draft's players are pending (see ShowState.savedPlayers). */
+  savedPlayers?: Player[]
 }
 /** One step in a stack: recall a preset, then cut/auto it to air (take: null = recall only, take by hand). The same preset may appear in many cues. */
 export type CueAction = 'nextRace' | 'nextMatch' | 'resetStack'
@@ -198,6 +200,8 @@ export type CueScopePatch = { [K in keyof PresetScope]?: boolean | null }
 export interface CueStack { id: string; name: string; cues: Cue[]; current: string | null; selected: string | null }
 export interface ShowState {
   draft: ShowData; outputs: OutputConfig[]; layers: Record<string, Layers>; program: Record<string, ProgramFrame>
+  /** The players as last saved, kept while hand edits to the draft's players are waiting for "Save players" (a Take uses these, not the edits). Not persisted. */
+  savedPlayers?: Player[]
   overlay: { hold: { on: boolean; message: string }; ftb: boolean }
   transition: TransitionSpeed; armed: string[]
   clocks: { onAirSince: number | null }

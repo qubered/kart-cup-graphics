@@ -15,7 +15,7 @@ const base = createDefaultState(idx, 0)
 const T = (s: ShowState) => activeTournament(s)!
 
 /** What the control UI captures before it loads a look into Preview. */
-const previewOf = (s: ShowState): PreviewSnapshot => structuredClone({ draft: s.draft, layers: s.layers, armed: s.armed, transition: s.transition, mattify: s.settings.mattify, lastPreset: s.lastPreset })
+const previewOf = (s: ShowState): PreviewSnapshot => structuredClone({ draft: s.draft, layers: s.layers, armed: s.armed, transition: s.transition, mattify: s.settings.mattify, lastPreset: s.lastPreset, ...(s.savedPlayers ? { savedPlayers: s.savedPlayers } : {}) })
 const race = (raceNo: number, positions = [1, 2, 3, 4]) => ({ raceNo, trackId: 'water-park', positions })
 
 /** A Preview that differs from the defaults in every part a snapshot covers. */

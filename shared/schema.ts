@@ -122,6 +122,7 @@ export const previewSnapshotSchema: z.ZodType<PreviewSnapshot, z.ZodTypeDef, unk
   transition: transitionSpeedSchema,
   mattify: z.boolean(),
   lastPreset: z.string().nullable(),
+  savedPlayers: z.array(playerSchema).optional(),
 })
 
 const cueScopeSchema = partialScopeSchema

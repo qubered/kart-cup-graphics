@@ -27,10 +27,16 @@ function pick<T>(list: T[], random: () => number): T {
   return list[i]
 }
 
+/** The draft as a Take sees it: hand-edited player details wait for "Save players", so until then a Take uses the players as last saved. */
+function takenDraft(state: ShowState): ShowState['draft'] {
+  return state.savedPlayers ? { ...state.draft, players: state.savedPlayers } : state.draft
+}
+
 function programFor(state: ShowState, id: string, layers: Layers, mode: ProgramFrame['mode'], ctx: ReduceContext): ProgramFrame {
+  const data = takenDraft(state)
   return {
-    view: deriveView(state.draft, layers, requireOutput(state, id), ctx.catalog, activeTournament(state)), mode, speed: state.transition, takenAt: ctx.now,
-    layers: structuredClone(layers), draft: structuredClone(state.draft),
+    view: deriveView(data, layers, requireOutput(state, id), ctx.catalog, activeTournament(state)), mode, speed: state.transition, takenAt: ctx.now,
+    layers: structuredClone(layers), draft: structuredClone(data),
   }
 }
 
@@ -302,7 +308,7 @@ function recall(state: ShowState, preset: Preset, take: ProgramFrame['mode'] | u
     next = withDraft(next, { event, typography, notice, qr })
   }
   if (sc.match) next = withDraft(next, { race: structuredClone(preset.draft.race) })
-  if (sc.players) next = withDraft(next, { players: structuredClone(preset.draft.players) })
+  if (sc.players) next = withDraft(clearSaved(next), { players: structuredClone(preset.draft.players) })
   if (sc.scores) next = liveScores(withDraft(next, { scores: structuredClone(preset.draft.scores) }), ctx)
   if (sc.transition) next = { ...next, transition: preset.transition }
   if (sc.mattify) next = { ...next, settings: { ...next.settings, mattify: preset.mattify } }
@@ -315,14 +321,23 @@ function scoreSig(state: ShowState): string {
   return JSON.stringify([state.draft.scores, t ? liveMatches(t, state.draft).map((m) => [m.id, m.data.scores, m.winnerOverride, m.status, m.data.players]) : null])
 }
 
+function clearSaved(state: ShowState): ShowState {
+  const { savedPlayers, ...rest } = state
+  void savedPlayers
+  return rest
+}
+
 const RACE_LIVE = new Set<Command['type']>(['setRace', 'stepRace', 'randomRace', 'setRaceTrack', 'updateMatch'])
+/** Commands that load other players into the draft: any pending hand edits are gone, so a Take uses the draft again. */
+const LOADS_PLAYERS = new Set<Command['type']>(['loadTournament', 'duplicateTournament', 'deleteTournament', 'removeMatch'])
 const MATCH_LIVE = new Set<Command['type']>(['setActiveMatch', 'nextMatch'])
 
 export function reduce(state: ShowState, cmd: Command, ctx: ReduceContext): ShowState {
   let next = reduceCore(state, cmd, ctx)
   if (next !== state) {
     if (RACE_LIVE.has(cmd.type)) next = liveOnAir(next, ctx, { players: false, race: true })
-    else if (MATCH_LIVE.has(cmd.type)) next = liveOnAir(next, ctx, { players: true, race: true })
+    else if (LOADS_PLAYERS.has(cmd.type)) next = clearSaved(next)
+    else if (MATCH_LIVE.has(cmd.type)) next = liveOnAir(clearSaved(next), ctx, { players: true, race: true })
   }
   const t = activeTournament(next)
   if (!t) return next
@@ -397,12 +412,13 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       const t = activeTournament(state)
       const src = t?.matches.find((m) => m.id === t.activeMatchId)?.slotSources?.[cmd.index]
       const edited = Object.entries(cmd.patch).some(([k, v]) => state.draft.players[cmd.index]?.[k as 'name'] !== v)
-      const next = withDraft(state, { players })
+      const base = edited && !state.savedPlayers ? { ...state, savedPlayers: structuredClone(state.draft.players) } : state
+      const next = withDraft(base, { players })
       // Hand-editing an auto-filled slot turns auto-fill off for it.
       return t && src?.auto && edited ? withTournament(next, withMatch(t, t.activeMatchId, (m) => ({ ...m, slotSources: m.slotSources!.map((x, i) => (i === cmd.index && x ? { ...x, auto: false } : x)) }))) : next
     }
     case 'savePlayers':
-      return livePlayers(state, ctx)
+      return livePlayers(clearSaved(state), ctx)
     case 'setRace':
       return applyRace(state, cmd.patch, ctx)
     case 'stepRace': {
@@ -704,7 +720,8 @@ function reduceCore(state: ShowState, cmd: Command, ctx: ReduceContext): ShowSta
       for (const o of state.outputs) if (snap.layers[o.id]) layers[o.id] = snap.layers[o.id]
       const scoresChanged = JSON.stringify(snap.draft.scores) !== JSON.stringify(state.draft.scores)
       const next: ShowState = {
-        ...state,
+        ...clearSaved(state),
+        ...(snap.savedPlayers ? { savedPlayers: snap.savedPlayers } : {}),
         draft: snap.draft, layers, armed: [...new Set(snap.armed)].filter((id) => state.outputs.some((o) => o.id === id)),
         transition: snap.transition, settings: { ...state.settings, mattify: snap.mattify },
         lastPreset: snap.lastPreset !== null && state.presets.some((p) => p.id === snap.lastPreset) ? snap.lastPreset : null,
